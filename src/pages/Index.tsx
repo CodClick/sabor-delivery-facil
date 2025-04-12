@@ -1,12 +1,53 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState, useEffect, useRef } from "react";
+import { categories, getMenuItemsByCategory, getPopularItems } from "@/data/menuData";
+import RestaurantHeader from "@/components/RestaurantHeader";
+import CategoryNav from "@/components/CategoryNav";
+import MenuSection from "@/components/MenuSection";
+import ShoppingCart from "@/components/ShoppingCart";
+import { useCart } from "@/contexts/CartContext";
 
 const Index = () => {
+  const [activeCategory, setActiveCategory] = useState(categories[0].id);
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  const handleCategorySelect = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    const element = document.getElementById(categoryId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gray-50">
+      <RestaurantHeader />
+      
+      <CategoryNav 
+        categories={categories} 
+        activeCategory={activeCategory}
+        onSelectCategory={handleCategorySelect}
+      />
+      
+      <div className="container mx-auto px-4 py-8 pb-24">
+        {/* Popular items section */}
+        <MenuSection
+          title="Mais Populares"
+          items={getPopularItems()}
+        />
+        
+        {/* Category sections */}
+        {categories.map((category) => (
+          <div key={category.id} id={category.id} ref={(el) => (sectionRefs.current[category.id] = el)}>
+            <MenuSection
+              title={category.name}
+              items={getMenuItemsByCategory(category.id)}
+            />
+          </div>
+        ))}
       </div>
+      
+      <ShoppingCart />
     </div>
   );
 };
