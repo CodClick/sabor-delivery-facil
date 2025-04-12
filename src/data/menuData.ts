@@ -109,6 +109,14 @@ export const menuItems: MenuItem[] = [
     image: "/images/sorvete.jpg",
     category: "sobremesas",
   }
+  {
+    id: "13",
+    name: "Costela Prime",
+    description: "Delicioso hambúrguer com 250g de costela de qualidade",
+    price: 28.90,
+    image: "/images/costela_prime.webp",
+    category: "sobremesas",
+  }
 ];
 
 export const getMenuItemsByCategory = (categoryId: string): MenuItem[] => {
