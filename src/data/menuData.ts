@@ -101,16 +101,8 @@ export const menuItems: MenuItem[] = [
     category: "sobremesas",
     popular: true,
   },
-  {
+    {
     id: "12",
-    name: "Sorvete de Cajeta",
-    description: "Sorvete artesanal de doce de leite mexicano com amêndoas caramelizadas",
-    price: 16.90,
-    image: "/images/sorvete.jpg",
-    category: "sobremesas",
-  },
-  {
-    id: "13",
     name: "Costela Prime Top",
     description: "Delicioso hambúrguer com 250g de costela de qualidade",
     price: 28.90,
