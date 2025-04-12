@@ -111,7 +111,7 @@ export const menuItems: MenuItem[] = [
   }
   {
     id: "13",
-    name: "Costela Prime",
+    name: "Costela Prime Top",
     description: "Delicioso hambúrguer com 250g de costela de qualidade",
     price: 28.90,
     image: "/images/costela_prime.webp",
