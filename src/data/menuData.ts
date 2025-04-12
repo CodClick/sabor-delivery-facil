@@ -106,7 +106,7 @@ export const menuItems: MenuItem[] = [
     name: "Costela Prime Top",
     description: "Delicioso hambúrguer com 250g de costela de qualidade",
     price: 28.90,
-    image: "/images/costela_prime.webp",
+    image: "https://villamex.com.br/wp-content/uploads/2023/08/Barbecue-Burger-1024x683.webp",
     category: "sobremesas",
   }
 ];
