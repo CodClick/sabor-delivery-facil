@@ -5,6 +5,9 @@ import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const ShoppingCart: React.FC = () => {
   const {
@@ -17,6 +20,30 @@ const ShoppingCart: React.FC = () => {
     setIsCartOpen,
     itemCount,
   } = useCart();
+  
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleCheckout = () => {
+    if (!currentUser) {
+      toast({
+        title: "Login necessário",
+        description: "Por favor, faça login para continuar com seu pedido",
+        variant: "destructive",
+      });
+      setIsCartOpen(false);
+      navigate("/login");
+      return;
+    }
+    
+    // Aqui continuaria o processo de checkout quando o usuário estiver autenticado
+    toast({
+      title: "Pedido iniciado",
+      description: "Seu pedido está sendo processado",
+    });
+    // Implementação futura do processo de finalização de pedido
+  };
 
   return (
     <>
@@ -126,7 +153,10 @@ const ShoppingCart: React.FC = () => {
                 <span>Total</span>
                 <span>{formatCurrency(cartTotal)}</span>
               </div>
-              <Button className="w-full text-center py-3 bg-food-green hover:bg-opacity-90">
+              <Button 
+                className="w-full text-center py-3 bg-food-green hover:bg-opacity-90"
+                onClick={handleCheckout}
+              >
                 Finalizar Pedido
               </Button>
             </div>
