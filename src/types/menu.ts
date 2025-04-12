@@ -16,4 +16,5 @@ export interface CartItem extends MenuItem {
 export interface Category {
   id: string;
   name: string;
+  order?: number;
 }
