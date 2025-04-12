@@ -108,7 +108,7 @@ export const menuItems: MenuItem[] = [
     price: 16.90,
     image: "/images/sorvete.jpg",
     category: "sobremesas",
-  }
+  },
   {
     id: "13",
     name: "Costela Prime Top",
