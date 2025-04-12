@@ -101,7 +101,7 @@ export const menuItems: MenuItem[] = [
     category: "sobremesas",
     popular: true,
   },
-    {
+  {
     id: "12",
     name: "Costela Prime Top",
     description: "Delicioso hambúrguer com 250g de costela de qualidade",
