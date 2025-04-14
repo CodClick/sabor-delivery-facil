@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 
 interface CartContextType {
   cartItems: CartItem[];
+  addItem: (item: MenuItem) => void;
   addToCart: (item: MenuItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -39,7 +40,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItemCount(count);
   }, [cartItems]);
 
-  const addToCart = (menuItem: MenuItem) => {
+  const addItem = (menuItem: MenuItem) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === menuItem.id);
       
@@ -60,6 +61,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       duration: 2000
     });
   };
+
+  // Alias para addItem para manter compatibilidade com código existente
+  const addToCart = addItem;
 
   const removeFromCart = (id: string) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));
@@ -91,6 +95,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <CartContext.Provider
       value={{
         cartItems,
+        addItem,
         addToCart,
         removeFromCart,
         increaseQuantity,
