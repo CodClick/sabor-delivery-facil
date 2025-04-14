@@ -53,8 +53,8 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "6",
-    name: "Enchiladas Verdes",
-    description: "Tortilhas de milho recheadas com frango, cobertas com molho verde, queijo, creme azedo e cebola",
+    name: "Trio Mex",
+    description: "Três pratos pelo preco de 1 - 1 burrito, 1 quesadilla, 1 taco. aescolha o sabor que quiser.",
     price: 34.90,
     image: "/images/enchiladas.jpg",
     category: "principais",
