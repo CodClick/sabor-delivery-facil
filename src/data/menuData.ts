@@ -14,7 +14,7 @@ export const menuItems: MenuItem[] = [
     name: "Nachos Supremos",
     description: "Tortilhas crocantes cobertas com queijo derretido, guacamole, pico de gallo, creme azedo e jalapeños",
     price: 24.90,
-    image: "https://github.com/CodClick/sabor-delivery-facil/blob/main/public/images/CHILLI%20NACHOS_20250414_034828_0000.png",
+    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/08/NACHOS-1024x682.webp.bv_resized_mobile.webp.bv.webp",
     category: "entradas",
     popular: true,
   },
