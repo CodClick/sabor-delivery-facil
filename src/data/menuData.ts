@@ -20,10 +20,10 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "2",
-    name: "Guacamole Fresco",
+    name: "Festival dos Tacos",
     description: "Abacate amassado na hora com tomate, cebola, coentro, limão e especiarias. Servido com tortilhas",
     price: 19.90,
-    image: "/images/guacamole.jpg",
+    image: "https://github.com/CodClick/sabor-delivery-facil/blob/main/public/images/FESTIVAL%20DOS%20TACOS_20250414_034829_0003.png",
     category: "entradas",
   },
   {
