@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +10,7 @@ import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -38,6 +40,11 @@ const Index = () => {
       setMenuItems(items);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Usando dados locais como alternativa.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
