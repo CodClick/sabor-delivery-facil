@@ -39,7 +39,7 @@ export const menuItems: MenuItem[] = [
     name: "Burrito de Carne",
     description: "Tortilha de trigo recheada com carne bovina temperada, arroz mexicano, feijão, queijo, alface e tomate",
     price: 32.90,
-    image: "/images/burrito.jpg",
+    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/08/Burrito-1024x683.webp.bv_resized_mobile.webp.bv.webp",
     category: "principais",
     popular: true,
   },
