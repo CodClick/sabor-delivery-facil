@@ -48,7 +48,7 @@ export const menuItems: MenuItem[] = [
     name: "Tacos de Frango",
     description: "Três tacos com tortilhas de milho, frango desfiado, pico de gallo, guacamole e coentro fresco",
     price: 29.90,
-    image: "/images/tacos.jpg",
+    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/08/Burrito-1024x683.webp.bv_resized_mobile.webp.bv.webp",
     category: "principais",
   },
   {
