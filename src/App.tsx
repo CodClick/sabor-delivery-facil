@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
+import Orders from "./pages/Orders";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
@@ -46,6 +47,7 @@ const App = () => (
                   <Admin />
                 </PrivateRoute>
               } />
+              <Route path="/orders" element={<Orders />} />
               {/* Rotas de API */}
               <Route path="/api/*" element={<Api />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
