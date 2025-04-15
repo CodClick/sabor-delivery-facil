@@ -39,7 +39,7 @@ export const menuItems: MenuItem[] = [
     name: "Burrito de Carne",
     description: "Tortilha de trigo recheada com carne bovina temperada, arroz mexicano, feijão, queijo, alface e tomate",
     price: 32.90,
-    image: "/images/TRIO MEX 1_20250414_034828_0002.png",
+    image: "https://github.com/CodClick/sabor-delivery-facil/blob/main/public/images/burrito_de_carne.png",
     category: "principais",
     popular: true,
   },
