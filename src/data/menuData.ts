@@ -28,10 +28,10 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "3",
-    name: "Quesadilla de Queijo",
-    description: "Tortilha de trigo recheada com queijo derretido, servida com guacamole, pico de gallo e creme azedo",
+    name: "Quesadillas",
+    description: "Tortilha de trigo recheada com carne temperada, servida com guacamole, pico de gallo e creme azedo",
     price: 22.50,
-    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/08/Onion-Rings-1-1024x683.webp.bv_resized_mobile.webp.bv.webp",
+    image: "/images/enchiladas_de_carne.png",
     category: "entradas",
   },
   {
@@ -45,10 +45,10 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "5",
-    name: "Tacos de Frango",
+    name: "Tacos de Queijo",
     description: "Três tacos com tortilhas de milho, frango desfiado, pico de gallo, guacamole e coentro fresco",
     price: 29.90,
-    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/08/Burrito-1024x683.webp.bv_resized_mobile.webp.bv.webp",
+    image: "/images/tacos_de_queijo.png",
     category: "principais",
   },
   {
