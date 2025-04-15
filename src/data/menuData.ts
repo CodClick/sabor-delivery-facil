@@ -31,7 +31,7 @@ export const menuItems: MenuItem[] = [
     name: "Quesadilla de Queijo",
     description: "Tortilha de trigo recheada com queijo derretido, servida com guacamole, pico de gallo e creme azedo",
     price: 22.50,
-    image: "/images/quesadilla.jpg",
+    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/08/Onion-Rings-1-1024x683.webp.bv_resized_mobile.webp.bv.webp",
     category: "entradas",
   },
   {
