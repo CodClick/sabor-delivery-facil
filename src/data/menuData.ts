@@ -61,10 +61,10 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "7",
-    name: "Fajitas de Carne",
+    name: "Tacos Mexicanos",
     description: "Tiras de carne grelhadas com pimentões e cebola, acompanha tortilhas, guacamole, pico de gallo e creme azedo",
     price: 38.90,
-    image: "/images/fajitas.jpg",
+    image: "/images/tacos.png",
     category: "principais",
     popular: true,
   },
