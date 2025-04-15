@@ -23,7 +23,7 @@ export const menuItems: MenuItem[] = [
     name: "Festival dos Tacos",
     description: "Abacate amassado na hora com tomate, cebola, coentro, limão e especiarias. Servido com tortilhas",
     price: 19.90,
-    image: "https://github.com/CodClick/sabor-delivery-facil/blob/main/public/images/FESTIVAL%20DOS%20TACOS_20250414_034829_0003.png",
+    image: "/images/FESTIVAL DOS TACOS_20250414_034829_0003.png",
     category: "entradas",
   },
   {
@@ -39,7 +39,7 @@ export const menuItems: MenuItem[] = [
     name: "Burrito de Carne",
     description: "Tortilha de trigo recheada com carne bovina temperada, arroz mexicano, feijão, queijo, alface e tomate",
     price: 32.90,
-    image: "https://github.com/CodClick/sabor-delivery-facil/blob/main/public/images/TRIO%20MEX%201_20250414_034828_0002.png",
+    image: "/images/TRIO MEX 1_20250414_034828_0002.png",
     category: "principais",
     popular: true,
   },
@@ -106,7 +106,7 @@ export const menuItems: MenuItem[] = [
     name: "Costela Prime Top",
     description: "Delicioso hambúrguer com 250g de costela de qualidade",
     price: 28.90,
-    image: "https://villamex.com.br/wp-content/uploads/2023/08/Barbecue-Burger-1024x683.webp",
+    image: "/images/costela_prime.webp",
     category: "sobremesas",
   }
 ];

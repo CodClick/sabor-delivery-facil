@@ -21,6 +21,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           alt={item.name}
           className="w-full h-full object-cover transition-transform hover:scale-105"
           onError={(e) => {
+            console.log("Erro ao carregar imagem:", item.image);
             // Fallback to a placeholder image if the food image fails to load
             const target = e.target as HTMLImageElement;
             target.src = "/placeholder.svg";
