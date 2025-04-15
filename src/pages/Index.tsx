@@ -7,14 +7,15 @@ import { getPopularItems, getMenuItemsByCategory } from "@/services/menuService"
 import { categories } from "@/data/menuData";
 import { MenuItem } from "@/types/menu";
 import { useEffect, useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, LogIn, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
+import MenuItemCard from "@/components/MenuItemCard";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, logOut } = useAuth();
   const { addItem } = useCart();
   const [popularItems, setPopularItems] = useState<MenuItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -58,15 +59,48 @@ const Index = () => {
     addItem(item);
   };
 
+  const handleLoginClick = () => {
+    navigate("/login");
+  };
+
+  const handleAccountClick = () => {
+    if (currentUser) {
+      // Se o usuário estiver logado, mostra opções da conta ou faz logout
+      logOut();
+    } else {
+      // Se não estiver logado, redireciona para a página de login
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Cardápio Delivery Fácil</h1>
-        {currentUser && (
-          <Button onClick={handleAdminAccess} variant="outline">
-            Gerenciar Cardápio
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleAccountClick} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            {currentUser ? (
+              <>
+                <User className="h-4 w-4" />
+                <span>Minha Conta</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="h-4 w-4" />
+                <span>Entrar</span>
+              </>
+            )}
           </Button>
-        )}
+          {currentUser && (
+            <Button onClick={handleAdminAccess} variant="outline">
+              Gerenciar Cardápio
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Categories */}
@@ -94,36 +128,7 @@ const Index = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {menuItems.map((item) => (
-            <Card key={item.id} className="overflow-hidden">
-              <div className="h-40 bg-gray-200">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = "/placeholder.svg";
-                  }}
-                />
-              </div>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold">{item.name}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {item.description}
-                    </p>
-                    <p className="mt-2 font-semibold text-brand">
-                      R$ {item.price.toFixed(2)}
-                    </p>
-                  </div>
-                  <Button size="sm" onClick={() => handleAddToCart(item)}>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Adicionar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <MenuItemCard key={item.id} item={item} />
           ))}
 
           {menuItems.length === 0 && (

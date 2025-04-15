@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import ShoppingCart from "./components/ShoppingCart";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <ShoppingCart />
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>
