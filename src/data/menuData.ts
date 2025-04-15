@@ -97,7 +97,7 @@ export const menuItems: MenuItem[] = [
     name: "Churros Mexicanos",
     description: "Massa frita polvilhada com canela e açúcar, servida com doce de leite",
     price: 18.90,
-    image: "/images/churros.jpg",
+    image: "/images/mini-churros.png",
     category: "sobremesas",
     popular: true,
   },
