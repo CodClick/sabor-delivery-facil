@@ -23,7 +23,7 @@ export const menuItems: MenuItem[] = [
     name: "Festival dos Tacos",
     description: "Abacate amassado na hora com tomate, cebola, coentro, limão e especiarias. Servido com tortilhas",
     price: 19.90,
-    image: "/images/FESTIVAL DOS TACOS_20250414_034829_0003.png",
+    image: "/images/20250415_020552_0000.png",
     category: "entradas",
   },
   {
