@@ -56,7 +56,7 @@ export const menuItems: MenuItem[] = [
     name: "Trio Mex",
     description: "Três pratos pelo preco de 1 - 1 burrito, 1 quesadilla, 1 taco. aescolha o sabor que quiser.",
     price: 34.90,
-    image: "https://villamex.com.br/wp-content/uploads/al_opt_content/IMAGE/villamex.com.br/wp-content/uploads/2023/12/QUALQUER-SABOR-5_090155-red.webp.bv_resized_mobile.webp.bv.webp",
+    image: "/images/trio-mex.png",
     category: "principais",
   },
   {
