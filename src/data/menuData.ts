@@ -37,7 +37,7 @@ export const menuItems: MenuItem[] = [
   {
     id: "4",
     name: "Burrito de Carne",
-    description: "Tortilha de trigo recheada com carne bovina temperada, arroz mexicano, feijão, queijo, alface e tomate",
+    description: "Tortilha de trigo recheada com carne bovina temperada, arroz mexicano, pasta de feijão e queijo",
     price: 32.90,
     image: "/images/burrito_de_carne.png",
     category: "principais",
