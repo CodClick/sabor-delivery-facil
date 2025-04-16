@@ -10,7 +10,11 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { saveUserToSupabase, getUserById } from "@/services/supabaseService";
+import { 
+  saveUserToSupabase, 
+  getUserById, 
+  updateUserLastSignIn 
+} from "@/services/supabaseService";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -35,21 +39,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Função para sincronizar usuário com o Supabase
+  const syncUserWithSupabase = async (user: User, name?: string, phone?: string) => {
+    try {
+      // Buscar usuário existente do Supabase para preservar dados
+      const existingUser = await getUserById(user.uid);
+      
+      // Preparar dados do usuário para sincronização
+      await saveUserToSupabase({
+        id: user.uid,
+        email: user.email || '',
+        last_sign_in: new Date().toISOString(),
+        // Preservar nome e telefone existentes se não foram fornecidos novos
+        name: name || (existingUser?.name || null),
+        phone: phone || (existingUser?.phone || null),
+        // Preservar data de criação se existir
+        created_at: existingUser?.created_at || new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Erro ao sincronizar usuário com Supabase:", error);
+      // Não lançamos o erro para evitar interromper o fluxo do usuário
+      toast({
+        title: "Aviso",
+        description: "Seus dados foram salvos localmente, mas houve um problema com a sincronização.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      setLoading(false);
       
       // Atualizar o último login no Supabase quando o usuário faz login
       if (user) {
-        saveUserToSupabase({
-          id: user.uid,
-          email: user.email || '',
-          last_sign_in: new Date().toISOString()
-        }).catch(error => {
-          console.error("Erro ao sincronizar login com Supabase:", error);
-        });
+        try {
+          await updateUserLastSignIn(user.uid);
+        } catch (error) {
+          console.error("Erro ao atualizar último login:", error);
+        }
       }
+      
+      setLoading(false);
     });
 
     return unsubscribe;
@@ -59,16 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Após criar usuário no Firebase, salvar no Supabase
+      // Após criar usuário no Firebase, sincronizar com Supabase
       if (result.user) {
-        await saveUserToSupabase({
-          id: result.user.uid,
-          email: email,
-          created_at: new Date().toISOString(),
-          last_sign_in: new Date().toISOString(),
-          name,
-          phone
-        });
+        await syncUserWithSupabase(result.user, name, phone);
       }
       
       toast({
@@ -91,13 +115,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       
-      // Atualizar o último login
+      // Sincronizar com Supabase após login
       if (result.user) {
-        await saveUserToSupabase({
-          id: result.user.uid,
-          email: email,
-          last_sign_in: new Date().toISOString()
-        });
+        await syncUserWithSupabase(result.user);
       }
       
       toast({

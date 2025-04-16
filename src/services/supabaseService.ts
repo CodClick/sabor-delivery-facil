@@ -19,6 +19,8 @@ export interface UserProfile {
 // Função para salvar um novo usuário no Supabase
 export async function saveUserToSupabase(user: UserProfile) {
   try {
+    console.log('Salvando usuário no Supabase:', user);
+    
     const { data, error } = await supabase
       .from('users')
       .upsert(
@@ -38,6 +40,7 @@ export async function saveUserToSupabase(user: UserProfile) {
       throw error;
     }
 
+    console.log('Usuário salvo com sucesso no Supabase:', data);
     return data;
   } catch (error) {
     console.error('Erro ao conectar com Supabase:', error);
@@ -48,6 +51,8 @@ export async function saveUserToSupabase(user: UserProfile) {
 // Função para buscar um usuário por ID
 export async function getUserById(userId: string) {
   try {
+    console.log('Buscando usuário no Supabase com ID:', userId);
+    
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -59,10 +64,34 @@ export async function getUserById(userId: string) {
       return null;
     }
 
+    console.log('Usuário encontrado no Supabase:', data);
     return data as UserProfile;
   } catch (error) {
     console.error('Erro ao conectar com Supabase:', error);
     return null;
+  }
+}
+
+// Função para atualizar o último login de um usuário
+export async function updateUserLastSignIn(userId: string) {
+  try {
+    console.log('Atualizando último login para usuário:', userId);
+    
+    const { data, error } = await supabase
+      .from('users')
+      .update({ last_sign_in: new Date().toISOString() })
+      .eq('id', userId);
+      
+    if (error) {
+      console.error('Erro ao atualizar último login:', error);
+      return false;
+    }
+    
+    console.log('Último login atualizado com sucesso');
+    return true;
+  } catch (error) {
+    console.error('Erro ao conectar com Supabase para atualizar login:', error);
+    return false;
   }
 }
 
