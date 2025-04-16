@@ -1,20 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-
-// Inicializar o cliente Supabase com melhor tratamento de erro
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Verificar se as variáveis de ambiente estão definidas
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Erro: Variáveis de ambiente do Supabase não estão definidas.');
-  console.error('Por favor, defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no seu arquivo .env');
-}
-
-// Criar um cliente mock para desenvolvimento quando as credenciais estiverem faltando
-const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
-  : createMockClient();
+import { supabase } from '@/integrations/supabase/client';
 
 // Cliente mock simples para evitar erros durante o desenvolvimento
 function createMockClient() {
@@ -48,12 +34,6 @@ export async function saveUserToSupabase(user: UserProfile) {
   try {
     console.log('Salvando usuário no Supabase:', user);
     
-    // Se estamos em modo mock, apenas simular
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Ignorando salvamento do usuário no Supabase (usando cliente mock)');
-      return null;
-    }
-    
     const { data, error } = await supabase
       .from('users')
       .upsert(
@@ -86,12 +66,6 @@ export async function getUserById(userId: string) {
   try {
     console.log('Buscando usuário no Supabase com ID:', userId);
     
-    // Se estamos em modo mock, apenas simular
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Ignorando busca do usuário no Supabase (usando cliente mock)');
-      return null;
-    }
-    
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -115,12 +89,6 @@ export async function getUserById(userId: string) {
 export async function updateUserLastSignIn(userId: string) {
   try {
     console.log('Atualizando último login para usuário:', userId);
-    
-    // Se estamos em modo mock, apenas simular
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Ignorando atualização de login no Supabase (usando cliente mock)');
-      return false;
-    }
     
     const { data, error } = await supabase
       .from('users')
