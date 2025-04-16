@@ -1,11 +1,38 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Inicializar o cliente Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Inicializar o cliente Supabase com melhor tratamento de erro
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Verificar se as variáveis de ambiente estão definidas
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Erro: Variáveis de ambiente do Supabase não estão definidas.');
+  console.error('Por favor, defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no seu arquivo .env');
+}
+
+// Criar um cliente mock para desenvolvimento quando as credenciais estiverem faltando
+const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : createMockClient();
+
+// Cliente mock simples para evitar erros durante o desenvolvimento
+function createMockClient() {
+  console.warn('ATENÇÃO: Usando cliente Supabase MOCK. A aplicação funcionará apenas com o Firebase.');
+  
+  // Implementação básica para evitar erros durante o desenvolvimento
+  return {
+    from: () => ({
+      upsert: () => Promise.resolve({ data: null, error: new Error('Cliente Supabase mock') }),
+      update: () => Promise.resolve({ data: null, error: new Error('Cliente Supabase mock') }),
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: null, error: new Error('Cliente Supabase mock') })
+        })
+      })
+    })
+  };
+}
 
 export interface UserProfile {
   id: string; // Mantemos como string para compatibilidade com Firebase
@@ -20,6 +47,12 @@ export interface UserProfile {
 export async function saveUserToSupabase(user: UserProfile) {
   try {
     console.log('Salvando usuário no Supabase:', user);
+    
+    // Se estamos em modo mock, apenas simular
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Ignorando salvamento do usuário no Supabase (usando cliente mock)');
+      return null;
+    }
     
     const { data, error } = await supabase
       .from('users')
@@ -37,14 +70,14 @@ export async function saveUserToSupabase(user: UserProfile) {
 
     if (error) {
       console.error('Erro ao salvar usuário no Supabase:', error);
-      throw error;
+      return null;
     }
 
     console.log('Usuário salvo com sucesso no Supabase:', data);
     return data;
   } catch (error) {
     console.error('Erro ao conectar com Supabase:', error);
-    throw error;
+    return null;
   }
 }
 
@@ -52,6 +85,12 @@ export async function saveUserToSupabase(user: UserProfile) {
 export async function getUserById(userId: string) {
   try {
     console.log('Buscando usuário no Supabase com ID:', userId);
+    
+    // Se estamos em modo mock, apenas simular
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Ignorando busca do usuário no Supabase (usando cliente mock)');
+      return null;
+    }
     
     const { data, error } = await supabase
       .from('users')
@@ -76,6 +115,12 @@ export async function getUserById(userId: string) {
 export async function updateUserLastSignIn(userId: string) {
   try {
     console.log('Atualizando último login para usuário:', userId);
+    
+    // Se estamos em modo mock, apenas simular
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Ignorando atualização de login no Supabase (usando cliente mock)');
+      return false;
+    }
     
     const { data, error } = await supabase
       .from('users')

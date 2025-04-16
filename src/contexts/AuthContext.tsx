@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const existingUser = await getUserById(user.uid);
       
       // Preparar dados do usuário para sincronização
-      await saveUserToSupabase({
+      const result = await saveUserToSupabase({
         id: user.uid,
         email: user.email || '',
         last_sign_in: new Date().toISOString(),
@@ -56,6 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Preservar data de criação se existir
         created_at: existingUser?.created_at || new Date().toISOString()
       });
+
+      if (result === null) {
+        console.warn("Sincronização com Supabase falhou, mas o fluxo do usuário não será interrompido");
+      }
     } catch (error) {
       console.error("Erro ao sincronizar usuário com Supabase:", error);
       // Não lançamos o erro para evitar interromper o fluxo do usuário
@@ -74,7 +78,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Atualizar o último login no Supabase quando o usuário faz login
       if (user) {
         try {
-          await updateUserLastSignIn(user.uid);
+          const result = await updateUserLastSignIn(user.uid);
+          if (!result) {
+            console.warn("Falha ao atualizar último login no Supabase, mas o fluxo do usuário não será interrompido");
+          }
         } catch (error) {
           console.error("Erro ao atualizar último login:", error);
         }
