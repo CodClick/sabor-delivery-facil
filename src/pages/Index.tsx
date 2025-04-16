@@ -1,12 +1,24 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
+import { categories, getMenuItemsByCategory, getPopularItems } from "@/data/menuData";
+import { Category } from "@/types/menu";
 
 const Index = () => {
+  const [activeCategory, setActiveCategory] = useState<string>("entradas");
+  const [menuCategories, setMenuCategories] = useState<Category[]>(categories);
+  const [menuItems, setMenuItems] = useState(getMenuItemsByCategory("entradas"));
+  const [popularItems, setPopularItems] = useState(getPopularItems());
+
+  const handleSelectCategory = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    setMenuItems(getMenuItemsByCategory(categoryId));
+  };
+
   return (
     <div className="container mx-auto px-4">
       <div className="flex justify-between items-center my-4">
@@ -18,8 +30,18 @@ const Index = () => {
         </div>
       </div>
       <RestaurantHeader />
-      <CategoryNav />
-      <MenuSection />
+      <CategoryNav 
+        categories={menuCategories} 
+        activeCategory={activeCategory} 
+        onSelectCategory={handleSelectCategory} 
+      />
+      <MenuSection 
+        title={menuCategories.find(cat => cat.id === activeCategory)?.name || ""}
+        items={menuItems} 
+      />
+      {popularItems.length > 0 && (
+        <MenuSection title="Mais Populares" items={popularItems} />
+      )}
     </div>
   );
 };
