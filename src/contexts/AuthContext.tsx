@@ -10,11 +10,12 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { saveUserToSupabase, getUserById } from "@/services/supabaseService";
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<UserCredential>;
+  signUp: (email: string, password: string, name?: string, phone?: string) => Promise<UserCredential>;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   logOut: () => Promise<void>;
 }
@@ -38,14 +39,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
+      
+      // Atualizar o último login no Supabase quando o usuário faz login
+      if (user) {
+        saveUserToSupabase({
+          id: user.uid,
+          email: user.email || '',
+          last_sign_in: new Date().toISOString()
+        }).catch(error => {
+          console.error("Erro ao sincronizar login com Supabase:", error);
+        });
+      }
     });
 
     return unsubscribe;
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string, phone?: string) => {
     try {
-      return await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Após criar usuário no Firebase, salvar no Supabase
+      if (result.user) {
+        await saveUserToSupabase({
+          id: result.user.uid,
+          email: email,
+          created_at: new Date().toISOString(),
+          last_sign_in: new Date().toISOString(),
+          name,
+          phone
+        });
+      }
+      
+      toast({
+        title: "Conta criada com sucesso",
+        description: "Bem-vindo ao nosso aplicativo!",
+      });
+      
+      return result;
     } catch (error: any) {
       toast({
         title: "Erro ao criar conta",
@@ -58,7 +89,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Atualizar o último login
+      if (result.user) {
+        await saveUserToSupabase({
+          id: result.user.uid,
+          email: email,
+          last_sign_in: new Date().toISOString()
+        });
+      }
+      
+      toast({
+        title: "Login realizado",
+        description: "Você entrou com sucesso.",
+      });
+      
+      return result;
     } catch (error: any) {
       toast({
         title: "Erro ao fazer login",

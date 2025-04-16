@@ -6,35 +6,67 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Phone } from "lucide-react";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Nome deve ter pelo menos 2 caracteres"
+  }),
+  email: z.string().email({
+    message: "Email inválido"
+  }),
+  phone: z.string().optional(),
+  password: z.string().min(6, {
+    message: "Senha deve ter pelo menos 6 caracteres"
+  }),
+  passwordConfirm: z.string()
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "As senhas não coincidem",
+  path: ["passwordConfirm"]
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const Register = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password !== passwordConfirm) {
-      return setError("As senhas não coincidem");
+  
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      passwordConfirm: ""
     }
-    
+  });
+
+  const onSubmit = async (values: FormValues) => {
     try {
       setError("");
       setLoading(true);
-      await signUp(email, password);
+      await signUp(values.email, values.password, values.name, values.phone);
       toast({
         title: "Conta criada com sucesso",
         description: "Você foi registrado e conectado automaticamente",
       });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       setError("Falha ao criar conta. Verifique seus dados e tente novamente.");
     } finally {
       setLoading(false);
@@ -60,77 +92,125 @@ const Register = () => {
           </Alert>
         )}
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <div className="mt-1 relative">
-                <Mail className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                />
-              </div>
-            </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <User className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
+                      <Input 
+                        placeholder="Seu nome completo" 
+                        className="pl-10" 
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Senha
-              </label>
-              <div className="mt-1 relative">
-                <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
+                      <Input 
+                        placeholder="seu@email.com" 
+                        className="pl-10" 
+                        type="email"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div>
-              <label htmlFor="password-confirm" className="block text-sm font-medium text-gray-700">
-                Confirmar Senha
-              </label>
-              <div className="mt-1 relative">
-                <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
-                <Input
-                  id="password-confirm"
-                  name="password-confirm"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="pl-10"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <Button
-            type="submit"
-            className="w-full bg-brand hover:bg-brand-600"
-            disabled={loading}
-          >
-            {loading ? "Criando conta..." : "Criar Conta"}
-          </Button>
-        </form>
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone (opcional)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Phone className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
+                      <Input 
+                        placeholder="(00) 00000-0000" 
+                        className="pl-10" 
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Senha</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
+                      <Input 
+                        placeholder="••••••••" 
+                        className="pl-10" 
+                        type="password"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="passwordConfirm"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirmar Senha</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
+                      <Input 
+                        placeholder="••••••••" 
+                        className="pl-10" 
+                        type="password"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <Button
+              type="submit"
+              className="w-full bg-brand hover:bg-brand-600"
+              disabled={loading}
+            >
+              {loading ? "Criando conta..." : "Criar Conta"}
+            </Button>
+          </form>
+        </Form>
       </div>
     </div>
   );
