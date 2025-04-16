@@ -8,7 +8,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface UserProfile {
-  id: string;
+  id: string; // Mantemos como string para compatibilidade com Firebase
   email: string;
   created_at?: string;
   last_sign_in?: string;
