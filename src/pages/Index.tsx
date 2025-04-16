@@ -7,12 +7,15 @@ import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
 import { categories, getMenuItemsByCategory, getPopularItems } from "@/data/menuData";
 import { Category } from "@/types/menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogIn, LogOut } from "lucide-react";
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState<string>("entradas");
   const [menuCategories, setMenuCategories] = useState<Category[]>(categories);
   const [menuItems, setMenuItems] = useState(getMenuItemsByCategory("entradas"));
   const [popularItems, setPopularItems] = useState(getPopularItems());
+  const { currentUser, logOut } = useAuth();
 
   const handleSelectCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
@@ -24,9 +27,24 @@ const Index = () => {
       <div className="flex justify-between items-center my-4">
         <h1 className="text-2xl font-bold">Menu</h1>
         <div className="flex space-x-2">
-          <Button asChild variant="outline">
-            <Link to="/orders">Ver Pedidos</Link>
-          </Button>
+          {currentUser ? (
+            <>
+              <Button asChild variant="outline">
+                <Link to="/orders">Ver Pedidos</Link>
+              </Button>
+              <Button onClick={logOut} variant="outline" className="flex items-center gap-2">
+                <LogOut size={16} />
+                Sair
+              </Button>
+            </>
+          ) : (
+            <Button asChild variant="outline" className="flex items-center gap-2">
+              <Link to="/login">
+                <LogIn size={16} />
+                Entrar
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
       <RestaurantHeader />
