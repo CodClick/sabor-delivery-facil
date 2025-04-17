@@ -12,7 +12,7 @@ import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { 
   saveUserToSupabase, 
-  getUserById, 
+  getUserByFirebaseId, 
   updateUserLastSignIn 
 } from "@/services/supabaseService";
 
@@ -50,11 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Iniciando sincronização com Supabase para usuário:", user.uid);
       
       // Buscar usuário existente do Supabase para preservar dados
-      const existingUser = await getUserById(user.uid);
+      const existingUser = await getUserByFirebaseId(user.uid);
       
       // Preparar dados do usuário para sincronização
       const userData = {
         id: user.uid,
+        uuid: existingUser?.uuid, // Manter UUID se já existir
         email: user.email || '',
         last_sign_in: new Date().toISOString(),
         // Preservar nome e telefone existentes se não foram fornecidos novos
@@ -79,6 +80,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         console.log("Sincronização com Supabase concluída com sucesso:", result);
+        
+        // Notificar o usuário sobre o sucesso da sincronização
+        toast({
+          title: "Sucesso",
+          description: "Seus dados foram sincronizados com sucesso.",
+        });
       }
     } catch (error) {
       console.error("Erro ao sincronizar usuário com Supabase:", error);
