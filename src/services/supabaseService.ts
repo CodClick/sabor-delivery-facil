@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
@@ -11,6 +10,7 @@ export interface UserProfile {
   last_sign_in?: string;
   name?: string;
   phone?: string;
+  firebase_id?: string;
 }
 
 // Função para gerar um UUID válido a partir de um ID do Firebase
@@ -36,11 +36,7 @@ export async function saveUserToSupabase(user: UserProfile) {
     }
     
     // Gerar UUID compatível com Supabase se não foi fornecido
-    // Corrigindo o problema com o tipo undefined
-    let uuid = user.uuid;
-    if (!uuid || typeof uuid !== 'string') {
-      uuid = generateUUID(user.id);
-    }
+    const uuid = user.uuid || generateUUID(user.id);
     
     const userData = {
       id: uuid, // Usar UUID compatível com Supabase
