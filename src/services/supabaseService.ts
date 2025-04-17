@@ -36,7 +36,11 @@ export async function saveUserToSupabase(user: UserProfile) {
     }
     
     // Gerar UUID compatível com Supabase se não foi fornecido
-    const uuid = user.uuid || generateUUID(user.id);
+    // Corrigindo o problema com o tipo undefined
+    let uuid = user.uuid;
+    if (!uuid || typeof uuid !== 'string') {
+      uuid = generateUUID(user.id);
+    }
     
     const userData = {
       id: uuid, // Usar UUID compatível com Supabase

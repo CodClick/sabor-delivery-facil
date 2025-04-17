@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Preparar dados do usuário para sincronização
       const userData = {
         id: user.uid,
-        uuid: existingUser?.uuid, // Manter UUID se já existir
+        uuid: existingUser?.id, // Usar o ID existente do Supabase se disponível
         email: user.email || '',
         last_sign_in: new Date().toISOString(),
         // Preservar nome e telefone existentes se não foram fornecidos novos
