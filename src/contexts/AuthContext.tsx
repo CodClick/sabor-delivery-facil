@@ -41,12 +41,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Função para sincronizar usuário com o Supabase
   const syncUserWithSupabase = async (user: User, name?: string, phone?: string) => {
+    if (!user || !user.uid || !user.email) {
+      console.error("Dados de usuário incompletos para sincronização com Supabase", user);
+      return;
+    }
+    
     try {
+      console.log("Iniciando sincronização com Supabase para usuário:", user.uid);
+      
       // Buscar usuário existente do Supabase para preservar dados
       const existingUser = await getUserById(user.uid);
       
       // Preparar dados do usuário para sincronização
-      const result = await saveUserToSupabase({
+      const userData = {
         id: user.uid,
         email: user.email || '',
         last_sign_in: new Date().toISOString(),
@@ -55,13 +62,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: phone || (existingUser?.phone || null),
         // Preservar data de criação se existir
         created_at: existingUser?.created_at || new Date().toISOString()
-      });
+      };
+      
+      console.log("Dados preparados para sincronização:", userData);
+      
+      const result = await saveUserToSupabase(userData);
 
       if (result === null) {
         console.warn("Sincronização com Supabase falhou, mas o fluxo do usuário não será interrompido");
+        
+        // Notificar o usuário sobre o problema de sincronização
+        toast({
+          title: "Aviso",
+          description: "Seus dados foram salvos localmente, mas houve um problema com a sincronização com o banco de dados.",
+          variant: "destructive",
+        });
+      } else {
+        console.log("Sincronização com Supabase concluída com sucesso:", result);
       }
     } catch (error) {
       console.error("Erro ao sincronizar usuário com Supabase:", error);
+      
       // Não lançamos o erro para evitar interromper o fluxo do usuário
       toast({
         title: "Aviso",
@@ -78,9 +99,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Atualizar o último login no Supabase quando o usuário faz login
       if (user) {
         try {
+          console.log("Tentando atualizar último login para usuário:", user.uid);
           const result = await updateUserLastSignIn(user.uid);
+          
           if (!result) {
             console.warn("Falha ao atualizar último login no Supabase, mas o fluxo do usuário não será interrompido");
+          } else {
+            console.log("Último login atualizado com sucesso no Supabase");
           }
         } catch (error) {
           console.error("Erro ao atualizar último login:", error);
@@ -95,10 +120,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name?: string, phone?: string) => {
     try {
+      console.log("Iniciando cadastro para email:", email);
+      
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
       // Após criar usuário no Firebase, sincronizar com Supabase
       if (result.user) {
+        console.log("Usuário criado no Firebase, sincronizando com Supabase");
         await syncUserWithSupabase(result.user, name, phone);
       }
       
@@ -109,6 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return result;
     } catch (error: any) {
+      console.error("Erro ao criar conta:", error);
+      
       toast({
         title: "Erro ao criar conta",
         description: error.message,
@@ -120,10 +150,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Iniciando login para email:", email);
+      
       const result = await signInWithEmailAndPassword(auth, email, password);
       
       // Sincronizar com Supabase após login
       if (result.user) {
+        console.log("Login realizado no Firebase, sincronizando com Supabase");
         await syncUserWithSupabase(result.user);
       }
       
@@ -134,6 +167,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return result;
     } catch (error: any) {
+      console.error("Erro ao fazer login:", error);
+      
       toast({
         title: "Erro ao fazer login",
         description: error.message,
@@ -151,6 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Você foi desconectado com sucesso.",
       });
     } catch (error: any) {
+      console.error("Erro ao fazer logout:", error);
+      
       toast({
         title: "Erro ao fazer logout",
         description: error.message,

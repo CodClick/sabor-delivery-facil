@@ -2,24 +2,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-// Cliente mock simples para evitar erros durante o desenvolvimento
-function createMockClient() {
-  console.warn('ATENÇÃO: Usando cliente Supabase MOCK. A aplicação funcionará apenas com o Firebase.');
-  
-  // Implementação básica para evitar erros durante o desenvolvimento
-  return {
-    from: () => ({
-      upsert: () => Promise.resolve({ data: null, error: new Error('Cliente Supabase mock') }),
-      update: () => Promise.resolve({ data: null, error: new Error('Cliente Supabase mock') }),
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: new Error('Cliente Supabase mock') })
-        })
-      })
-    })
-  };
-}
-
 export interface UserProfile {
   id: string; // Mantemos como string para compatibilidade com Firebase
   email: string;
@@ -34,19 +16,27 @@ export async function saveUserToSupabase(user: UserProfile) {
   try {
     console.log('Salvando usuário no Supabase:', user);
     
+    // Verificar se o usuário foi fornecido com todos os dados obrigatórios
+    if (!user.id || !user.email) {
+      console.error('Erro: ID e email são obrigatórios para salvar usuário');
+      return null;
+    }
+    
+    const userData = {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at || new Date().toISOString(),
+      last_sign_in: user.last_sign_in || new Date().toISOString(),
+      name: user.name || null,
+      phone: user.phone || null
+    };
+    
+    console.log('Dados formatados para inserção:', userData);
+    
+    // Tenta inserir o usuário na tabela users
     const { data, error } = await supabase
       .from('users')
-      .upsert(
-        { 
-          id: user.id,
-          email: user.email,
-          created_at: user.created_at || new Date().toISOString(),
-          last_sign_in: user.last_sign_in || new Date().toISOString(),
-          name: user.name || null,
-          phone: user.phone || null
-        },
-        { onConflict: 'id' }
-      );
+      .upsert(userData, { onConflict: 'id' });
 
     if (error) {
       console.error('Erro ao salvar usuário no Supabase:', error);
@@ -65,6 +55,11 @@ export async function saveUserToSupabase(user: UserProfile) {
 export async function getUserById(userId: string) {
   try {
     console.log('Buscando usuário no Supabase com ID:', userId);
+    
+    if (!userId) {
+      console.error('ID de usuário não fornecido');
+      return null;
+    }
     
     const { data, error } = await supabase
       .from('users')
@@ -89,6 +84,11 @@ export async function getUserById(userId: string) {
 export async function updateUserLastSignIn(userId: string) {
   try {
     console.log('Atualizando último login para usuário:', userId);
+    
+    if (!userId) {
+      console.error('ID de usuário não fornecido');
+      return false;
+    }
     
     const { data, error } = await supabase
       .from('users')
