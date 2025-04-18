@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useForm } from "react-hook-form";
@@ -18,22 +18,38 @@ interface CheckoutFormData {
   complement?: string;
   neighborhood: string;
   city: string;
-  paymentMethod: "pix" | "card" | "cash";
+  paymentMethod: "pix" | "card";
 }
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutFormData>();
+  const [showPixQRCode, setShowPixQRCode] = useState(false);
+  const selectedPaymentMethod = watch("paymentMethod");
+
+  const handlePixPayment = () => {
+    // Simulating PIX QR code generation
+    setShowPixQRCode(true);
+    toast({
+      title: "QR Code PIX gerado",
+      description: "Escaneie o QR Code para realizar o pagamento.",
+    });
+  };
 
   const onSubmit = async (data: CheckoutFormData) => {
     try {
+      if (data.paymentMethod === "pix" && !showPixQRCode) {
+        handlePixPayment();
+        return;
+      }
+
       const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city}`;
       
       const orderData = {
-        customerName: "Cliente", // Será atualizado quando implementarmos autenticação
-        customerPhone: "", // Será atualizado quando implementarmos autenticação
+        customerName: "Cliente",
+        customerPhone: "",
         items: cartItems.map(item => ({
           menuItemId: item.id,
           quantity: item.quantity
@@ -163,6 +179,17 @@ const Checkout = () => {
           <RadioGroup defaultValue="card">
             <div className="flex items-center space-x-2">
               <RadioGroupItem 
+                value="pix" 
+                id="pix"
+                {...register("paymentMethod")}
+              />
+              <Label htmlFor="pix" className="flex items-center gap-2">
+                <QrCode className="h-5 w-5" />
+                PIX
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem 
                 value="card" 
                 id="card"
                 {...register("paymentMethod")}
@@ -172,18 +199,22 @@ const Checkout = () => {
                 Cartão de Crédito/Débito na entrega
               </Label>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem 
-                value="pix" 
-                id="pix"
-                {...register("paymentMethod")}
-              />
-              <Label htmlFor="pix" className="flex items-center gap-2">
-                <QrCode className="h-5 w-5" />
-                PIX na entrega
-              </Label>
-            </div>
           </RadioGroup>
+
+          {showPixQRCode && selectedPaymentMethod === "pix" && (
+            <div className="mt-6 p-4 border rounded-lg">
+              <h3 className="text-lg font-semibold mb-2">QR Code PIX</h3>
+              <div className="bg-gray-100 p-4 rounded-lg flex items-center justify-center">
+                {/* Simulação do QR Code */}
+                <div className="w-48 h-48 border-2 border-dashed border-gray-400 rounded flex items-center justify-center">
+                  <span className="text-sm text-gray-500">QR Code PIX</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                Escaneie o QR Code acima para realizar o pagamento via PIX
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-4">
@@ -195,7 +226,9 @@ const Checkout = () => {
             Voltar ao Cardápio
           </Button>
           <Button type="submit">
-            Confirmar Pedido
+            {selectedPaymentMethod === "pix" && !showPixQRCode 
+              ? "Gerar QR Code PIX" 
+              : "Confirmar Pedido"}
           </Button>
         </div>
       </form>
