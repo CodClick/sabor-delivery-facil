@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -37,12 +36,8 @@ const ShoppingCart: React.FC = () => {
       return;
     }
     
-    // Aqui continuaria o processo de checkout quando o usuário estiver autenticado
-    toast({
-      title: "Pedido iniciado",
-      description: "Seu pedido está sendo processado",
-    });
-    // Implementação futura do processo de finalização de pedido
+    setIsCartOpen(false);
+    navigate("/checkout");
   };
 
   return (

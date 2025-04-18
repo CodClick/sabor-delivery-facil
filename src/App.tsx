@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,10 +14,10 @@ import Orders from "./pages/Orders";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
-// Componente para proteger rotas que necessitam de autenticação
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, loading } = useAuth();
   
@@ -43,15 +42,14 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/admin" element={
                 <PrivateRoute>
                   <Admin />
                 </PrivateRoute>
               } />
               <Route path="/orders" element={<Orders />} />
-              {/* Rotas de API */}
               <Route path="/api/*" element={<Api />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ShoppingCart />
