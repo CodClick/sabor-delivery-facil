@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   getAllMenuItems, 
   saveMenuItem, 
@@ -30,13 +29,11 @@ const Admin = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Verificar se o usuário está logado
     if (!currentUser) {
       navigate("/login");
       return;
     }
 
-    // Carregar dados iniciais
     loadData();
   }, [currentUser, navigate]);
 
@@ -113,7 +110,6 @@ const Admin = () => {
     try {
       await saveMenuItem(editItem);
       
-      // Atualizar a lista de itens
       setMenuItems(prev => {
         const exists = prev.find(item => item.id === editItem.id);
         if (exists) {
@@ -177,12 +173,10 @@ const Admin = () => {
       try {
         const { categories, menuItems } = await import("@/data/menuData");
         
-        // Salvar categorias
         for (const category of categories) {
           await saveCategory({...category, order: categories.indexOf(category)});
         }
         
-        // Salvar itens do menu
         for (const item of menuItems) {
           await saveMenuItem(item);
         }
@@ -192,7 +186,6 @@ const Admin = () => {
           description: "Dados iniciais importados com sucesso",
         });
         
-        // Recarregar dados
         loadData();
       } catch (error) {
         console.error("Erro ao importar dados iniciais:", error);
@@ -215,7 +208,6 @@ const Admin = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Painel de categorias */}
         <Card>
           <CardHeader>
             <CardTitle>Categorias</CardTitle>
@@ -253,7 +245,6 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Painel de importação de dados */}
         <Card>
           <CardHeader>
             <CardTitle>Importar Dados</CardTitle>
@@ -271,7 +262,6 @@ const Admin = () => {
         </Card>
       </div>
 
-      {/* Lista de itens do menu */}
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Itens do Cardápio</h2>
@@ -335,7 +325,6 @@ const Admin = () => {
         )}
       </div>
 
-      {/* Modal de edição de item */}
       {editItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">

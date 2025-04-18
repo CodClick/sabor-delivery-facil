@@ -7,7 +7,7 @@ import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
 import { categories, getMenuItemsByCategory, getPopularItems } from "@/data/menuData";
 import { Category } from "@/types/menu";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { LogIn, LogOut } from "lucide-react";
 
 const Index = () => {

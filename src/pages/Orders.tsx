@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { getOrdersByPhone, updateOrder } from "@/services/orderService";
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +43,6 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Efeito para verificar autenticação (opcional)
   useEffect(() => {
     if (currentUser) {
       // Poderia carregar pedidos iniciais se o usuário estiver conectado
@@ -98,12 +96,10 @@ const Orders = () => {
     try {
       const updatedOrder = await updateOrder(orderId, { status: newStatus });
       if (updatedOrder) {
-        // Atualizar a lista de pedidos
         setOrders(orders.map(order => 
           order.id === orderId ? updatedOrder : order
         ));
         
-        // Atualizar o pedido selecionado se estiver aberto
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updatedOrder);
         }
@@ -123,7 +119,6 @@ const Orders = () => {
     }
   };
 
-  // Formatar data para exibição
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('pt-BR', {
@@ -135,7 +130,6 @@ const Orders = () => {
     }).format(date);
   };
 
-  // Traduzir status para português
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
       pending: "Pendente",
@@ -148,7 +142,6 @@ const Orders = () => {
     return statusMap[status] || status;
   };
 
-  // Obter classe de cor com base no status
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -239,7 +232,6 @@ const Orders = () => {
         </Card>
       )}
 
-      {/* Modal para visualização e edição de pedido */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
