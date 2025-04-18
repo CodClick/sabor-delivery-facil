@@ -18,6 +18,7 @@ interface CheckoutFormData {
   complement?: string;
   neighborhood: string;
   city: string;
+  phone: string;
   paymentMethod: "pix" | "card";
 }
 
@@ -27,6 +28,7 @@ const Checkout = () => {
   const { toast } = useToast();
   const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutFormData>();
   const [showPixQRCode, setShowPixQRCode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedPaymentMethod = watch("paymentMethod");
 
   const handlePixPayment = () => {
@@ -45,18 +47,21 @@ const Checkout = () => {
         return;
       }
 
+      setIsSubmitting(true);
       const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city}`;
       
       const orderData = {
         customerName: "Cliente",
-        customerPhone: "",
+        customerPhone: data.phone, // Use the phone from the form
         items: cartItems.map(item => ({
           menuItemId: item.id,
           quantity: item.quantity
         }))
       };
 
+      console.log("Submitting order data:", orderData);
       const order = await createOrder(orderData);
+      console.log("Order created:", order);
 
       toast({
         title: "Pedido realizado com sucesso!",
@@ -66,11 +71,22 @@ const Checkout = () => {
       clearCart();
       navigate("/orders");
     } catch (error) {
+      console.error("Erro ao criar pedido:", error);
+      
+      // More specific error message
+      let errorMessage = "Ocorreu um erro ao processar seu pedido. Tente novamente.";
+      
+      if (error.code === "permission-denied") {
+        errorMessage = "Erro de permissão ao criar o pedido. Verifique se todos os campos estão preenchidos corretamente.";
+      }
+      
       toast({
         title: "Erro ao criar pedido",
-        description: "Ocorreu um erro ao processar seu pedido. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -171,6 +187,23 @@ const Checkout = () => {
                 <p className="text-sm text-red-500">{errors.city.message}</p>
               )}
             </div>
+            <div>
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                {...register("phone", { 
+                  required: "Telefone é obrigatório",
+                  pattern: {
+                    value: /^[0-9]{10,11}$/,
+                    message: "Telefone deve ter 10 ou 11 dígitos"
+                  }
+                })}
+                placeholder="Digite seu telefone (apenas números)"
+              />
+              {errors.phone && (
+                <p className="text-sm text-red-500">{errors.phone.message}</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -225,10 +258,15 @@ const Checkout = () => {
           >
             Voltar ao Cardápio
           </Button>
-          <Button type="submit">
-            {selectedPaymentMethod === "pix" && !showPixQRCode 
-              ? "Gerar QR Code PIX" 
-              : "Confirmar Pedido"}
+          <Button 
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting 
+              ? "Processando..." 
+              : selectedPaymentMethod === "pix" && !showPixQRCode 
+                ? "Gerar QR Code PIX" 
+                : "Confirmar Pedido"}
           </Button>
         </div>
       </form>
