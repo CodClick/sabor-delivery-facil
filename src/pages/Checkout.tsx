@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useForm } from "react-hook-form";
-import { MapPin, CreditCard, QrCode } from "lucide-react";
+import { MapPin, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -19,40 +19,24 @@ interface CheckoutFormData {
   neighborhood: string;
   city: string;
   phone: string;
-  paymentMethod: "pix" | "card";
+  paymentMethod: "card";
 }
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutFormData>();
-  const [showPixQRCode, setShowPixQRCode] = useState(false);
+  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const selectedPaymentMethod = watch("paymentMethod");
-
-  const handlePixPayment = () => {
-    // Simulating PIX QR code generation
-    setShowPixQRCode(true);
-    toast({
-      title: "QR Code PIX gerado",
-      description: "Escaneie o QR Code para realizar o pagamento.",
-    });
-  };
 
   const onSubmit = async (data: CheckoutFormData) => {
     try {
-      if (data.paymentMethod === "pix" && !showPixQRCode) {
-        handlePixPayment();
-        return;
-      }
-
       setIsSubmitting(true);
       const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city}`;
       
       const orderData = {
         customerName: "Cliente",
-        customerPhone: data.phone, // Use the phone from the form
+        customerPhone: data.phone,
         items: cartItems.map(item => ({
           menuItemId: item.id,
           quantity: item.quantity
@@ -73,7 +57,6 @@ const Checkout = () => {
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
       
-      // More specific error message
       let errorMessage = "Ocorreu um erro ao processar seu pedido. Tente novamente.";
       
       if (error.code === "permission-denied") {
@@ -209,45 +192,10 @@ const Checkout = () => {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Forma de Pagamento</h2>
-          <RadioGroup defaultValue="card">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem 
-                value="pix" 
-                id="pix"
-                {...register("paymentMethod")}
-              />
-              <Label htmlFor="pix" className="flex items-center gap-2">
-                <QrCode className="h-5 w-5" />
-                PIX
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem 
-                value="card" 
-                id="card"
-                {...register("paymentMethod")}
-              />
-              <Label htmlFor="card" className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Cartão de Crédito/Débito na entrega
-              </Label>
-            </div>
-          </RadioGroup>
-
-          {showPixQRCode && selectedPaymentMethod === "pix" && (
-            <div className="mt-6 p-4 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">QR Code PIX</h3>
-              <div className="bg-gray-100 p-4 rounded-lg flex items-center justify-center">
-                {/* Simulação do QR Code */}
-                <div className="w-48 h-48 border-2 border-dashed border-gray-400 rounded flex items-center justify-center">
-                  <span className="text-sm text-gray-500">QR Code PIX</span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2 text-center">
-                Escaneie o QR Code acima para realizar o pagamento via PIX
-              </p>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            <CreditCard className="h-5 w-5" />
+            <span>Cartão de Crédito/Débito na entrega</span>
+          </div>
         </div>
 
         <div className="flex justify-end gap-4">
@@ -262,11 +210,7 @@ const Checkout = () => {
             type="submit"
             disabled={isSubmitting}
           >
-            {isSubmitting 
-              ? "Processando..." 
-              : selectedPaymentMethod === "pix" && !showPixQRCode 
-                ? "Gerar QR Code PIX" 
-                : "Confirmar Pedido"}
+            {isSubmitting ? "Processando..." : "Confirmar Pedido"}
           </Button>
         </div>
       </form>
