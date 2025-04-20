@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
@@ -6,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { MapPin, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
@@ -88,7 +86,6 @@ const Checkout = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
       
-      {/* Resumo do pedido */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Resumo do Pedido</h2>
         <div className="space-y-4">
@@ -110,7 +107,6 @@ const Checkout = () => {
         </div>
       </div>
 
-      {/* Formulário de checkout */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -129,46 +125,50 @@ const Checkout = () => {
                 <p className="text-sm text-red-500">{errors.street.message}</p>
               )}
             </div>
-            <div>
-              <Label htmlFor="number">Número</Label>
-              <Input
-                id="number"
-                {...register("number", { required: "Número é obrigatório" })}
-                placeholder="Número"
-              />
-              {errors.number && (
-                <p className="text-sm text-red-500">{errors.number.message}</p>
-              )}
+            <div className="flex space-x-4">
+              <div className="w-[70%]">
+                <Label htmlFor="number">Número</Label>
+                <Input
+                  id="number"
+                  {...register("number", { required: "Número é obrigatório" })}
+                  placeholder="Número"
+                />
+                {errors.number && (
+                  <p className="text-sm text-red-500">{errors.number.message}</p>
+                )}
+              </div>
+              <div className="w-[30%]">
+                <Label htmlFor="complement">Complemento</Label>
+                <Input
+                  id="complement"
+                  {...register("complement")}
+                  placeholder="Apt, bloco"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="complement">Complemento</Label>
-              <Input
-                id="complement"
-                {...register("complement")}
-                placeholder="Apartamento, bloco, etc. (opcional)"
-              />
-            </div>
-            <div>
-              <Label htmlFor="neighborhood">Bairro</Label>
-              <Input
-                id="neighborhood"
-                {...register("neighborhood", { required: "Bairro é obrigatório" })}
-                placeholder="Digite o bairro"
-              />
-              {errors.neighborhood && (
-                <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                {...register("city", { required: "Cidade é obrigatória" })}
-                placeholder="Digite a cidade"
-              />
-              {errors.city && (
-                <p className="text-sm text-red-500">{errors.city.message}</p>
-              )}
+            <div className="flex space-x-4">
+              <div className="w-[50%]">
+                <Label htmlFor="neighborhood">Bairro</Label>
+                <Input
+                  id="neighborhood"
+                  {...register("neighborhood", { required: "Bairro é obrigatório" })}
+                  placeholder="Digite o bairro"
+                />
+                {errors.neighborhood && (
+                  <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
+                )}
+              </div>
+              <div className="w-[50%]">
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  {...register("city", { required: "Cidade é obrigatória" })}
+                  placeholder="Digite a cidade"
+                />
+                {errors.city && (
+                  <p className="text-sm text-red-500">{errors.city.message}</p>
+                )}
+              </div>
             </div>
             <div>
               <Label htmlFor="phone">Telefone</Label>
