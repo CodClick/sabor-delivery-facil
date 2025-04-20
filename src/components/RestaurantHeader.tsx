@@ -11,7 +11,7 @@ const RestaurantHeader: React.FC = () => {
           className="w-full h-full object-cover mix-blend-overlay opacity-50"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = "/images/mexico_kid_logo.png";
+            target.src = "/placeholder.svg";
           }}
         />
       </div>
@@ -25,7 +25,7 @@ const RestaurantHeader: React.FC = () => {
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/images/mexico_kid_logo.png";
+                  target.src = "/placeholder.svg";
                 }}
               />
             </div>
