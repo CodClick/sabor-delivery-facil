@@ -25,7 +25,7 @@ const RestaurantHeader: React.FC = () => {
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder.svg";
+                  target.src = "/mexico_kid_logo.png";
                 }}
               />
             </div>
