@@ -20,7 +20,7 @@ const RestaurantHeader: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center">
             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md mr-0 sm:mr-6 mb-4 sm:mb-0">
               <img
-                src="/images/restaurant-logo.jpg"
+                src="/images/mexico_kid_logo.png"
                 alt="Logo"
                 className="w-full h-full object-cover"
                 onError={(e) => {
