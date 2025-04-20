@@ -18,6 +18,7 @@ interface CheckoutFormData {
   city: string;
   phone: string;
   paymentMethod: "card";
+  observations?: string;
 }
 
 const Checkout = () => {
@@ -113,8 +114,8 @@ const Checkout = () => {
             <MapPin className="h-5 w-5" />
             Endereço de Entrega
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 gap-4">
+            <div>
               <Label htmlFor="street">Rua</Label>
               <Input
                 id="street"
@@ -125,8 +126,9 @@ const Checkout = () => {
                 <p className="text-sm text-red-500">{errors.street.message}</p>
               )}
             </div>
-            <div className="flex space-x-4">
-              <div className="w-[70%]">
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label htmlFor="number">Número</Label>
                 <Input
                   id="number"
@@ -137,7 +139,7 @@ const Checkout = () => {
                   <p className="text-sm text-red-500">{errors.number.message}</p>
                 )}
               </div>
-              <div className="w-[30%]">
+              <div>
                 <Label htmlFor="complement">Complemento</Label>
                 <Input
                   id="complement"
@@ -146,8 +148,9 @@ const Checkout = () => {
                 />
               </div>
             </div>
-            <div className="flex space-x-4">
-              <div className="w-[50%]">
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label htmlFor="neighborhood">Bairro</Label>
                 <Input
                   id="neighborhood"
@@ -158,7 +161,7 @@ const Checkout = () => {
                   <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
                 )}
               </div>
-              <div className="w-[50%]">
+              <div>
                 <Label htmlFor="city">Cidade</Label>
                 <Input
                   id="city"
@@ -170,6 +173,7 @@ const Checkout = () => {
                 )}
               </div>
             </div>
+
             <div>
               <Label htmlFor="phone">Telefone</Label>
               <Input
@@ -186,6 +190,15 @@ const Checkout = () => {
               {errors.phone && (
                 <p className="text-sm text-red-500">{errors.phone.message}</p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="observations">Observações</Label>
+              <Input
+                id="observations"
+                {...register("observations")}
+                placeholder="sem pimenta, sem cebola, mal-passado, etc"
+              />
             </div>
           </div>
         </div>
