@@ -7,7 +7,7 @@ import { MapPin, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { createOrder } from "@/services/orderService";
 
@@ -18,7 +18,7 @@ interface CheckoutFormData {
   neighborhood: string;
   city: string;
   phone: string;
-  paymentMethod: "card";
+  paymentMethod: "card" | "cash";
   observations?: string;
 }
 
@@ -38,7 +38,7 @@ const Checkout = () => {
         customerName: "Cliente",
         customerPhone: data.phone,
         address: address,
-        paymentMethod: "card",
+        paymentMethod: "card" as "card" | "cash",
         observations: data.observations || "",
         items: cartItems.map(item => ({
           menuItemId: item.id,
@@ -133,8 +133,8 @@ const Checkout = () => {
               )}
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-1">
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-8 sm:col-span-7">
                 <Label htmlFor="number">Número</Label>
                 <Input
                   id="number"
@@ -145,7 +145,7 @@ const Checkout = () => {
                   <p className="text-sm text-red-500">{errors.number.message}</p>
                 )}
               </div>
-              <div className="col-span-1">
+              <div className="col-span-4 sm:col-span-5">
                 <Label htmlFor="complement">Complemento</Label>
                 <Input
                   id="complement"
