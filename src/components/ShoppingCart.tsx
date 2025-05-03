@@ -44,14 +44,16 @@ const ShoppingCart: React.FC = () => {
   // Determine if we're on the checkout page to adjust the cart button position
   const isCheckoutPage = window.location.pathname === "/checkout";
 
+  // Don't show the cart button on the checkout page at all
+  if (isCheckoutPage) {
+    return null;
+  }
+
   return (
     <>
-      {/* Cart Trigger Button - Adjusted position when on checkout page */}
+      {/* Cart Trigger Button */}
       <button
-        className={cn(
-          "fixed bottom-6 z-30 bg-brand p-4 rounded-full shadow-lg hover:bg-brand-600 transition-all duration-300",
-          isCheckoutPage ? "right-20" : "right-6" // Move further right when on checkout page
-        )}
+        className="fixed bottom-6 right-6 z-30 bg-brand p-4 rounded-full shadow-lg hover:bg-brand-600 transition-all duration-300"
         onClick={() => setIsCartOpen(true)}
       >
         <div className="relative">
