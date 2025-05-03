@@ -26,7 +26,11 @@ const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>();
+  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>({
+    defaultValues: {
+      paymentMethod: "card"
+    }
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (data: CheckoutFormData) => {
@@ -38,7 +42,7 @@ const Checkout = () => {
         customerName: "Cliente",
         customerPhone: data.phone,
         address: address,
-        paymentMethod: "card" as "card" | "cash",
+        paymentMethod: data.paymentMethod,
         observations: data.observations || "",
         items: cartItems.map(item => ({
           menuItemId: item.id,
@@ -210,10 +214,22 @@ const Checkout = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Forma de Pagamento</h2>
-          <div className="flex items-center space-x-2">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            <span>Cartão de Crédito/Débito na entrega</span>
+            Forma de Pagamento
+          </h2>
+          <div className="flex items-center space-x-2">
+            <input
+              type="radio"
+              id="card"
+              value="card"
+              {...register("paymentMethod")}
+              defaultChecked
+              className="h-4 w-4"
+            />
+            <label htmlFor="card" className="text-sm font-medium">
+              Cartão de Crédito/Débito na entrega
+            </label>
           </div>
         </div>
 
