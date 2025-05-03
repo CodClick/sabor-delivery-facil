@@ -11,6 +11,9 @@ export interface Order {
   userId?: string;
   customerName: string;
   customerPhone: string;
+  address: string;
+  paymentMethod: "card" | "cash";
+  observations?: string;
   items: OrderItem[];
   status: "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
   total: number;
@@ -21,8 +24,13 @@ export interface Order {
 export interface CreateOrderRequest {
   customerName: string;
   customerPhone: string;
+  address: string;
+  paymentMethod: "card" | "cash";
+  observations?: string;
   items: {
     menuItemId: string;
+    name: string;
+    price: number;
     quantity: number;
   }[];
 }

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
@@ -6,7 +7,7 @@ import { MapPin, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { createOrder } from "@/services/orderService";
 
@@ -36,9 +37,14 @@ const Checkout = () => {
       const orderData = {
         customerName: "Cliente",
         customerPhone: data.phone,
+        address: address,
+        paymentMethod: "card",
+        observations: data.observations || "",
         items: cartItems.map(item => ({
           menuItemId: item.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          name: item.name,
+          price: item.price
         }))
       };
 
@@ -128,7 +134,7 @@ const Checkout = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="col-span-1">
                 <Label htmlFor="number">Número</Label>
                 <Input
                   id="number"
@@ -139,7 +145,7 @@ const Checkout = () => {
                   <p className="text-sm text-red-500">{errors.number.message}</p>
                 )}
               </div>
-              <div>
+              <div className="col-span-1">
                 <Label htmlFor="complement">Complemento</Label>
                 <Input
                   id="complement"
@@ -150,7 +156,7 @@ const Checkout = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="col-span-1">
                 <Label htmlFor="neighborhood">Bairro</Label>
                 <Input
                   id="neighborhood"
@@ -161,7 +167,7 @@ const Checkout = () => {
                   <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
                 )}
               </div>
-              <div>
+              <div className="col-span-1">
                 <Label htmlFor="city">Cidade</Label>
                 <Input
                   id="city"

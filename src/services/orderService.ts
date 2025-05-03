@@ -12,16 +12,13 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
     // Calcular o total e montar os itens do pedido
     let total = 0;
     const orderItems = orderData.items.map(item => {
-      const menuItem = menuItems.find(m => m.id === item.menuItemId);
-      if (!menuItem) throw new Error(`Item do menu com ID ${item.menuItemId} não encontrado`);
-      
-      const itemTotal = menuItem.price * item.quantity;
+      const itemTotal = item.price * item.quantity;
       total += itemTotal;
       
       return {
         menuItemId: item.menuItemId,
-        name: menuItem.name,
-        price: menuItem.price,
+        name: item.name,
+        price: item.price,
         quantity: item.quantity
       };
     });
@@ -30,6 +27,9 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
     const orderToSave = {
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
+      address: orderData.address,
+      paymentMethod: orderData.paymentMethod,
+      observations: orderData.observations || "",
       items: orderItems,
       status: "pending",
       total,
