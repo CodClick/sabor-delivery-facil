@@ -2,7 +2,6 @@
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
-import { menuItems } from "@/data/menuData";
 
 const ORDERS_COLLECTION = "orders";
 
@@ -23,7 +22,8 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
       };
     });
 
-    // Criar o documento do pedido
+    // Criar o documento do pedido sem referência ao usuário atual
+    // Isso evita erros de permissão quando não há autenticação
     const orderToSave = {
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
@@ -33,10 +33,11 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
       items: orderItems,
       status: "pending",
       total,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: new Date(),  // Usando Date() diretamente ao invés de serverTimestamp()
+      updatedAt: new Date()   // Isso ajuda a evitar problemas de permissão
     };
 
+    // Usar o método try/catch para capturar erros específicos de permissão
     const docRef = await addDoc(collection(db, ORDERS_COLLECTION), orderToSave);
     
     return {

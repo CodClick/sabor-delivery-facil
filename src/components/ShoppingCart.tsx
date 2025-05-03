@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -40,11 +41,17 @@ const ShoppingCart: React.FC = () => {
     navigate("/checkout");
   };
 
+  // Determine if we're on the checkout page to adjust the cart button position
+  const isCheckoutPage = window.location.pathname === "/checkout";
+
   return (
     <>
-      {/* Cart Trigger Button */}
+      {/* Cart Trigger Button - Adjusted position when on checkout page */}
       <button
-        className="fixed bottom-6 right-6 z-30 bg-brand p-4 rounded-full shadow-lg hover:bg-brand-600 transition-all duration-300"
+        className={cn(
+          "fixed bottom-6 z-30 bg-brand p-4 rounded-full shadow-lg hover:bg-brand-600 transition-all duration-300",
+          isCheckoutPage ? "right-20" : "right-6" // Move further right when on checkout page
+        )}
         onClick={() => setIsCartOpen(true)}
       >
         <div className="relative">
