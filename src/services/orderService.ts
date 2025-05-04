@@ -64,8 +64,8 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
     return {
       id: orderSnap.id,
       ...orderData,
-      createdAt: formatTimestamp(orderData.createdAt),
-      updatedAt: formatTimestamp(orderData.updatedAt)
+      createdAt: formatTimestamp(orderData?.createdAt),
+      updatedAt: formatTimestamp(orderData?.updatedAt)
     } as Order;
   } catch (error) {
     console.error("Erro ao obter pedido:", error);
@@ -164,8 +164,19 @@ export const updateOrder = async (orderId: string, updates: UpdateOrderRequest):
 };
 
 // Função auxiliar para formatar timestamps do Firestore
-const formatTimestamp = (timestamp: Timestamp): string => {
+const formatTimestamp = (timestamp: any): string => {
   if (!timestamp) return new Date().toISOString();
   if (typeof timestamp === 'string') return timestamp;
-  return timestamp.toDate().toISOString();
+  
+  // Verifica se o timestamp é um objeto Firestore Timestamp
+  if (timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate().toISOString();
+  }
+  
+  // Se for um objeto Date
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString();
+  }
+  
+  return new Date().toISOString();
 };
