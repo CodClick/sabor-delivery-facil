@@ -110,6 +110,7 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
     let q;
     
     if (status && status !== "all") {
+      // Cria uma query com filtro de data E status
       q = query(
         ordersCollection,
         where("createdAt", ">=", todayTimestamp),
@@ -117,6 +118,7 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
         orderBy("createdAt", "desc")
       );
     } else {
+      // Cria uma query apenas com filtro de data
       q = query(
         ordersCollection,
         where("createdAt", ">=", todayTimestamp),
@@ -124,7 +126,12 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
       );
     }
     
+    console.log("Executando query com status:", status);
+    
     const ordersSnapshot = await getDocs(q);
+    
+    console.log("Resultados encontrados:", ordersSnapshot.size);
+    
     return ordersSnapshot.docs.map(doc => {
       const data = doc.data() as Record<string, any>;
       return {
