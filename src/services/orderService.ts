@@ -99,6 +99,47 @@ export const getOrdersByPhone = async (phone: string): Promise<Order[]> => {
   }
 };
 
+// Obter todos os pedidos de hoje com filtro opcional de status
+export const getTodayOrders = async (status?: string): Promise<Order[]> => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = Timestamp.fromDate(today);
+    
+    const ordersCollection = collection(db, ORDERS_COLLECTION);
+    let q;
+    
+    if (status && status !== "all") {
+      q = query(
+        ordersCollection,
+        where("createdAt", ">=", todayTimestamp),
+        where("status", "==", status),
+        orderBy("createdAt", "desc")
+      );
+    } else {
+      q = query(
+        ordersCollection,
+        where("createdAt", ">=", todayTimestamp),
+        orderBy("createdAt", "desc")
+      );
+    }
+    
+    const ordersSnapshot = await getDocs(q);
+    return ordersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: formatTimestamp(data.createdAt),
+        updatedAt: formatTimestamp(data.updatedAt)
+      } as Order;
+    });
+  } catch (error) {
+    console.error("Erro ao obter pedidos do dia:", error);
+    throw error;
+  }
+};
+
 // Atualizar um pedido
 export const updateOrder = async (orderId: string, updates: UpdateOrderRequest): Promise<Order | null> => {
   try {
