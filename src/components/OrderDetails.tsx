@@ -8,7 +8,8 @@ import {
   ChefHat,
   Package,
   Truck,
-  XCircle
+  XCircle,
+  Check
 } from "lucide-react";
 
 interface OrderDetailsProps {
@@ -21,10 +22,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
       pending: "Pendente",
-      confirmed: "Confirmado",
-      preparing: "Preparando",
-      ready: "Pronto",
-      delivered: "Entregue",
+      confirmed: "Aceito",
+      preparing: "Em produção",
+      ready: "Pronto para Entrega",
+      delivering: "Saiu para entrega",
+      received: "Recebido",
+      delivered: "Entrega finalizada",
       cancelled: "Cancelado"
     };
     return statusMap[status] || status;
@@ -49,6 +52,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       case "confirmed": return "bg-blue-100 text-blue-800";
       case "preparing": return "bg-purple-100 text-purple-800";
       case "ready": return "bg-green-100 text-green-800";
+      case "delivering": return "bg-blue-100 text-blue-800";
+      case "received": return "bg-blue-200 text-blue-800";
       case "delivered": return "bg-green-100 text-green-800";
       case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
@@ -61,7 +66,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       pending: ["confirmed", "cancelled"],
       confirmed: ["preparing", "cancelled"],
       preparing: ["ready", "cancelled"],
-      ready: ["delivered", "cancelled"],
+      ready: ["delivering", "cancelled"],
+      delivering: ["received", "cancelled"],
+      received: ["delivered", "cancelled"],
       delivered: [],
       cancelled: []
     };
@@ -75,7 +82,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       case "confirmed": return <CheckCircle2 className="h-5 w-5" />;
       case "preparing": return <ChefHat className="h-5 w-5" />;
       case "ready": return <Package className="h-5 w-5" />;
-      case "delivered": return <Truck className="h-5 w-5" />;
+      case "delivering": return <Truck className="h-5 w-5" />;
+      case "received": return <Check className="h-5 w-5" />;
+      case "delivered": return <CheckCircle2 className="h-5 w-5" />;
       case "cancelled": return <XCircle className="h-5 w-5" />;
       default: return <ClipboardList className="h-5 w-5" />;
     }
@@ -119,6 +128,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           <h3 className="text-sm font-medium text-gray-500">Telefone</h3>
           <p className="mt-1">{order.customerPhone}</p>
         </div>
+        <div className="col-span-2">
+          <h3 className="text-sm font-medium text-gray-500">Endereço</h3>
+          <p className="mt-1">{order.address}</p>
+        </div>
         <div>
           <h3 className="text-sm font-medium text-gray-500">Total</h3>
           <p className="mt-1 font-semibold">R$ {order.total.toFixed(2)}</p>
@@ -132,6 +145,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
             </span>
           </p>
         </div>
+        {order.observations && (
+          <div className="col-span-2">
+            <h3 className="text-sm font-medium text-gray-500">Observações</h3>
+            <p className="mt-1">{order.observations}</p>
+          </div>
+        )}
       </div>
 
       {/* Itens do pedido */}

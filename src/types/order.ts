@@ -15,7 +15,7 @@ export interface Order {
   paymentMethod: "card" | "cash";
   observations?: string;
   items: OrderItem[];
-  status: "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled";
   total: number;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -36,5 +36,5 @@ export interface CreateOrderRequest {
 }
 
 export interface UpdateOrderRequest {
-  status?: "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
+  status?: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled";
 }

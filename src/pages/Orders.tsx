@@ -1,18 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
 import { getOrdersByPhone, updateOrder } from "@/services/orderService";
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Card,
   CardContent,
@@ -30,24 +21,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, RefreshCw } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import OrderDetails from "@/components/OrderDetails";
 
 const Orders = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchPhone, setSearchPhone] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (currentUser) {
-      // Poderia carregar pedidos iniciais se o usuário estiver conectado
-    }
-  }, [currentUser]);
 
   const handleSearch = async () => {
     if (!searchPhone.trim()) {
@@ -106,7 +90,7 @@ const Orders = () => {
         
         toast({
           title: "Pedido atualizado",
-          description: `Status alterado para ${newStatus}`,
+          description: `Status alterado para ${translateStatus(newStatus)}`,
         });
       }
     } catch (error) {
@@ -119,47 +103,26 @@ const Orders = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
       pending: "Pendente",
-      confirmed: "Confirmado",
-      preparing: "Preparando",
-      ready: "Pronto",
-      delivered: "Entregue",
+      confirmed: "Aceito",
+      preparing: "Em produção",
+      ready: "Pronto para Entrega",
+      delivering: "Saiu para entrega",
+      received: "Recebido",
+      delivered: "Entrega finalizada",
       cancelled: "Cancelado"
     };
     return statusMap[status] || status;
   };
 
-  const getStatusColor = (status: Order["status"]) => {
-    switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "confirmed": return "bg-blue-100 text-blue-800";
-      case "preparing": return "bg-purple-100 text-purple-800";
-      case "ready": return "bg-green-100 text-green-800";
-      case "delivered": return "bg-green-100 text-green-800";
-      case "cancelled": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gerenciamento de Pedidos</h1>
-        <Button onClick={() => navigate("/")} variant="outline">
-          Voltar para o Cardápio
+        <h1 className="text-2xl font-bold">Buscar Pedidos de Cliente</h1>
+        <Button onClick={() => navigate("/admin-orders")} variant="outline">
+          Ver Todos os Pedidos
         </Button>
       </div>
 
@@ -173,7 +136,7 @@ const Orders = () => {
         <CardContent>
           <div className="flex gap-2">
             <Input
-              placeholder="Telefone (ex: +5511999999999)"
+              placeholder="Telefone (ex: 11999999999)"
               value={searchPhone}
               onChange={(e) => setSearchPhone(e.target.value)}
               className="flex-1"
@@ -195,45 +158,29 @@ const Orders = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableCaption>Lista de pedidos do cliente</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID do Pedido</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id.substring(0, 8)}...</TableCell>
-                    <TableCell>{formatDate(order.createdAt as string)}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell>R$ {order.total.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
-                        {translateStatus(order.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleViewOrder(order)}>
-                        <Eye className="h-4 w-4" />
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <Card key={order.id} className="overflow-hidden">
+                  <CardHeader className="bg-gray-50 py-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm text-gray-500">Pedido #{order.id.substring(0, 8)}</p>
+                        <h3 className="font-semibold">{order.customerName}</h3>
+                      </div>
+                      <Button onClick={() => handleViewOrder(order)} variant="outline" size="sm">
+                        Ver detalhes
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes do Pedido</DialogTitle>
             <DialogDescription>

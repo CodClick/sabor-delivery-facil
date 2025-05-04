@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useForm } from "react-hook-form";
-import { MapPin, CreditCard } from "lucide-react";
+import { MapPin, CreditCard, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,12 +12,13 @@ import { formatCurrency } from "@/lib/utils";
 import { createOrder } from "@/services/orderService";
 
 interface CheckoutFormData {
+  customerName: string;
+  phone: string;
   street: string;
   number: string;
   complement?: string;
   neighborhood: string;
   city: string;
-  phone: string;
   paymentMethod: "card" | "cash";
   observations?: string;
 }
@@ -39,7 +40,7 @@ const Checkout = () => {
       const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city}`;
       
       const orderData = {
-        customerName: "Cliente",
+        customerName: data.customerName,
         customerPhone: data.phone,
         address: address,
         paymentMethod: data.paymentMethod,
@@ -119,6 +120,46 @@ const Checkout = () => {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Customer Information */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Dados Pessoais
+          </h2>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="customerName">Nome Completo</Label>
+              <Input
+                id="customerName"
+                {...register("customerName", { required: "Nome é obrigatório" })}
+                placeholder="Digite seu nome completo"
+              />
+              {errors.customerName && (
+                <p className="text-sm text-red-500">{errors.customerName.message}</p>
+              )}
+            </div>
+            
+            <div>
+              <Label htmlFor="phone">WhatsApp</Label>
+              <Input
+                id="phone"
+                {...register("phone", { 
+                  required: "Telefone é obrigatório",
+                  pattern: {
+                    value: /^[0-9]{10,11}$/,
+                    message: "WhatsApp deve ter 10 ou 11 dígitos"
+                  }
+                })}
+                placeholder="Digite seu WhatsApp (apenas números)"
+              />
+              {errors.phone && (
+                <p className="text-sm text-red-500">{errors.phone.message}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Address Information */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <MapPin className="h-5 w-5" />
@@ -185,24 +226,6 @@ const Checkout = () => {
             </div>
 
             <div>
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                {...register("phone", { 
-                  required: "Telefone é obrigatório",
-                  pattern: {
-                    value: /^[0-9]{10,11}$/,
-                    message: "Telefone deve ter 10 ou 11 dígitos"
-                  }
-                })}
-                placeholder="Digite seu telefone (apenas números)"
-              />
-              {errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone.message}</p>
-              )}
-            </div>
-
-            <div>
               <Label htmlFor="observations">Observações</Label>
               <Input
                 id="observations"
@@ -218,18 +241,32 @@ const Checkout = () => {
             <CreditCard className="h-5 w-5" />
             Forma de Pagamento
           </h2>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="card"
-              value="card"
-              {...register("paymentMethod")}
-              defaultChecked
-              className="h-4 w-4"
-            />
-            <label htmlFor="card" className="text-sm font-medium">
-              Cartão de Crédito/Débito na entrega
-            </label>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="card"
+                value="card"
+                {...register("paymentMethod")}
+                defaultChecked
+                className="h-4 w-4"
+              />
+              <label htmlFor="card" className="text-sm font-medium">
+                Cartão de Crédito/Débito na entrega
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="cash"
+                value="cash"
+                {...register("paymentMethod")}
+                className="h-4 w-4"
+              />
+              <label htmlFor="cash" className="text-sm font-medium">
+                Dinheiro na entrega
+              </label>
+            </div>
           </div>
         </div>
 

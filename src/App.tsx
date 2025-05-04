@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
 import Orders from "./pages/Orders";
+import AdminOrders from "./pages/AdminOrders";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
@@ -49,6 +51,7 @@ const App = () => (
                 </PrivateRoute>
               } />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/admin-orders" element={<AdminOrders />} />
               <Route path="/api/*" element={<Api />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
