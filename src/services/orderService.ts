@@ -60,12 +60,12 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
     
     if (!orderSnap.exists()) return null;
     
-    const orderData = orderSnap.data();
+    const orderData = orderSnap.data() as Record<string, any>;
     return {
       id: orderSnap.id,
       ...orderData,
-      createdAt: formatTimestamp(orderData?.createdAt),
-      updatedAt: formatTimestamp(orderData?.updatedAt)
+      createdAt: formatTimestamp(orderData.createdAt),
+      updatedAt: formatTimestamp(orderData.updatedAt)
     } as Order;
   } catch (error) {
     console.error("Erro ao obter pedido:", error);
@@ -85,7 +85,7 @@ export const getOrdersByPhone = async (phone: string): Promise<Order[]> => {
     
     const ordersSnapshot = await getDocs(q);
     return ordersSnapshot.docs.map(doc => {
-      const data = doc.data();
+      const data = doc.data() as Record<string, any>;
       return {
         id: doc.id,
         ...data,
@@ -126,7 +126,7 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
     
     const ordersSnapshot = await getDocs(q);
     return ordersSnapshot.docs.map(doc => {
-      const data = doc.data();
+      const data = doc.data() as Record<string, any>;
       return {
         id: doc.id,
         ...data,
