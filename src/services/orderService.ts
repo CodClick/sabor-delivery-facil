@@ -109,7 +109,7 @@ export const updateOrder = async (orderId: string, updates: UpdateOrderRequest):
     
     const updateData = {
       ...updates,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date()  // Usar Date() em vez de serverTimestamp() para evitar problemas de permissão
     };
     
     await updateDoc(orderRef, updateData);

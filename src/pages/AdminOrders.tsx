@@ -8,16 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +21,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { updateOrder } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AdminOrders = () => {
   const navigate = useNavigate();
@@ -36,7 +35,7 @@ const AdminOrders = () => {
   const [todayOrders, setTodayOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeStatus, setActiveStatus] = useState("all");
 
   useEffect(() => {
     // Get today's date at midnight for filtering
@@ -49,7 +48,7 @@ const AdminOrders = () => {
     const ordersRef = collection(db, "orders");
     let ordersQuery;
     
-    if (activeTab === "all") {
+    if (activeStatus === "all") {
       // All orders from today, ordered by creation time (newest first)
       ordersQuery = query(
         ordersRef,
@@ -61,7 +60,7 @@ const AdminOrders = () => {
       ordersQuery = query(
         ordersRef,
         where("createdAt", ">=", todayTimestamp),
-        where("status", "==", activeTab),
+        where("status", "==", activeStatus),
         orderBy("createdAt", "desc")
       );
     }
@@ -83,7 +82,7 @@ const AdminOrders = () => {
         setTodayOrders(ordersList);
         
         // Show notification for new orders when in pending tab or all tab
-        if (activeTab === "pending" || activeTab === "all") {
+        if (activeStatus === "pending" || activeStatus === "all") {
           const newOrders = ordersList.filter(
             order => order.status === "pending" && 
             new Date(order.createdAt as string).getTime() > Date.now() - 10000 // 10 seconds ago
@@ -109,7 +108,7 @@ const AdminOrders = () => {
     
     // Clean up subscription on unmount
     return () => unsubscribe();
-  }, [activeTab, toast]);
+  }, [activeStatus, toast]);
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -119,8 +118,16 @@ const AdminOrders = () => {
   const handleUpdateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
     try {
       const updatedOrder = await updateOrder(orderId, { status: newStatus });
-      if (updatedOrder && selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder(updatedOrder);
+      
+      // Update local state to reflect the change
+      if (updatedOrder) {
+        // If we're filtering by status and the new status doesn't match the filter,
+        // the order will disappear from the list in the next snapshot update
+        
+        // Update the selected order if it's the one being viewed
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder(updatedOrder);
+        }
       }
       
       toast({
@@ -172,6 +179,19 @@ const AdminOrders = () => {
       minute: '2-digit'
     }).format(date);
   };
+  
+  // Status options for the dropdown
+  const statusOptions = [
+    { value: "all", label: "Todos" },
+    { value: "pending", label: "Pendentes" },
+    { value: "confirmed", label: "Aceitos" },
+    { value: "preparing", label: "Em Produção" },
+    { value: "ready", label: "Prontos" },
+    { value: "delivering", label: "Em Entrega" },
+    { value: "received", label: "Recebidos" },
+    { value: "delivered", label: "Finalizados" },
+    { value: "cancelled", label: "Cancelados" }
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -182,69 +202,65 @@ const AdminOrders = () => {
         </Button>
       </div>
 
-      <Tabs 
-        defaultValue="all" 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="w-full mb-6"
-      >
-        <TabsList className="w-full grid grid-cols-4 md:grid-cols-8 mb-4">
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="pending">Pendentes</TabsTrigger>
-          <TabsTrigger value="confirmed">Aceitos</TabsTrigger>
-          <TabsTrigger value="preparing">Em Produção</TabsTrigger>
-          <TabsTrigger value="ready">Prontos</TabsTrigger>
-          <TabsTrigger value="delivering">Em Entrega</TabsTrigger>
-          <TabsTrigger value="received">Recebidos</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelados</TabsTrigger>
-        </TabsList>
+      <div className="mb-6">
+        <label className="text-sm font-medium mb-2 block">Filtrar por status:</label>
+        <Select value={activeStatus} onValueChange={setActiveStatus}>
+          <SelectTrigger className="w-full md:w-[280px]">
+            <SelectValue placeholder="Selecione um status" />
+          </SelectTrigger>
+          <SelectContent>
+            {statusOptions.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <TabsContent value={activeTab} className="mt-0">
-          {todayOrders.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center p-8">
-                <p className="text-gray-500">Nenhum pedido encontrado.</p>
+      {todayOrders.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <p className="text-gray-500">Nenhum pedido encontrado.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {todayOrders.map((order) => (
+            <Card key={order.id} className="overflow-hidden">
+              <CardHeader className="bg-gray-50 py-4">
+                <div className="flex justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">
+                      Pedido #{order.id.substring(0, 6)} • {formatDate(order.createdAt as string)}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs flex items-center ${getStatusColor(order.status)}`}>
+                    {translateStatus(order.status)}
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <div className="font-semibold">{order.customerName}</div>
+                  <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                </div>
+              </CardHeader>
+              <CardContent className="py-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Itens: {order.items.length}</p>
+                  <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                  <Button 
+                    onClick={() => handleViewOrder(order)} 
+                    variant="outline"
+                    className="w-full mt-2"
+                  >
+                    Ver detalhes
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {todayOrders.map((order) => (
-                <Card key={order.id} className="overflow-hidden">
-                  <CardHeader className="bg-gray-50 py-4">
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">
-                          Pedido #{order.id.substring(0, 6)} • {formatDate(order.createdAt as string)}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs flex items-center ${getStatusColor(order.status)}`}>
-                        {translateStatus(order.status)}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <div className="font-semibold">{order.customerName}</div>
-                      <div className="text-sm text-gray-500">{order.customerPhone}</div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="py-4">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Itens: {order.items.length}</p>
-                      <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
-                      <Button 
-                        onClick={() => handleViewOrder(order)} 
-                        variant="outline"
-                        className="w-full mt-2"
-                      >
-                        Ver detalhes
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          ))}
+        </div>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
