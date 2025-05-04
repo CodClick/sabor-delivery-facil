@@ -19,7 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { updateOrder } from "@/services/orderService";
+import { updateOrder, getTodayOrders } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
 import {
   Select,
@@ -39,96 +39,84 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Função para carregar pedidos
+  const loadOrders = async (status: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log("Carregando pedidos com status:", status);
+      const orders = await getTodayOrders(status);
+      console.log("Pedidos carregados:", orders.length);
+      
+      setTodayOrders(orders);
+      setLoading(false);
+    } catch (err) {
+      console.error("Erro ao carregar pedidos:", err);
+      setError("Não foi possível carregar os pedidos. Tente novamente.");
+      setLoading(false);
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os pedidos. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Efeito para carregar pedidos quando o status muda
   useEffect(() => {
-    // Get today's date at midnight for filtering
+    loadOrders(activeStatus);
+    
+    // Configurar listener em tempo real para novos pedidos
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Convert to Firestore Timestamp
     const todayTimestamp = Timestamp.fromDate(today);
     
-    // Set loading state
-    setLoading(true);
-    setError(null);
-    
     const ordersRef = collection(db, "orders");
-    let ordersQuery;
+    let ordersQuery = query(
+      ordersRef,
+      where("createdAt", ">=", todayTimestamp),
+      orderBy("createdAt", "desc")
+    );
     
-    try {
-      if (activeStatus === "all") {
-        // All orders from today, ordered by creation time (newest first)
-        ordersQuery = query(
-          ordersRef,
-          where("createdAt", ">=", todayTimestamp),
-          orderBy("createdAt", "desc")
-        );
-      } else {
-        // Filter by status and today's date
-        ordersQuery = query(
-          ordersRef,
-          where("createdAt", ">=", todayTimestamp),
-          where("status", "==", activeStatus),
-          orderBy("createdAt", "desc")
-        );
-      }
-      
-      // Set up real-time listener
-      const unsubscribe = onSnapshot(
-        ordersQuery, 
-        (snapshot) => {
-          const ordersList: Order[] = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            ordersList.push({
-              id: doc.id,
-              ...data,
-              createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
-              updatedAt: data.updatedAt?.toDate().toISOString() || new Date().toISOString()
-            } as Order);
-          });
-          setTodayOrders(ordersList);
-          setLoading(false);
-          
-          // Show notification for new orders when in pending tab or all tab
-          if (activeStatus === "pending" || activeStatus === "all") {
-            const newOrders = ordersList.filter(
-              order => order.status === "pending" && 
-              new Date(order.createdAt as string).getTime() > Date.now() - 10000 // 10 seconds ago
-            );
+    // Configurar listener
+    const unsubscribe = onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        // Se houver novas mudanças, recarregar os pedidos
+        if (!snapshot.empty) {
+          loadOrders(activeStatus);
+        }
+        
+        // Mostrar notificação para novos pedidos
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const data = change.doc.data();
+            // Verificar se é um pedido novo (menos de 10 segundos)
+            const createdAt = data.createdAt?.toDate() || new Date();
+            const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
             
-            if (newOrders.length > 0) {
+            if (isRecent && data.status === "pending") {
               toast({
                 title: "Novo pedido recebido!",
-                description: `${newOrders.length} novo(s) pedido(s) pendente(s)`,
+                description: `Cliente: ${data.customerName}`,
               });
             }
           }
-        },
-        (err) => {
-          console.error("Error getting orders: ", err);
-          setError("Não foi possível carregar os pedidos. Tente novamente.");
-          setLoading(false);
-          toast({
-            title: "Erro",
-            description: "Não foi possível carregar os pedidos. Tente novamente.",
-            variant: "destructive",
-          });
-        }
-      );
-      
-      // Clean up subscription on unmount
-      return () => unsubscribe();
-    } catch (err) {
-      console.error("Error setting up query:", err);
-      setError("Erro ao configurar a consulta. Tente novamente.");
-      setLoading(false);
-      toast({
-        title: "Erro",
-        description: "Erro ao configurar a consulta. Tente novamente.",
-        variant: "destructive",
-      });
-      return () => {}; // Return empty function for cleanup
-    }
+        });
+      },
+      (err) => {
+        console.error("Erro no listener:", err);
+        toast({
+          title: "Erro",
+          description: "Não foi possível monitorar novos pedidos.",
+          variant: "destructive",
+        });
+      }
+    );
+    
+    return () => unsubscribe();
   }, [activeStatus, toast]);
 
   const handleViewOrder = (order: Order) => {
@@ -142,10 +130,17 @@ const AdminOrders = () => {
       
       // Update local state to reflect the change
       if (updatedOrder) {
-        // If we're filtering by status and the new status doesn't match the filter,
-        // the order will disappear from the list in the next snapshot update
+        // Atualizar o pedido na lista local se o status ainda corresponder ao filtro
+        if (activeStatus === "all" || updatedOrder.status === activeStatus) {
+          setTodayOrders(prev => 
+            prev.map(order => order.id === orderId ? updatedOrder : order)
+          );
+        } else {
+          // Remover o pedido da lista se não corresponder mais ao filtro
+          setTodayOrders(prev => prev.filter(order => order.id !== orderId));
+        }
         
-        // Update the selected order if it's the one being viewed
+        // Atualizar o pedido selecionado se estiver aberto
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updatedOrder);
         }
@@ -214,6 +209,10 @@ const AdminOrders = () => {
     { value: "cancelled", label: "Cancelados" }
   ];
 
+  const handleRetryLoad = () => {
+    loadOrders(activeStatus);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -250,9 +249,19 @@ const AdminOrders = () => {
           <CardContent className="flex flex-col items-center justify-center p-8">
             <p className="text-red-500">{error}</p>
             <Button 
-              onClick={() => setActiveStatus("all")} 
+              onClick={handleRetryLoad} 
               variant="outline" 
               className="mt-4"
+            >
+              Tentar novamente
+            </Button>
+            <Button 
+              onClick={() => {
+                setActiveStatus("all");
+                loadOrders("all");
+              }} 
+              variant="outline" 
+              className="mt-2"
             >
               Voltar para todos os pedidos
             </Button>
@@ -262,6 +271,18 @@ const AdminOrders = () => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-8">
             <p className="text-gray-500">Nenhum pedido encontrado com o status selecionado.</p>
+            {activeStatus !== "all" && (
+              <Button 
+                onClick={() => {
+                  setActiveStatus("all");
+                  loadOrders("all");
+                }} 
+                variant="outline" 
+                className="mt-4"
+              >
+                Ver todos os pedidos
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

@@ -106,19 +106,23 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
     today.setHours(0, 0, 0, 0);
     const todayTimestamp = Timestamp.fromDate(today);
     
+    console.log("Buscando pedidos para hoje:", today.toISOString());
+    console.log("Status filtro:", status);
+    
     const ordersCollection = collection(db, ORDERS_COLLECTION);
     let q;
     
+    // Importante: Firebase não suporta consultas com múltiplos "where" em campos diferentes
+    // a menos que existam índices compostos. Vamos simplificar a consulta.
+    
     if (status && status !== "all") {
-      // Cria uma query com filtro de data E status
+      // Primeiro, vamos buscar todos os pedidos de hoje
       q = query(
         ordersCollection,
         where("createdAt", ">=", todayTimestamp),
-        where("status", "==", status),
         orderBy("createdAt", "desc")
       );
     } else {
-      // Cria uma query apenas com filtro de data
       q = query(
         ordersCollection,
         where("createdAt", ">=", todayTimestamp),
@@ -126,13 +130,15 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
       );
     }
     
-    console.log("Executando query com status:", status);
+    console.log("Executando consulta ao Firestore...");
     
     const ordersSnapshot = await getDocs(q);
     
-    console.log("Resultados encontrados:", ordersSnapshot.size);
+    console.log("Resultados encontrados (total):", ordersSnapshot.size);
     
-    return ordersSnapshot.docs.map(doc => {
+    // Se tiver um filtro de status, filtramos os resultados em JavaScript
+    // Em vez de usar dois where na consulta do Firestore
+    let orders = ordersSnapshot.docs.map(doc => {
       const data = doc.data() as Record<string, any>;
       return {
         id: doc.id,
@@ -141,6 +147,14 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
         updatedAt: formatTimestamp(data.updatedAt)
       } as Order;
     });
+    
+    // Aplicar filtro de status se necessário
+    if (status && status !== "all") {
+      orders = orders.filter(order => order.status === status);
+      console.log(`Resultados filtrados por status '${status}':`, orders.length);
+    }
+    
+    return orders;
   } catch (error) {
     console.error("Erro ao obter pedidos do dia:", error);
     throw error;
