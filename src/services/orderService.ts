@@ -1,4 +1,3 @@
-
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
@@ -157,6 +156,66 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
     return orders;
   } catch (error) {
     console.error("Erro ao obter pedidos do dia:", error);
+    throw error;
+  }
+};
+
+// Nova função para obter pedidos por intervalo de datas e status opcional
+export const getOrdersByDateRange = async (
+  startDate: Date,
+  endDate: Date,
+  status?: string
+): Promise<Order[]> => {
+  try {
+    // Definir o horário para início (00:00:00) e fim (23:59:59) do dia
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    const startTimestamp = Timestamp.fromDate(start);
+    const endTimestamp = Timestamp.fromDate(end);
+    
+    console.log("Buscando pedidos no intervalo:", start.toISOString(), "até", end.toISOString());
+    console.log("Status filtro:", status);
+    
+    const ordersCollection = collection(db, ORDERS_COLLECTION);
+    
+    // Importante: Firebase não suporta consultas com múltiplos "where" em campos diferentes
+    // a menos que existam índices compostos. Vamos simplificar a consulta.
+    const q = query(
+      ordersCollection,
+      where("createdAt", ">=", startTimestamp),
+      where("createdAt", "<=", endTimestamp),
+      orderBy("createdAt", "desc")
+    );
+    
+    console.log("Executando consulta ao Firestore...");
+    
+    const ordersSnapshot = await getDocs(q);
+    
+    console.log("Resultados encontrados (total):", ordersSnapshot.size);
+    
+    let orders = ordersSnapshot.docs.map(doc => {
+      const data = doc.data() as Record<string, any>;
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: formatTimestamp(data.createdAt),
+        updatedAt: formatTimestamp(data.updatedAt)
+      } as Order;
+    });
+    
+    // Aplicar filtro de status se necessário
+    if (status && status !== "all") {
+      orders = orders.filter(order => order.status === status);
+      console.log(`Resultados filtrados por status '${status}':`, orders.length);
+    }
+    
+    return orders;
+  } catch (error) {
+    console.error("Erro ao obter pedidos por intervalo de datas:", error);
     throw error;
   }
 };

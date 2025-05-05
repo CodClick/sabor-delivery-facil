@@ -5,6 +5,7 @@ import { collection, query, where, onSnapshot, orderBy, Timestamp } from "fireba
 import { db } from "@/lib/firebase";
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
+import { DateRange } from "react-day-picker";
 import {
   Card,
   CardContent,
@@ -19,7 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { updateOrder, getTodayOrders } from "@/services/orderService";
+import { updateOrder, getOrdersByDateRange } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
 import {
   Select,
@@ -28,28 +29,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DateRangePicker } from "@/components/DateRangePicker";
 
 const AdminOrders = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [todayOrders, setTodayOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeStatus, setActiveStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Inicializar o intervalo de datas com o dia atual
+  const today = new Date();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: today,
+    to: today
+  });
 
   // Função para carregar pedidos
-  const loadOrders = async (status: string) => {
+  const loadOrders = async (status: string, dateRange: DateRange | undefined) => {
     try {
       setLoading(true);
       setError(null);
       
+      if (!dateRange?.from) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+      
+      const startDate = dateRange.from;
+      const endDate = dateRange.to || dateRange.from;
+      
       console.log("Carregando pedidos com status:", status);
-      const orders = await getTodayOrders(status);
+      console.log("Intervalo de datas:", startDate, "até", endDate);
+      
+      const orders = await getOrdersByDateRange(startDate, endDate, status === "all" ? undefined : status);
       console.log("Pedidos carregados:", orders.length);
       
-      setTodayOrders(orders);
+      setOrders(orders);
       setLoading(false);
     } catch (err) {
       console.error("Erro ao carregar pedidos:", err);
@@ -64,60 +84,72 @@ const AdminOrders = () => {
     }
   };
 
-  // Efeito para carregar pedidos quando o status muda
+  // Efeito para carregar pedidos quando o status ou intervalo de datas muda
   useEffect(() => {
-    loadOrders(activeStatus);
+    loadOrders(activeStatus, dateRange);
     
-    // Configurar listener em tempo real para novos pedidos
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayTimestamp = Timestamp.fromDate(today);
-    
-    const ordersRef = collection(db, "orders");
-    let ordersQuery = query(
-      ordersRef,
-      where("createdAt", ">=", todayTimestamp),
-      orderBy("createdAt", "desc")
-    );
-    
-    // Configurar listener
-    const unsubscribe = onSnapshot(
-      ordersQuery,
-      (snapshot) => {
-        // Se houver novas mudanças, recarregar os pedidos
-        if (!snapshot.empty) {
-          loadOrders(activeStatus);
-        }
-        
-        // Mostrar notificação para novos pedidos
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const data = change.doc.data();
-            // Verificar se é um pedido novo (menos de 10 segundos)
-            const createdAt = data.createdAt?.toDate() || new Date();
-            const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
-            
-            if (isRecent && data.status === "pending") {
-              toast({
-                title: "Novo pedido recebido!",
-                description: `Cliente: ${data.customerName}`,
-              });
-            }
+    // Configurar listener em tempo real para novos pedidos no intervalo selecionado
+    if (dateRange?.from) {
+      const start = new Date(dateRange.from);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(dateRange.to || dateRange.from);
+      end.setHours(23, 59, 59, 999);
+      
+      const startTimestamp = Timestamp.fromDate(start);
+      const endTimestamp = Timestamp.fromDate(end);
+      
+      const ordersRef = collection(db, "orders");
+      const ordersQuery = query(
+        ordersRef,
+        where("createdAt", ">=", startTimestamp),
+        where("createdAt", "<=", endTimestamp),
+        orderBy("createdAt", "desc")
+      );
+      
+      // Configurar listener
+      const unsubscribe = onSnapshot(
+        ordersQuery,
+        (snapshot) => {
+          // Se houver novas mudanças, recarregar os pedidos
+          if (!snapshot.empty) {
+            loadOrders(activeStatus, dateRange);
           }
-        });
-      },
-      (err) => {
-        console.error("Erro no listener:", err);
-        toast({
-          title: "Erro",
-          description: "Não foi possível monitorar novos pedidos.",
-          variant: "destructive",
-        });
-      }
-    );
-    
-    return () => unsubscribe();
-  }, [activeStatus, toast]);
+          
+          // Mostrar notificação para novos pedidos
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const data = change.doc.data();
+              // Verificar se é um pedido novo (menos de 10 segundos)
+              const createdAt = data.createdAt?.toDate() || new Date();
+              const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
+              
+              if (isRecent && data.status === "pending") {
+                toast({
+                  title: "Novo pedido recebido!",
+                  description: `Cliente: ${data.customerName}`,
+                });
+              }
+            }
+          });
+        },
+        (err) => {
+          console.error("Erro no listener:", err);
+          toast({
+            title: "Erro",
+            description: "Não foi possível monitorar novos pedidos.",
+            variant: "destructive",
+          });
+        }
+      );
+      
+      return () => unsubscribe();
+    }
+  }, [activeStatus, dateRange, toast]);
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+  };
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -132,12 +164,12 @@ const AdminOrders = () => {
       if (updatedOrder) {
         // Atualizar o pedido na lista local se o status ainda corresponder ao filtro
         if (activeStatus === "all" || updatedOrder.status === activeStatus) {
-          setTodayOrders(prev => 
+          setOrders(prev => 
             prev.map(order => order.id === orderId ? updatedOrder : order)
           );
         } else {
           // Remover o pedido da lista se não corresponder mais ao filtro
-          setTodayOrders(prev => prev.filter(order => order.id !== orderId));
+          setOrders(prev => prev.filter(order => order.id !== orderId));
         }
         
         // Atualizar o pedido selecionado se estiver aberto
@@ -210,7 +242,7 @@ const AdminOrders = () => {
   ];
 
   const handleRetryLoad = () => {
-    loadOrders(activeStatus);
+    loadOrders(activeStatus, dateRange);
   };
 
   return (
@@ -222,30 +254,43 @@ const AdminOrders = () => {
         </Button>
       </div>
 
-      <div className="mb-6">
-        <label className="text-sm font-medium mb-2 block">Filtrar por status:</label>
-        <Select value={activeStatus} onValueChange={setActiveStatus}>
-          <SelectTrigger className="w-full md:w-[280px]">
-            <SelectValue placeholder="Selecione um status" />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Filtrar por status:</label>
+            <Select value={activeStatus} onValueChange={setActiveStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione um status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium mb-2 block">Filtrar por período:</label>
+            <DateRangePicker 
+              dateRange={dateRange}
+              onDateRangeChange={handleDateRangeChange}
+              className="w-full"
+            />
+          </div>
+        </div>
       </div>
 
       {loading ? (
-        <Card>
+        <Card className="mt-6">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <p className="text-gray-500">Carregando pedidos...</p>
           </CardContent>
         </Card>
       ) : error ? (
-        <Card>
+        <Card className="mt-6">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <p className="text-red-500">{error}</p>
             <Button 
@@ -258,36 +303,38 @@ const AdminOrders = () => {
             <Button 
               onClick={() => {
                 setActiveStatus("all");
-                loadOrders("all");
+                const today = new Date();
+                setDateRange({from: today, to: today});
+                loadOrders("all", {from: today, to: today});
               }} 
               variant="outline" 
               className="mt-2"
             >
-              Voltar para todos os pedidos
+              Voltar para todos os pedidos de hoje
             </Button>
           </CardContent>
         </Card>
-      ) : todayOrders.length === 0 ? (
-        <Card>
+      ) : orders.length === 0 ? (
+        <Card className="mt-6">
           <CardContent className="flex flex-col items-center justify-center p-8">
-            <p className="text-gray-500">Nenhum pedido encontrado com o status selecionado.</p>
-            {activeStatus !== "all" && (
-              <Button 
-                onClick={() => {
-                  setActiveStatus("all");
-                  loadOrders("all");
-                }} 
-                variant="outline" 
-                className="mt-4"
-              >
-                Ver todos os pedidos
-              </Button>
-            )}
+            <p className="text-gray-500">Nenhum pedido encontrado para o período e status selecionados.</p>
+            <Button 
+              onClick={() => {
+                setActiveStatus("all");
+                const today = new Date();
+                setDateRange({from: today, to: today});
+                loadOrders("all", {from: today, to: today});
+              }} 
+              variant="outline" 
+              className="mt-4"
+            >
+              Ver todos os pedidos de hoje
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {todayOrders.map((order) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          {orders.map((order) => (
             <Card key={order.id} className="overflow-hidden">
               <CardHeader className="bg-gray-50 py-4">
                 <div className="flex justify-between">
