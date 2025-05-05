@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useForm } from "react-hook-form";
@@ -38,6 +38,11 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [deliveryAreaError, setDeliveryAreaError] = useState<string | null>(null);
+
+  // Ensure the page scrolls to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleCepChange = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value;
@@ -152,7 +157,7 @@ const Checkout = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">Finalizar Pedido</h1>
       
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Resumo do Pedido</h2>
