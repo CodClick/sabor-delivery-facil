@@ -14,30 +14,94 @@ import { createOrder } from "@/services/orderService";
 interface CheckoutFormData {
   customerName: string;
   phone: string;
+  cep: string;
   street: string;
   number: string;
   complement?: string;
   neighborhood: string;
   city: string;
+  state: string;
   paymentMethod: "card" | "cash";
   observations?: string;
+}
+
+interface CepResponse {
+  cep: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  service: string;
 }
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>({
+  const { register, handleSubmit, setValue, formState: { errors }, setError } = useForm<CheckoutFormData>({
     defaultValues: {
       paymentMethod: "card"
     }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
+
+  const fetchAddressByCep = async (cep: string) => {
+    // Remove any non-numeric characters
+    const cleanCep = cep.replace(/\D/g, '');
+    
+    if (cleanCep.length !== 8) {
+      return;
+    }
+    
+    try {
+      setIsLoadingCep(true);
+      const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`);
+      
+      if (!response.ok) {
+        throw new Error('CEP não encontrado');
+      }
+      
+      const data: CepResponse = await response.json();
+      
+      setValue('street', data.street);
+      setValue('neighborhood', data.neighborhood);
+      setValue('city', data.city);
+      setValue('state', data.state);
+      
+      toast({
+        title: "Endereço encontrado",
+        description: "Os campos de endereço foram preenchidos automaticamente.",
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Erro ao buscar endereço",
+        description: "Não foi possível encontrar o endereço pelo CEP informado.",
+        variant: "destructive",
+      });
+      
+      // Limpa os campos de endereço em caso de erro
+      setValue('street', '');
+      setValue('neighborhood', '');
+      setValue('city', '');
+      setValue('state', '');
+    } finally {
+      setIsLoadingCep(false);
+    }
+  };
+
+  const handleCepChange = (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value;
+    if (cep && cep.length >= 8) {
+      fetchAddressByCep(cep);
+    }
+  };
 
   const onSubmit = async (data: CheckoutFormData) => {
     try {
       setIsSubmitting(true);
-      const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city}`;
+      const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city} - ${data.state}`;
       
       const orderData = {
         customerName: data.customerName,
@@ -167,6 +231,29 @@ const Checkout = () => {
           </h2>
           <div className="grid grid-cols-1 gap-4">
             <div>
+              <Label htmlFor="cep">CEP</Label>
+              <Input
+                id="cep"
+                {...register("cep", { 
+                  required: "CEP é obrigatório",
+                  pattern: {
+                    value: /^[0-9]{8}$/,
+                    message: "CEP deve ter 8 dígitos"
+                  }
+                })}
+                placeholder="Digite o CEP (apenas números)"
+                onBlur={handleCepChange}
+                disabled={isLoadingCep}
+              />
+              {errors.cep && (
+                <p className="text-sm text-red-500">{errors.cep.message}</p>
+              )}
+              {isLoadingCep && (
+                <p className="text-sm text-blue-500">Buscando endereço...</p>
+              )}
+            </div>
+            
+            <div>
               <Label htmlFor="street">Rua</Label>
               <Input
                 id="street"
@@ -179,7 +266,7 @@ const Checkout = () => {
             </div>
             
             <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-8 sm:col-span-7">
+              <div className="col-span-4">
                 <Label htmlFor="number">Número</Label>
                 <Input
                   id="number"
@@ -190,7 +277,7 @@ const Checkout = () => {
                   <p className="text-sm text-red-500">{errors.number.message}</p>
                 )}
               </div>
-              <div className="col-span-4 sm:col-span-5">
+              <div className="col-span-8">
                 <Label htmlFor="complement">Complemento</Label>
                 <Input
                   id="complement"
@@ -200,18 +287,19 @@ const Checkout = () => {
               </div>
             </div>
 
+            <div>
+              <Label htmlFor="neighborhood">Bairro</Label>
+              <Input
+                id="neighborhood"
+                {...register("neighborhood", { required: "Bairro é obrigatório" })}
+                placeholder="Digite o bairro"
+              />
+              {errors.neighborhood && (
+                <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-1">
-                <Label htmlFor="neighborhood">Bairro</Label>
-                <Input
-                  id="neighborhood"
-                  {...register("neighborhood", { required: "Bairro é obrigatório" })}
-                  placeholder="Digite o bairro"
-                />
-                {errors.neighborhood && (
-                  <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
-                )}
-              </div>
               <div className="col-span-1">
                 <Label htmlFor="city">Cidade</Label>
                 <Input
@@ -221,6 +309,17 @@ const Checkout = () => {
                 />
                 {errors.city && (
                   <p className="text-sm text-red-500">{errors.city.message}</p>
+                )}
+              </div>
+              <div className="col-span-1">
+                <Label htmlFor="state">Estado</Label>
+                <Input
+                  id="state"
+                  {...register("state", { required: "Estado é obrigatório" })}
+                  placeholder="Digite o estado"
+                />
+                {errors.state && (
+                  <p className="text-sm text-red-500">{errors.state.message}</p>
                 )}
               </div>
             </div>
