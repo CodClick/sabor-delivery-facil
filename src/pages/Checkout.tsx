@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
@@ -10,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { createOrder } from "@/services/orderService";
+import { fetchAddressByCep, isDeliveryAreaValid } from "@/services/cepService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface CheckoutFormData {
   customerName: string;
@@ -25,15 +26,6 @@ interface CheckoutFormData {
   observations?: string;
 }
 
-interface CepResponse {
-  cep: string;
-  state: string;
-  city: string;
-  neighborhood: string;
-  street: string;
-  service: string;
-}
-
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
@@ -45,56 +37,56 @@ const Checkout = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [deliveryAreaError, setDeliveryAreaError] = useState<string | null>(null);
 
-  const fetchAddressByCep = async (cep: string) => {
-    // Remove any non-numeric characters
-    const cleanCep = cep.replace(/\D/g, '');
-    
-    if (cleanCep.length !== 8) {
-      return;
-    }
-    
-    try {
-      setIsLoadingCep(true);
-      const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`);
-      
-      if (!response.ok) {
-        throw new Error('CEP não encontrado');
-      }
-      
-      const data: CepResponse = await response.json();
-      
-      setValue('street', data.street);
-      setValue('neighborhood', data.neighborhood);
-      setValue('city', data.city);
-      setValue('state', data.state);
-      
-      toast({
-        title: "Endereço encontrado",
-        description: "Os campos de endereço foram preenchidos automaticamente.",
-      });
-      
-    } catch (error) {
-      toast({
-        title: "Erro ao buscar endereço",
-        description: "Não foi possível encontrar o endereço pelo CEP informado.",
-        variant: "destructive",
-      });
-      
-      // Limpa os campos de endereço em caso de erro
-      setValue('street', '');
-      setValue('neighborhood', '');
-      setValue('city', '');
-      setValue('state', '');
-    } finally {
-      setIsLoadingCep(false);
-    }
-  };
-
-  const handleCepChange = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleCepChange = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value;
     if (cep && cep.length >= 8) {
-      fetchAddressByCep(cep);
+      setIsLoadingCep(true);
+      setDeliveryAreaError(null);
+      
+      try {
+        // First check if the CEP is within a valid delivery area
+        const isValid = await isDeliveryAreaValid(cep);
+        
+        if (!isValid) {
+          setDeliveryAreaError("Infelizmente ainda não entregamos nesse endereço.");
+          // Clear the address fields
+          setValue('street', '');
+          setValue('neighborhood', '');
+          setValue('city', '');
+          setValue('state', '');
+          setIsLoadingCep(false);
+          return;
+        }
+        
+        // If the CEP is valid for delivery, fetch the address details
+        const data = await fetchAddressByCep(cep);
+        
+        setValue('street', data.street);
+        setValue('neighborhood', data.neighborhood);
+        setValue('city', data.city);
+        setValue('state', data.state);
+        
+        toast({
+          title: "Endereço encontrado",
+          description: "Os campos de endereço foram preenchidos automaticamente.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro ao buscar endereço",
+          description: "Não foi possível encontrar o endereço pelo CEP informado.",
+          variant: "destructive",
+        });
+        
+        // Limpa os campos de endereço em caso de erro
+        setValue('street', '');
+        setValue('neighborhood', '');
+        setValue('city', '');
+        setValue('state', '');
+      } finally {
+        setIsLoadingCep(false);
+      }
     }
   };
 
@@ -229,6 +221,14 @@ const Checkout = () => {
             <MapPin className="h-5 w-5" />
             Endereço de Entrega
           </h2>
+          
+          {deliveryAreaError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Área não atendida</AlertTitle>
+              <AlertDescription>{deliveryAreaError}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="cep">CEP</Label>
@@ -335,6 +335,7 @@ const Checkout = () => {
           </div>
         </div>
 
+        {/* Payment Method */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
@@ -379,7 +380,7 @@ const Checkout = () => {
           </Button>
           <Button 
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!deliveryAreaError}
           >
             {isSubmitting ? "Processando..." : "Confirmar Pedido"}
           </Button>

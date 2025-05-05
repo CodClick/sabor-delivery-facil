@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      faixas_ceps_atendidos: {
+        Row: {
+          cep_fim: string
+          cep_inicio: string
+          created_at: string
+          id: string
+          regiao: string | null
+        }
+        Insert: {
+          cep_fim: string
+          cep_inicio: string
+          created_at?: string
+          id?: string
+          regiao?: string | null
+        }
+        Update: {
+          cep_fim?: string
+          cep_inicio?: string
+          created_at?: string
+          id?: string
+          regiao?: string | null
+        }
+        Relationships: []
+      }
       promocoes: {
         Row: {
           created_at: string
