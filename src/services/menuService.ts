@@ -1,10 +1,11 @@
 
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { MenuItem, Category } from "@/types/menu";
+import { MenuItem, Category, Variation } from "@/types/menu";
 
 const MENU_COLLECTION = "menu";
 const CATEGORIES_COLLECTION = "categories";
+const VARIATIONS_COLLECTION = "variations";
 
 // Obter todos os itens do menu
 export const getAllMenuItems = async (): Promise<MenuItem[]> => {
@@ -105,6 +106,42 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
     await deleteDoc(categoryRef);
   } catch (error) {
     console.error("Erro ao excluir categoria:", error);
+    throw error;
+  }
+};
+
+// Obter todas as variações
+export const getAllVariations = async (): Promise<Variation[]> => {
+  try {
+    const variationCollection = collection(db, VARIATIONS_COLLECTION);
+    const variationSnapshot = await getDocs(variationCollection);
+    return variationSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Variation));
+  } catch (error) {
+    console.error("Erro ao obter variações:", error);
+    // Retornar dados locais como fallback
+    const { variations } = await import("@/data/menuData");
+    return variations;
+  }
+};
+
+// Adicionar ou atualizar uma variação
+export const saveVariation = async (variation: Variation): Promise<void> => {
+  try {
+    const variationRef = doc(db, VARIATIONS_COLLECTION, variation.id);
+    await setDoc(variationRef, variation);
+  } catch (error) {
+    console.error("Erro ao salvar variação:", error);
+    throw error;
+  }
+};
+
+// Excluir uma variação
+export const deleteVariation = async (variationId: string): Promise<void> => {
+  try {
+    const variationRef = doc(db, VARIATIONS_COLLECTION, variationId);
+    await deleteDoc(variationRef);
+  } catch (error) {
+    console.error("Erro ao excluir variação:", error);
     throw error;
   }
 };

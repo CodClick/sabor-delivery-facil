@@ -6,6 +6,7 @@ import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
 import { categories, getMenuItemsByCategory, getPopularItems } from "@/data/menuData";
+import { getAllCategories, getMenuItemsByCategory as getFirebaseMenuItemsByCategory, getPopularItems as getFirebasePopularItems } from "@/services/menuService";
 import { Category } from "@/types/menu";
 import { useAuth } from "@/hooks/useAuth";
 import { LogIn, LogOut } from "lucide-react";
@@ -17,20 +18,63 @@ const Index = () => {
   const [popularItems, setPopularItems] = useState(getPopularItems());
   const { currentUser, logOut } = useAuth();
 
-  // Ordenação de categorias por ordem (se definida)
+  // Load data on component mount
   useEffect(() => {
-    setMenuCategories(
-      [...categories].sort((a, b) => {
-        const orderA = a.order || 0;
-        const orderB = b.order || 0;
-        return orderA - orderB;
-      })
-    );
+    loadData();
   }, []);
+
+  // Ordenação de categorias por ordem (se definida) e carregamento de dados do Firebase
+  useEffect(() => {
+    const sortedCategories = [...menuCategories].sort((a, b) => {
+      const orderA = a.order || 0;
+      const orderB = b.order || 0;
+      return orderA - orderB;
+    });
+    
+    setMenuCategories(sortedCategories);
+  }, [menuCategories]);
+
+  const loadData = async () => {
+    try {
+      // Try to get data from Firebase, fallback to local data
+      const firebaseCategories = await getAllCategories();
+      if (firebaseCategories.length > 0) {
+        setMenuCategories(firebaseCategories);
+      }
+
+      // Load initial category items
+      loadCategoryItems(activeCategory);
+
+      // Load popular items
+      const firebasePopularItems = await getFirebasePopularItems();
+      if (firebasePopularItems.length > 0) {
+        setPopularItems(firebasePopularItems);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      // Already using local data as fallback
+    }
+  };
+
+  const loadCategoryItems = async (categoryId: string) => {
+    try {
+      const firebaseCategoryItems = await getFirebaseMenuItemsByCategory(categoryId);
+      if (firebaseCategoryItems.length > 0) {
+        setMenuItems(firebaseCategoryItems);
+      } else {
+        // Fallback to local data
+        setMenuItems(getMenuItemsByCategory(categoryId));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar itens da categoria:", error);
+      // Fallback to local data
+      setMenuItems(getMenuItemsByCategory(categoryId));
+    }
+  };
 
   const handleSelectCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
-    setMenuItems(getMenuItemsByCategory(categoryId));
+    loadCategoryItems(categoryId);
   };
 
   return (
@@ -42,6 +86,9 @@ const Index = () => {
             <>
               <Button asChild variant="outline">
                 <Link to="/orders">Ver Pedidos</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/admin">Administração</Link>
               </Button>
               <Button onClick={logOut} variant="outline" className="flex items-center gap-2">
                 <LogOut size={16} />

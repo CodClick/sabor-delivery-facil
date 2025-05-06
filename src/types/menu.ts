@@ -34,5 +34,5 @@ export interface Variation {
   description?: string;
   additionalPrice?: number;
   available: boolean;
-  categoryIds: string[]; // Categorias onde esta variação pode ser usada
+  categoryIds: string[]; // Categories where this variation can be used
 }
