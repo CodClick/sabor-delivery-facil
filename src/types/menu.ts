@@ -10,6 +10,7 @@ export interface MenuItem {
   hasVariations?: boolean;
   variations?: string[];
   maxVariationCount?: number;
+  variationMessage?: string; // New field for customizable variation message
 }
 
 export interface CartItem extends MenuItem {

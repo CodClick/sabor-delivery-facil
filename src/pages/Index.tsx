@@ -21,10 +21,8 @@ const Index = () => {
   // Load data on component mount
   useEffect(() => {
     loadData();
-  }, []);
-
-  // Ordenação de categorias por ordem (se definida) e carregamento de dados do Firebase
-  useEffect(() => {
+    
+    // Ordenação de categorias por ordem (se definida)
     const sortedCategories = [...menuCategories].sort((a, b) => {
       const orderA = a.order || 0;
       const orderB = b.order || 0;
@@ -32,14 +30,19 @@ const Index = () => {
     });
     
     setMenuCategories(sortedCategories);
-  }, [menuCategories]);
+  }, []); // Removed menuCategories from dependency array to prevent infinite loop
 
   const loadData = async () => {
     try {
       // Try to get data from Firebase, fallback to local data
       const firebaseCategories = await getAllCategories();
       if (firebaseCategories.length > 0) {
-        setMenuCategories(firebaseCategories);
+        const sortedCategories = [...firebaseCategories].sort((a, b) => {
+          const orderA = a.order || 0;
+          const orderB = b.order || 0;
+          return orderA - orderB;
+        });
+        setMenuCategories(sortedCategories);
       }
 
       // Load initial category items

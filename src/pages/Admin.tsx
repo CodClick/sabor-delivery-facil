@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -596,19 +597,34 @@ const Admin = () => {
                 </div>
 
                 {editItem.hasVariations && (
-                  <div>
-                    <Label htmlFor="maxVariations">Quantidade máxima de variações</Label>
-                    <Input 
-                      id="maxVariations"
-                      type="number" 
-                      min="1"
-                      value={editItem.maxVariationCount || 1} 
-                      onChange={(e) => setEditItem({
-                        ...editItem, 
-                        maxVariationCount: parseInt(e.target.value) || 1
-                      })}
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <Label htmlFor="maxVariations">Quantidade máxima de variações</Label>
+                      <Input 
+                        id="maxVariations"
+                        type="number" 
+                        min="1"
+                        value={editItem.maxVariationCount || 1} 
+                        onChange={(e) => setEditItem({
+                          ...editItem, 
+                          maxVariationCount: parseInt(e.target.value) || 1
+                        })}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="variationMessage">Mensagem para Variações</Label>
+                      <Input 
+                        id="variationMessage"
+                        value={editItem.variationMessage || ''} 
+                        onChange={(e) => setEditItem({...editItem, variationMessage: e.target.value})}
+                        placeholder="Selecione {count} opções de recheio"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Use {'{count}'} para representar a quantidade máxima. Exemplo: "Selecione {'{count}'} molhos"
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 {editItem.hasVariations && (

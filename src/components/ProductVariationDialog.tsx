@@ -84,6 +84,14 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     return availableVariations.find(v => v.id === variationId);
   };
 
+  // Default message if no custom message is provided
+  const getVariationMessage = () => {
+    if (item.variationMessage) {
+      return item.variationMessage.replace('{count}', maxAllowed.toString());
+    }
+    return `Selecione ${maxAllowed} opções de recheio (${totalSelectedCount}/${maxAllowed} selecionados)`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -99,7 +107,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
           
           <div className="space-y-4 mt-6">
             <p className="text-sm text-gray-500">
-              Selecione {maxAllowed} opções de recheio ({totalSelectedCount}/{maxAllowed} selecionados)
+              {getVariationMessage()}
             </p>
             
             {selectedVariations.map((variation) => {

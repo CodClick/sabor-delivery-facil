@@ -1,21 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MenuItem, Variation } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import ProductVariationDialog from "./ProductVariationDialog";
-
-// Dados mockados para variações até implementarmos a tela de administração
-const mockVariations: Variation[] = [
-  { id: "var1", name: "Taco de Carne", available: true, categoryIds: ["tacos", "combos"] },
-  { id: "var2", name: "Taco de Queijo", available: true, categoryIds: ["tacos", "combos"] },
-  { id: "var3", name: "Taco de Pernil", available: true, categoryIds: ["tacos", "combos"] },
-  { id: "var4", name: "Taco de Frango", available: true, categoryIds: ["tacos", "combos"] },
-  { id: "var5", name: "Burrito de Carne", available: true, categoryIds: ["burritos", "combos"] },
-  { id: "var6", name: "Burrito de Queijo", available: true, categoryIds: ["burritos", "combos"] },
-];
+import { getAllVariations } from "@/services/menuService";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -24,6 +15,22 @@ interface MenuItemCardProps {
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   const { addToCart, addItem } = useCart();
   const [isVariationDialogOpen, setIsVariationDialogOpen] = useState(false);
+  const [availableVariations, setAvailableVariations] = useState<Variation[]>([]);
+
+  useEffect(() => {
+    // Load variations when the component mounts
+    const loadVariations = async () => {
+      try {
+        const variations = await getAllVariations();
+        setAvailableVariations(variations);
+      } catch (error) {
+        console.error("Error loading variations:", error);
+        setAvailableVariations([]);
+      }
+    };
+
+    loadVariations();
+  }, []);
 
   const handleButtonClick = () => {
     if (item.hasVariations) {
@@ -38,8 +45,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
       return [];
     }
     
-    // Filtrar variações disponíveis para esta categoria
-    return mockVariations.filter(
+    // Filter variations available for this item based on both category and the item's variations array
+    return availableVariations.filter(
       variation => 
         variation.available && 
         variation.categoryIds.includes(item.category) &&
