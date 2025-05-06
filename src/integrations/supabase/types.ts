@@ -33,6 +33,33 @@ export type Database = {
         }
         Relationships: []
       }
+      horario_funcionamento: {
+        Row: {
+          created_at: string
+          horario_extra: string | null
+          id: string
+          promocao_ativa: string
+          regras_da_promocao: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          horario_extra?: string | null
+          id?: string
+          promocao_ativa: string
+          regras_da_promocao?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          horario_extra?: string | null
+          id?: string
+          promocao_ativa?: string
+          regras_da_promocao?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       promocoes: {
         Row: {
           created_at: string

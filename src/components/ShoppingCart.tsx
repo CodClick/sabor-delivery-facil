@@ -9,6 +9,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+// Dados mockados para variações até implementarmos a tela de administração
+const mockVariationNames: Record<string, string> = {
+  "var1": "Taco de Carne",
+  "var2": "Taco de Queijo",
+  "var3": "Taco de Pernil",
+  "var4": "Taco de Frango", 
+  "var5": "Burrito de Carne",
+  "var6": "Burrito de Queijo"
+};
+
 const ShoppingCart: React.FC = () => {
   const {
     cartItems,
@@ -48,6 +58,11 @@ const ShoppingCart: React.FC = () => {
   if (isCheckoutPage) {
     return null;
   }
+
+  // Função para obter o nome da variação a partir do ID
+  const getVariationName = (variationId: string): string => {
+    return mockVariationNames[variationId] || `Variação ${variationId}`;
+  };
 
   return (
     <>
@@ -130,6 +145,22 @@ const ShoppingCart: React.FC = () => {
                     <p className="text-brand-600 font-medium">
                       {formatCurrency(item.price)}
                     </p>
+                    
+                    {/* Display selected variations if any */}
+                    {item.selectedVariations && item.selectedVariations.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        {item.selectedVariations
+                          .filter(v => v.quantity > 0)
+                          .map(v => (
+                            <div key={v.variationId} className="flex justify-between">
+                              <span>{getVariationName(v.variationId)}</span>
+                              <span>x{v.quantity}</span>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    )}
+                    
                     <div className="flex items-center mt-2">
                       <button
                         onClick={() => decreaseQuantity(item.id)}

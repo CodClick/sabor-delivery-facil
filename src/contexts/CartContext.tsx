@@ -1,11 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { CartItem, MenuItem } from "@/types/menu";
+import { CartItem, MenuItem, SelectedVariation } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem) => void;
+  addItem: (item: MenuItem & { selectedVariations?: SelectedVariation[] }) => void;
   addToCart: (item: MenuItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -40,30 +40,58 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItemCount(count);
   }, [cartItems]);
 
-  const addItem = (menuItem: MenuItem) => {
+  // Função para gerar ID único para itens com variações
+  const generateCartItemId = (item: MenuItem, selectedVariations?: SelectedVariation[]): string => {
+    if (!selectedVariations || selectedVariations.length === 0) {
+      return item.id;
+    }
+
+    // Criar um ID composto do ID do item + IDs das variações selecionadas
+    const variationsKey = selectedVariations
+      .filter(v => v.quantity > 0)
+      .sort((a, b) => a.variationId.localeCompare(b.variationId))
+      .map(v => `${v.variationId}-${v.quantity}`)
+      .join('_');
+    
+    return `${item.id}_${variationsKey}`;
+  };
+
+  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariation[] }) => {
+    const { selectedVariations, ...item } = menuItem;
+    const cartItemId = generateCartItemId(item, selectedVariations);
+    
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === menuItem.id);
+      // Procura pelo item usando o ID composto (para variações específicas)
+      const existingItemIndex = prevItems.findIndex(
+        i => generateCartItemId(i, i.selectedVariations) === cartItemId
+      );
       
-      if (existingItem) {
-        return prevItems.map(item => 
-          item.id === menuItem.id 
+      if (existingItemIndex >= 0) {
+        // Se já existe no carrinho, incrementa a quantidade
+        return prevItems.map((item, index) => 
+          index === existingItemIndex 
             ? { ...item, quantity: item.quantity + 1 } 
             : item
         );
       } else {
-        return [...prevItems, { ...menuItem, quantity: 1 }];
+        // Se não existe, adiciona novo item
+        return [...prevItems, { 
+          ...item, 
+          quantity: 1,
+          selectedVariations 
+        }];
       }
     });
     
     toast({
       title: "Item adicionado",
-      description: `${menuItem.name} foi adicionado ao carrinho`,
+      description: `${item.name} foi adicionado ao carrinho`,
       duration: 2000
     });
   };
 
   // Alias para addItem para manter compatibilidade com código existente
-  const addToCart = addItem;
+  const addToCart = (item: MenuItem) => addItem(item);
 
   const removeFromCart = (id: string) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));

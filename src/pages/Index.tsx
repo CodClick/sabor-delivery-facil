@@ -17,6 +17,17 @@ const Index = () => {
   const [popularItems, setPopularItems] = useState(getPopularItems());
   const { currentUser, logOut } = useAuth();
 
+  // Ordenação de categorias por ordem (se definida)
+  useEffect(() => {
+    setMenuCategories(
+      [...categories].sort((a, b) => {
+        const orderA = a.order || 0;
+        const orderB = b.order || 0;
+        return orderA - orderB;
+      })
+    );
+  }, []);
+
   const handleSelectCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
     setMenuItems(getMenuItemsByCategory(categoryId));

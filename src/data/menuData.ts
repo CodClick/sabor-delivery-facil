@@ -1,11 +1,23 @@
 
-import { MenuItem, Category } from "@/types/menu";
+import { MenuItem, Category, Variation } from "@/types/menu";
 
 export const categories: Category[] = [
-  { id: "entradas", name: "Entradas" },
-  { id: "principais", name: "Pratos Principais" },
-  { id: "bebidas", name: "Bebidas" },
-  { id: "sobremesas", name: "Sobremesas" }
+  { id: "entradas", name: "Entradas", order: 1 },
+  { id: "tacos", name: "Tacos", order: 2 },
+  { id: "burritos", name: "Burritos", order: 3 },
+  { id: "quesadillas", name: "Quesadillas", order: 4 },
+  { id: "principais", name: "Pratos Principais", order: 5 },
+  { id: "bebidas", name: "Bebidas", order: 6 },
+  { id: "sobremesas", name: "Sobremesas", order: 7 }
+];
+
+export const variations: Variation[] = [
+  { id: "var1", name: "Taco de Carne", available: true, categoryIds: ["tacos", "combos"] },
+  { id: "var2", name: "Taco de Queijo", available: true, categoryIds: ["tacos", "combos"] },
+  { id: "var3", name: "Taco de Pernil", available: true, categoryIds: ["tacos", "combos"] },
+  { id: "var4", name: "Taco de Frango", available: true, categoryIds: ["tacos", "combos"] },
+  { id: "var5", name: "Burrito de Carne", available: true, categoryIds: ["burritos", "combos"] },
+  { id: "var6", name: "Burrito de Queijo", available: true, categoryIds: ["burritos", "combos"] },
 ];
 
 export const menuItems: MenuItem[] = [
@@ -53,11 +65,14 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "6",
-    name: "Trio Mex",
-    description: "Três pratos pelo preco de 1 - 1 burrito, 1 quesadilla, 1 taco. aescolha o sabor que quiser.",
+    name: "Combo 3 Tacos",
+    description: "Escolha três tacos com os recheios que preferir. Acompanha guacamole, pico de gallo e creme azedo.",
     price: 34.90,
     image: "/images/trio-mex.png",
-    category: "principais",
+    category: "tacos",
+    hasVariations: true,
+    variations: ["var1", "var2", "var3", "var4"],
+    maxVariationCount: 3
   },
   {
     id: "7",
@@ -70,11 +85,14 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "8",
-    name: "Refrigerante",
-    description: "Lata 350ml. Opções: Coca-Cola, Guaraná, Sprite",
-    price: 6.90,
-    image: "/images/refrigerante.jpg",
-    category: "bebidas",
+    name: "Combo 2 Burritos",
+    description: "Escolha dois burritos com os recheios que preferir. Servido com chips de tortilla.",
+    price: 39.90,
+    image: "/images/burrito.jpg",
+    category: "burritos",
+    hasVariations: true,
+    variations: ["var5", "var6"],
+    maxVariationCount: 2
   },
   {
     id: "9",
@@ -117,4 +135,16 @@ export const getMenuItemsByCategory = (categoryId: string): MenuItem[] => {
 
 export const getPopularItems = (): MenuItem[] => {
   return menuItems.filter(item => item.popular === true);
+};
+
+export const getVariationsForItem = (item: MenuItem): Variation[] => {
+  if (!item.variations || item.variations.length === 0) {
+    return [];
+  }
+  
+  return variations.filter(
+    variation => 
+      variation.available && 
+      item.variations?.includes(variation.id)
+  );
 };
