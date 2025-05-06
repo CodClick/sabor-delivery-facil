@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,16 +8,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-// Dados mockados para variações até implementarmos a tela de administração
-const mockVariationNames: Record<string, string> = {
-  "var1": "Taco de Carne",
-  "var2": "Taco de Queijo",
-  "var3": "Taco de Pernil",
-  "var4": "Taco de Frango", 
-  "var5": "Burrito de Carne",
-  "var6": "Burrito de Queijo"
-};
+import { getAllVariations, getVariationById } from "@/services/menuService";
+import { Variation } from "@/types/menu";
 
 const ShoppingCart: React.FC = () => {
   const {
@@ -33,6 +26,24 @@ const ShoppingCart: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [variationsLoading, setVariationsLoading] = useState(true);
+
+  // Load all variations when the component mounts
+  useEffect(() => {
+    const loadVariations = async () => {
+      try {
+        const allVariations = await getAllVariations();
+        setVariations(allVariations);
+      } catch (error) {
+        console.error("Erro ao carregar variações:", error);
+      } finally {
+        setVariationsLoading(false);
+      }
+    };
+    
+    loadVariations();
+  }, []);
 
   const handleCheckout = () => {
     if (!currentUser) {
@@ -60,11 +71,15 @@ const ShoppingCart: React.FC = () => {
 
   // Função para obter o nome da variação a partir do ID
   const getVariationName = (variationId: string): string => {
-    const variation = cartItems.flatMap(item => item.selectedVariations || [])
-      .find(v => v.variationId === variationId);
+    // Procurar a variação no estado local
+    const variation = variations.find(v => v.id === variationId);
     
-    const variationName = mockVariationNames[variationId] || `Variação ${variationId}`;
-    return variationName;
+    if (variation) {
+      return variation.name;
+    }
+    
+    // Se não encontrar (enquanto está carregando), retornar um placeholder
+    return variationsLoading ? "Carregando..." : "Variação não encontrada";
   };
 
   return (

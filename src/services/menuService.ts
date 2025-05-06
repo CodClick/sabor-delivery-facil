@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MenuItem, Category, Variation } from "@/types/menu";
 
@@ -131,6 +131,22 @@ export const getAllVariations = async (): Promise<Variation[]> => {
     // Retornar dados locais como fallback
     const { variations } = await import("@/data/menuData");
     return variations;
+  }
+};
+
+// Obter uma variação específica pelo ID
+export const getVariationById = async (variationId: string): Promise<Variation | null> => {
+  try {
+    const variationRef = doc(db, VARIATIONS_COLLECTION, variationId);
+    const variationSnapshot = await getDoc(variationRef);
+    
+    if (variationSnapshot.exists()) {
+      return { id: variationSnapshot.id, ...variationSnapshot.data() } as Variation;
+    }
+    return null;
+  } catch (error) {
+    console.error("Erro ao obter variação:", error);
+    return null;
   }
 };
 
