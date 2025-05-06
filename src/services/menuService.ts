@@ -1,4 +1,3 @@
-
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MenuItem, Category, Variation } from "@/types/menu";
@@ -106,6 +105,17 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
     await deleteDoc(categoryRef);
   } catch (error) {
     console.error("Erro ao excluir categoria:", error);
+    throw error;
+  }
+};
+
+// Update a category
+export const updateCategory = async (category: Category): Promise<void> => {
+  try {
+    const categoryRef = doc(db, CATEGORIES_COLLECTION, category.id);
+    await setDoc(categoryRef, category);
+  } catch (error) {
+    console.error("Erro ao atualizar categoria:", error);
     throw error;
   }
 };

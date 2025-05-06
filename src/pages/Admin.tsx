@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +7,8 @@ import {
   deleteMenuItem, 
   getAllCategories, 
   saveCategory,
+  updateCategory,
+  deleteCategory,
   getAllVariations,
   saveVariation,
   deleteVariation
@@ -36,6 +37,7 @@ const Admin = () => {
   const [newCategory, setNewCategory] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("menu");
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -147,7 +149,12 @@ const Admin = () => {
   };
 
   // Category methods
-  const handleAddCategory = async () => {
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setNewCategory(category.name);
+  };
+
+  const handleSaveCategory = async () => {
     if (!newCategory.trim()) {
       toast({
         title: "Campo obrigatório",
@@ -158,24 +165,62 @@ const Admin = () => {
     }
 
     try {
-      const newCat: Category = {
-        id: newCategory.toLowerCase().replace(/\s+/g, '-'),
-        name: newCategory,
-        order: categories.length
-      };
+      if (editingCategory) {
+        // Update existing category
+        const updatedCategory = {
+          ...editingCategory,
+          name: newCategory,
+        };
+        await updateCategory(updatedCategory);
+        setCategories(prev => prev.map(cat => 
+          cat.id === editingCategory.id ? updatedCategory : cat
+        ));
+      } else {
+        // Add new category
+        const newCat: Category = {
+          id: newCategory.toLowerCase().replace(/\s+/g, '-'),
+          name: newCategory,
+          order: categories.length
+        };
+        await saveCategory(newCat);
+        setCategories([...categories, newCat]);
+      }
       
-      await saveCategory(newCat);
-      setCategories([...categories, newCat]);
       setNewCategory("");
+      setEditingCategory(null);
       toast({
         title: "Sucesso",
-        description: "Categoria adicionada com sucesso",
+        description: editingCategory 
+          ? "Categoria atualizada com sucesso"
+          : "Categoria adicionada com sucesso",
       });
     } catch (error) {
-      console.error("Erro ao adicionar categoria:", error);
+      console.error("Erro ao salvar categoria:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar a categoria. Tente novamente.",
+        description: "Não foi possível salvar a categoria. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta categoria?")) {
+      return;
+    }
+
+    try {
+      await deleteCategory(categoryId);
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      toast({
+        title: "Sucesso",
+        description: "Categoria excluída com sucesso",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir categoria:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a categoria. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -396,20 +441,55 @@ const Admin = () => {
                   <Input
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    placeholder="Nome da nova categoria"
+                    placeholder="Nome da categoria"
                     className="flex-1"
                   />
-                  <Button onClick={handleAddCategory}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adicionar
+                  <Button onClick={handleSaveCategory}>
+                    {editingCategory ? (
+                      <>
+                        <Save className="h-4 w-4 mr-1" />
+                        Atualizar
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </>
+                    )}
                   </Button>
+                  {editingCategory && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setEditingCategory(null);
+                        setNewCategory("");
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="space-y-2 mt-4">
                   {categories.map((category) => (
                     <div key={category.id} className="p-3 bg-gray-100 rounded-md flex justify-between items-center">
                       <span>{category.name}</span>
-                      <span className="text-sm text-gray-500">({category.id})</span>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditCategory(category)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                   

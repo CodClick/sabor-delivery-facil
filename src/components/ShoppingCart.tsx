@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -61,7 +60,11 @@ const ShoppingCart: React.FC = () => {
 
   // Função para obter o nome da variação a partir do ID
   const getVariationName = (variationId: string): string => {
-    return mockVariationNames[variationId] || `Variação ${variationId}`;
+    const variation = cartItems.flatMap(item => item.selectedVariations || [])
+      .find(v => v.variationId === variationId);
+    
+    const variationName = mockVariationNames[variationId] || `Variação ${variationId}`;
+    return variationName;
   };
 
   return (
@@ -146,7 +149,6 @@ const ShoppingCart: React.FC = () => {
                       {formatCurrency(item.price)}
                     </p>
                     
-                    {/* Display selected variations if any */}
                     {item.selectedVariations && item.selectedVariations.length > 0 && (
                       <div className="mt-2 text-sm text-gray-500">
                         {item.selectedVariations
