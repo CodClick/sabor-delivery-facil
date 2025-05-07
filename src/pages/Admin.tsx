@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -663,6 +664,10 @@ const Admin = () => {
                   <p className="text-xs text-gray-600">"{group.customMessage}"</p>
                 </div>
               )}
+              
+              <div className="flex flex-wrap gap-2 mt-2">
+                {/* Content for flex container */}
+              </div>
             </div>
           ))
         ) : (
@@ -952,4 +957,54 @@ const Admin = () => {
                             "{group.customMessage}"
                           </p>
                         )}
-                        <div className="flex
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-sm bg-gray-100 rounded px-2 py-1">
+                            Min: {group.minRequired} | Max: {group.maxAllowed}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleEditExistingVariationGroup(group)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleDeleteExistingVariationGroup(group.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <p className="text-sm font-medium mb-1">Variações:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {group.variations.map(varId => (
+                              <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
+                                {getVariationName(varId)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {variationGroups.length === 0 && (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  Nenhum grupo de variação encontrado. Adicione grupos para personalizar seus itens do menu.
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default Admin;
