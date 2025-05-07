@@ -1,0 +1,189 @@
+
+import React from "react";
+import { MenuItem, Variation, VariationGroup } from "@/types/menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { Save, XCircle } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { saveVariationGroup } from "@/services/menuService";
+
+interface AddVariationGroupModalProps {
+  tempVariationGroup: VariationGroup;
+  setTempVariationGroup: (group: VariationGroup | null) => void;
+  editItem: MenuItem;
+  setEditItem: (item: MenuItem) => void;
+  variations: Variation[];
+  variationGroups: VariationGroup[];
+}
+
+export const AddVariationGroupModal = ({
+  tempVariationGroup,
+  setTempVariationGroup,
+  editItem,
+  setEditItem,
+  variations,
+  variationGroups,
+}: AddVariationGroupModalProps) => {
+  const { toast } = useToast();
+
+  const handleVariationCheckboxChange = (variationId: string) => {
+    const updatedVariations = tempVariationGroup.variations.includes(variationId)
+      ? tempVariationGroup.variations.filter(id => id !== variationId)
+      : [...tempVariationGroup.variations, variationId];
+    
+    setTempVariationGroup({
+      ...tempVariationGroup,
+      variations: updatedVariations
+    });
+  };
+
+  const handleSaveAndAddToItem = async () => {
+    if (!tempVariationGroup.name || tempVariationGroup.variations.length === 0) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha o nome e selecione pelo menos uma variação",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // First save this as a new variation group
+      await saveVariationGroup(tempVariationGroup);
+      
+      // Then add it to the item
+      setEditItem({
+        ...editItem,
+        hasVariations: true,
+        variationGroups: [...(editItem.variationGroups || []), tempVariationGroup]
+      });
+      
+      // Close the dialog
+      setTempVariationGroup(null);
+      
+      toast({
+        title: "Sucesso",
+        description: "Grupo de variações adicionado com sucesso",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar grupo de variação:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o grupo de variação",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Dialog open={!!tempVariationGroup} onOpenChange={(open) => !open && setTempVariationGroup(null)}>
+      <DialogContent className="max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Adicionar Grupo de Variações</h2>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setTempVariationGroup(null)}
+          >
+            <XCircle className="h-5 w-5" />
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="group-name">Nome do Grupo</Label>
+            <Input
+              id="group-name"
+              value={tempVariationGroup.name}
+              onChange={(e) => setTempVariationGroup({...tempVariationGroup, name: e.target.value})}
+              placeholder="Ex: Sabores, Recheios, Complementos"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+              <Input
+                id="min-required"
+                type="number"
+                min="0"
+                value={tempVariationGroup.minRequired}
+                onChange={(e) => setTempVariationGroup({
+                  ...tempVariationGroup, 
+                  minRequired: parseInt(e.target.value)
+                })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="max-allowed">Máximo Permitido</Label>
+              <Input
+                id="max-allowed"
+                type="number"
+                min="1"
+                value={tempVariationGroup.maxAllowed}
+                onChange={(e) => setTempVariationGroup({
+                  ...tempVariationGroup, 
+                  maxAllowed: parseInt(e.target.value)
+                })}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
+            <Input
+              id="custom-message"
+              value={tempVariationGroup.customMessage || ""}
+              onChange={(e) => setTempVariationGroup({
+                ...tempVariationGroup, 
+                customMessage: e.target.value
+              })}
+              placeholder="Ex: Escolha {min} opções"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Use {"{min}"} para o número mínimo, {"{max}"} para o máximo e {"{count}"} para quantidade selecionada
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Variações Disponíveis</Label>
+            <div className="max-h-60 overflow-y-auto border rounded-md p-2">
+              {variations
+                .filter(v => v.available && (v.categoryIds.length === 0 || v.categoryIds.includes(editItem?.category || "")))
+                .map(variation => (
+                  <div key={variation.id} className="flex items-center space-x-2 py-1">
+                    <Checkbox 
+                      id={`temp-var-${variation.id}`}
+                      checked={tempVariationGroup.variations.includes(variation.id)}
+                      onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
+                    />
+                    <Label htmlFor={`temp-var-${variation.id}`}>
+                      {variation.name}
+                      {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
+                    </Label>
+                  </div>
+                ))}
+              {variations.length === 0 && (
+                <p className="text-sm text-gray-500 py-2">
+                  Nenhuma variação disponível para esta categoria. Adicione variações primeiro.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={() => setTempVariationGroup(null)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveAndAddToItem}>
+            <Save className="h-4 w-4 mr-1" />
+            Adicionar ao Item
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
