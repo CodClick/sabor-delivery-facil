@@ -8,7 +8,7 @@ export interface MenuItem {
   category: string;
   popular?: boolean;
   hasVariations?: boolean;
-  variationGroups?: VariationGroup[];
+  variationGroups?: string[] | VariationGroup[]; // Can be either IDs or full objects
 }
 
 export interface CartItem extends MenuItem {
@@ -25,6 +25,8 @@ export interface SelectedVariationGroup {
 export interface SelectedVariation {
   variationId: string;
   quantity: number;
+  name?: string; // Added for displaying in cart
+  additionalPrice?: number; // Added for price calculation
 }
 
 export interface Category {

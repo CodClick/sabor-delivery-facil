@@ -1,4 +1,3 @@
-
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
@@ -6,6 +5,7 @@ import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 const MENU_COLLECTION = "menu";
 const CATEGORIES_COLLECTION = "categories";
 const VARIATIONS_COLLECTION = "variations";
+const VARIATION_GROUPS_COLLECTION = "variation_groups";
 
 // Obter todos os itens do menu
 export const getAllMenuItems = async (): Promise<MenuItem[]> => {
@@ -170,5 +170,111 @@ export const deleteVariation = async (variationId: string): Promise<void> => {
   } catch (error) {
     console.error("Erro ao excluir variação:", error);
     throw error;
+  }
+};
+
+// NOVO - Métodos para gerenciar grupos de variações
+// Obter todos os grupos de variações
+export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
+  try {
+    const groupsCollection = collection(db, VARIATION_GROUPS_COLLECTION);
+    const groupsSnapshot = await getDocs(groupsCollection);
+    return groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VariationGroup));
+  } catch (error) {
+    console.error("Erro ao obter grupos de variações:", error);
+    // Return empty array as fallback for now
+    return [];
+  }
+};
+
+// Obter um grupo de variação específico pelo ID
+export const getVariationGroupById = async (groupId: string): Promise<VariationGroup | null> => {
+  try {
+    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, groupId);
+    const groupSnapshot = await getDoc(groupRef);
+    
+    if (groupSnapshot.exists()) {
+      return { id: groupSnapshot.id, ...groupSnapshot.data() } as VariationGroup;
+    }
+    return null;
+  } catch (error) {
+    console.error("Erro ao obter grupo de variação:", error);
+    return null;
+  }
+};
+
+// Adicionar um novo grupo de variação
+export const saveVariationGroup = async (group: VariationGroup): Promise<void> => {
+  try {
+    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, group.id);
+    await setDoc(groupRef, group);
+  } catch (error) {
+    console.error("Erro ao salvar grupo de variação:", error);
+    throw error;
+  }
+};
+
+// Atualizar um grupo de variação existente
+export const updateVariationGroup = async (group: VariationGroup): Promise<void> => {
+  try {
+    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, group.id);
+    await setDoc(groupRef, group);
+  } catch (error) {
+    console.error("Erro ao atualizar grupo de variação:", error);
+    throw error;
+  }
+};
+
+// Excluir um grupo de variação
+export const deleteVariationGroup = async (groupId: string): Promise<void> => {
+  try {
+    // TODO: Consider checking if this group is used by any menu items before deleting
+    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, groupId);
+    await deleteDoc(groupRef);
+  } catch (error) {
+    console.error("Erro ao excluir grupo de variação:", error);
+    throw error;
+  }
+};
+
+// Modificar o item selection dialog para associar grupos de variações nos itens do menu
+export const getVariationsForGroup = async (groupId: string): Promise<Variation[]> => {
+  try {
+    const group = await getVariationGroupById(groupId);
+    if (!group) return [];
+    
+    const allVariations = await getAllVariations();
+    return allVariations.filter(variation => 
+      variation.available && group.variations.includes(variation.id)
+    );
+  } catch (error) {
+    console.error("Erro ao obter variações para grupo:", error);
+    return [];
+  }
+};
+
+// Utility function to get all variations that can be used in a menu item based on its assigned variation groups
+export const getAvailableVariationsForMenuItem = async (menuItem: MenuItem): Promise<{[groupId: string]: Variation[]}> => {
+  if (!menuItem.variationGroups || menuItem.variationGroups.length === 0) {
+    return {};
+  }
+
+  try {
+    const result: {[groupId: string]: Variation[]} = {};
+    const allVariations = await getAllVariations();
+    
+    for (const groupId of menuItem.variationGroups.map(g => g.id)) {
+      const group = await getVariationGroupById(groupId);
+      if (group) {
+        result[groupId] = allVariations.filter(
+          v => v.available && group.variations.includes(v.id)
+        );
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Erro ao obter variações para item do menu:", error);
+    return {};
   }
 };

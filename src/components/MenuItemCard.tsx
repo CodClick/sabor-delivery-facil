@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import ProductVariationDialog from "./ProductVariationDialog";
-import { getAllVariations } from "@/services/menuService";
+import { getAllVariations, getVariationGroupById } from "@/services/menuService";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -16,21 +16,48 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   const { addToCart, addItem } = useCart();
   const [isVariationDialogOpen, setIsVariationDialogOpen] = useState(false);
   const [availableVariations, setAvailableVariations] = useState<Variation[]>([]);
+  const [groups, setGroups] = useState<{[groupId: string]: Variation[]}>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Load variations when the component mounts
     const loadVariations = async () => {
       try {
+        setLoading(true);
+        
+        // Get all variations for filtering
         const variations = await getAllVariations();
         setAvailableVariations(variations);
+        
+        // If the item has variation groups, fetch the variations for each group
+        if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
+          const groupVariations: {[groupId: string]: Variation[]} = {};
+          
+          for (const group of item.variationGroups) {
+            // Get full group data
+            const fullGroup = await getVariationGroupById(group.id);
+            if (fullGroup) {
+              // Filter variations that are available and in this group
+              groupVariations[group.id] = variations.filter(
+                variation => variation.available && 
+                fullGroup.variations.includes(variation.id) &&
+                variation.categoryIds.includes(item.category)
+              );
+            }
+          }
+          
+          setGroups(groupVariations);
+        }
       } catch (error) {
         console.error("Error loading variations:", error);
         setAvailableVariations([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadVariations();
-  }, []);
+  }, [item]);
 
   const handleButtonClick = () => {
     if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
@@ -40,29 +67,13 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
     }
   };
 
-  const getAvailableVariationsForItem = (item: MenuItem): Variation[] => {
-    if (!item.variationGroups) {
-      return [];
-    }
-    
-    // Get all variation IDs used in any group
-    const allVariationIds = item.variationGroups.flatMap(group => group.variations);
-    
-    // Filter variations available for this item
-    return availableVariations.filter(
-      variation => 
-        variation.available && 
-        variation.categoryIds.includes(item.category) &&
-        allVariationIds.includes(variation.id)
-    );
-  };
-
   const handleAddItemWithVariations = (
     item: MenuItem, 
     selectedVariationGroups: SelectedVariationGroup[]
   ) => {
     addItem({
       ...item,
+      quantity: 1,
       selectedVariations: selectedVariationGroups
     });
   };
@@ -93,6 +104,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
             onClick={handleButtonClick}
             className="add-to-cart-btn"
             size="sm"
+            disabled={loading || (item.hasVariations && Object.keys(groups).length === 0)}
           >
             <PlusCircle className="mr-1 h-4 w-4" />
             Adicionar
@@ -105,7 +117,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
         isOpen={isVariationDialogOpen}
         onClose={() => setIsVariationDialogOpen(false)}
         onAddToCart={handleAddItemWithVariations}
-        availableVariations={getAvailableVariationsForItem(item)}
+        availableVariations={availableVariations}
+        groupVariations={groups}
       />
     </>
   );

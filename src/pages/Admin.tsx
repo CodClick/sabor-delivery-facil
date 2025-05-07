@@ -1,7 +1,3 @@
-
-// This file is too long to include in full
-// I'll create a separate component for managing variation groups in a menu item
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,7 +11,11 @@ import {
   deleteCategory,
   getAllVariations,
   saveVariation,
-  deleteVariation
+  deleteVariation,
+  getAllVariationGroups,
+  saveVariationGroup,
+  deleteVariationGroup,
+  updateVariationGroup
 } from "@/services/menuService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -37,14 +37,16 @@ const Admin = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [variations, setVariations] = useState<Variation[]>([]);
+  const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([]);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [editVariation, setEditVariation] = useState<Variation | null>(null);
+  const [editVariationGroup, setEditVariationGroup] = useState<VariationGroup | null>(null);
   const [newCategory, setNewCategory] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("menu");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   
-  // New state for managing variation groups
+  // Temp state for managing variation groups in menu items
   const [tempVariationGroup, setTempVariationGroup] = useState<VariationGroup | null>(null);
 
   useEffect(() => {
@@ -59,14 +61,16 @@ const Admin = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [items, cats, vars] = await Promise.all([
+      const [items, cats, vars, groups] = await Promise.all([
         getAllMenuItems(),
         getAllCategories(),
-        getAllVariations()
+        getAllVariations(),
+        getAllVariationGroups()
       ]);
       setMenuItems(items);
       setCategories(cats);
       setVariations(vars);
+      setVariationGroups(groups);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast({
@@ -365,10 +369,45 @@ const Admin = () => {
     });
   };
 
-  const handleSaveVariationGroup = () => {
-    if (!editItem || !tempVariationGroup) return;
+  const handleAddNewVariationGroup = () => {
+    setEditVariationGroup({
+      id: uuidv4(),
+      name: "",
+      minRequired: 1,
+      maxAllowed: 1,
+      variations: [],
+      customMessage: ""
+    });
+  };
+
+  const handleEditExistingVariationGroup = (group: VariationGroup) => {
+    setEditVariationGroup({...group});
+  };
+
+  const handleDeleteExistingVariationGroup = async (groupId: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este grupo de variação? Isso pode afetar itens do menu que o utilizam.")) {
+      try {
+        await deleteVariationGroup(groupId);
+        setVariationGroups(prev => prev.filter(g => g.id !== groupId));
+        toast({
+          title: "Sucesso",
+          description: "Grupo de variação excluído com sucesso",
+        });
+      } catch (error) {
+        console.error("Erro ao excluir grupo de variação:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível excluir o grupo de variação. Verifique se ele está sendo usado em algum item do menu.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSaveVariationGroup = async () => {
+    if (!editVariationGroup) return;
     
-    if (!tempVariationGroup.name) {
+    if (!editVariationGroup.name) {
       toast({
         title: "Campo obrigatório",
         description: "O nome do grupo de variação é obrigatório",
@@ -377,7 +416,7 @@ const Admin = () => {
       return;
     }
 
-    if (tempVariationGroup.variations.length === 0) {
+    if (editVariationGroup.variations.length === 0) {
       toast({
         title: "Variações obrigatórias",
         description: "Selecione pelo menos uma variação para o grupo",
@@ -386,7 +425,7 @@ const Admin = () => {
       return;
     }
 
-    if (tempVariationGroup.minRequired > tempVariationGroup.maxAllowed) {
+    if (editVariationGroup.minRequired > editVariationGroup.maxAllowed) {
       toast({
         title: "Valores inválidos",
         description: "O mínimo obrigatório não pode ser maior que o máximo permitido",
@@ -395,40 +434,35 @@ const Admin = () => {
       return;
     }
 
-    // Check if we're editing an existing group or adding a new one
-    const existingGroupIndex = editItem.variationGroups?.findIndex(g => g.id === tempVariationGroup.id);
-    
-    const updatedGroups = existingGroupIndex !== undefined && existingGroupIndex >= 0
-      ? [
-          ...(editItem.variationGroups?.slice(0, existingGroupIndex) || []),
-          tempVariationGroup,
-          ...(editItem.variationGroups?.slice(existingGroupIndex + 1) || [])
-        ]
-      : [...(editItem.variationGroups || []), tempVariationGroup];
-    
-    setEditItem({
-      ...editItem,
-      variationGroups: updatedGroups,
-      hasVariations: true
-    });
+    try {
+      // Check if we're creating a new group or updating an existing one
+      const isNew = !variationGroups.some(g => g.id === editVariationGroup.id);
+      
+      if (isNew) {
+        await saveVariationGroup(editVariationGroup);
+        setVariationGroups([...variationGroups, editVariationGroup]);
+      } else {
+        await updateVariationGroup(editVariationGroup);
+        setVariationGroups(variationGroups.map(g => 
+          g.id === editVariationGroup.id ? editVariationGroup : g
+        ));
+      }
 
-    setTempVariationGroup(null);
-  };
-
-  const handleEditVariationGroup = (group: VariationGroup) => {
-    setTempVariationGroup({...group});
-  };
-
-  const handleDeleteVariationGroup = (groupId: string) => {
-    if (!editItem || !editItem.variationGroups) return;
-
-    const updatedGroups = editItem.variationGroups.filter(g => g.id !== groupId);
-
-    setEditItem({
-      ...editItem,
-      variationGroups: updatedGroups,
-      hasVariations: updatedGroups.length > 0
-    });
+      setEditVariationGroup(null);
+      toast({
+        title: "Sucesso",
+        description: isNew
+          ? "Grupo de variação criado com sucesso"
+          : "Grupo de variação atualizado com sucesso",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar grupo de variação:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o grupo de variação. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleVariationCheckboxChange = (variationId: string) => {
@@ -440,6 +474,19 @@ const Admin = () => {
     
     setTempVariationGroup({
       ...tempVariationGroup,
+      variations: updatedVariations
+    });
+  };
+
+  const handleVariationCheckboxChangeForGroup = (variationId: string) => {
+    if (!editVariationGroup) return;
+    
+    const updatedVariations = editVariationGroup.variations.includes(variationId)
+      ? editVariationGroup.variations.filter(id => id !== variationId)
+      : [...editVariationGroup.variations, variationId];
+    
+    setEditVariationGroup({
+      ...editVariationGroup,
       variations: updatedVariations
     });
   };
@@ -494,6 +541,7 @@ const Admin = () => {
           <TabsTrigger value="menu" className="flex-1">Itens do Menu</TabsTrigger>
           <TabsTrigger value="categories" className="flex-1">Categorias</TabsTrigger>
           <TabsTrigger value="variations" className="flex-1">Variações</TabsTrigger>
+          <TabsTrigger value="groups" className="flex-1">Grupos de Variações</TabsTrigger>
         </TabsList>
 
         {/* Menu Items Tab Content */}
@@ -725,6 +773,75 @@ const Admin = () => {
                 )}
               </TableBody>
             </Table>
+          )}
+        </TabsContent>
+
+        {/* New Variation Groups Tab Content */}
+        <TabsContent value="groups">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Grupos de Variações</h2>
+            <Button onClick={handleAddNewVariationGroup}>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo Grupo
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">Carregando...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {variationGroups.map((group) => (
+                <Card key={group.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="w-full">
+                        <h3 className="font-bold text-lg">{group.name}</h3>
+                        {group.customMessage && (
+                          <p className="text-sm text-gray-600 mt-1 italic">
+                            "{group.customMessage}"
+                          </p>
+                        )}
+                        <div className="mt-2">
+                          <span className="text-sm bg-gray-100 rounded px-2 py-1 mr-2">
+                            Min: {group.minRequired}
+                          </span>
+                          <span className="text-sm bg-gray-100 rounded px-2 py-1">
+                            Max: {group.maxAllowed}
+                          </span>
+                        </div>
+                        <div className="mt-3">
+                          <p className="text-sm font-semibold mb-1">Variações:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {group.variations.map(varId => {
+                              const variation = variations.find(v => v.id === varId);
+                              return variation ? (
+                                <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs mb-1">
+                                  {variation.name}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => handleEditExistingVariationGroup(group)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteExistingVariationGroup(group.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {variationGroups.length === 0 && (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  Nenhum grupo de variação encontrado. Adicione grupos para organizar suas variações.
+                </div>
+              )}
+            </div>
           )}
         </TabsContent>
       </Tabs>
@@ -1111,6 +1228,148 @@ const Admin = () => {
                       !tempVariationGroup.name || 
                       tempVariationGroup.variations.length === 0 || 
                       tempVariationGroup.minRequired > tempVariationGroup.maxAllowed
+                    }
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Salvar Grupo
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Variation Group Dialog */}
+      {editVariationGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>
+                {variationGroups.find(g => g.id === editVariationGroup.id) 
+                  ? "Editar Grupo de Variação" 
+                  : "Novo Grupo de Variação"
+                }
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setEditVariationGroup(null)}
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="group-name">Nome do Grupo</Label>
+                  <Input 
+                    id="group-name"
+                    value={editVariationGroup.name} 
+                    onChange={(e) => setEditVariationGroup({...editVariationGroup, name: e.target.value})}
+                    placeholder="Ex: Recheios, Molhos, Acompanhamentos"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+                    <Input 
+                      id="min-required"
+                      type="number" 
+                      min="0"
+                      value={editVariationGroup.minRequired} 
+                      onChange={(e) => setEditVariationGroup({
+                        ...editVariationGroup, 
+                        minRequired: parseInt(e.target.value, 10) || 0
+                      })}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="max-allowed">Máximo Permitido</Label>
+                    <Input 
+                      id="max-allowed"
+                      type="number"
+                      min="1"
+                      value={editVariationGroup.maxAllowed} 
+                      onChange={(e) => setEditVariationGroup({
+                        ...editVariationGroup, 
+                        maxAllowed: parseInt(e.target.value, 10) || 1
+                      })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
+                  <Input 
+                    id="custom-message"
+                    value={editVariationGroup.customMessage || ''} 
+                    onChange={(e) => setEditVariationGroup({
+                      ...editVariationGroup, 
+                      customMessage: e.target.value
+                    })}
+                    placeholder="Ex: Escolha {min} sabores de recheio ({count}/{min} selecionados)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Use {'{min}'} para o mínimo necessário, {'{max}'} para o máximo permitido, e {'{count}'} para mostrar quantos foram selecionados.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="block mb-2">Variações Disponíveis</Label>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Selecione as variações que estarão disponíveis neste grupo.
+                  </p>
+                  
+                  {variations.length === 0 ? (
+                    <div className="text-center py-4 text-amber-500 border border-amber-300 rounded-md bg-amber-50">
+                      Não há variações disponíveis.
+                      <br />
+                      <span className="text-sm">
+                        Adicione variações na aba "Variações" primeiro.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {variations
+                        .filter(v => v.available)
+                        .map(variation => (
+                          <div key={variation.id} className="flex items-center gap-2 p-2 border rounded">
+                            <input 
+                              type="checkbox"
+                              id={`variation-${variation.id}`}
+                              checked={editVariationGroup.variations.includes(variation.id)}
+                              onChange={() => handleVariationCheckboxChangeForGroup(variation.id)}
+                            />
+                            <Label htmlFor={`variation-${variation.id}`} className="flex-1">
+                              <span className="font-medium">{variation.name}</span>
+                              {variation.additionalPrice ? (
+                                <span className="text-xs text-gray-500 block">
+                                  +R$ {variation.additionalPrice.toFixed(2)}
+                                </span>
+                              ) : null}
+                            </Label>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setEditVariationGroup(null)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleSaveVariationGroup}
+                    disabled={
+                      !editVariationGroup.name || 
+                      editVariationGroup.variations.length === 0 || 
+                      editVariationGroup.minRequired > editVariationGroup.maxAllowed
                     }
                   >
                     <Save className="h-4 w-4 mr-1" />
