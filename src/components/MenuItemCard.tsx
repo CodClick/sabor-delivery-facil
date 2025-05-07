@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { MenuItem, Variation } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariationGroup } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -33,7 +33,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   }, []);
 
   const handleButtonClick = () => {
-    if (item.hasVariations) {
+    if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
       setIsVariationDialogOpen(true);
     } else {
       addToCart(item);
@@ -41,26 +41,29 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   };
 
   const getAvailableVariationsForItem = (item: MenuItem): Variation[] => {
-    if (!item.variations || item.variations.length === 0) {
+    if (!item.variationGroups) {
       return [];
     }
     
-    // Filter variations available for this item based on both category and the item's variations array
+    // Get all variation IDs used in any group
+    const allVariationIds = item.variationGroups.flatMap(group => group.variations);
+    
+    // Filter variations available for this item
     return availableVariations.filter(
       variation => 
         variation.available && 
         variation.categoryIds.includes(item.category) &&
-        item.variations?.includes(variation.id)
+        allVariationIds.includes(variation.id)
     );
   };
 
   const handleAddItemWithVariations = (
     item: MenuItem, 
-    selectedVariations: Array<{variationId: string; quantity: number}>
+    selectedVariationGroups: SelectedVariationGroup[]
   ) => {
     addItem({
       ...item,
-      selectedVariations
+      selectedVariations: selectedVariationGroups
     });
   };
 

@@ -9,6 +9,91 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      autom_horario: {
+        Row: {
+          horario_ativo: boolean | null
+          horario_extra: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          horario_ativo?: boolean | null
+          horario_extra?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          horario_ativo?: boolean | null
+          horario_extra?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autom_horario_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "autom_user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      autom_promocoes: {
+        Row: {
+          id: string
+          promocao_ativa: boolean | null
+          regras_promocao: string | null
+          texto_promocao: string | null
+          user_id: string | null
+          validade_promocao: string | null
+        }
+        Insert: {
+          id?: string
+          promocao_ativa?: boolean | null
+          regras_promocao?: string | null
+          texto_promocao?: string | null
+          user_id?: string | null
+          validade_promocao?: string | null
+        }
+        Update: {
+          id?: string
+          promocao_ativa?: boolean | null
+          regras_promocao?: string | null
+          texto_promocao?: string | null
+          user_id?: string | null
+          validade_promocao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autom_promocoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "autom_user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      autom_user: {
+        Row: {
+          email: string
+          id: string
+          nome: string
+          whatsapp: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          nome: string
+          whatsapp: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          nome?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       faixas_ceps_atendidos: {
         Row: {
           cep_fim: string
@@ -36,26 +121,26 @@ export type Database = {
       horario_funcionamento: {
         Row: {
           created_at: string
+          horario_ativo: string
           horario_extra: string | null
           id: string
-          promocao_ativa: string
-          regras_da_promocao: string | null
+          mais_detalhes: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          horario_ativo: string
           horario_extra?: string | null
           id?: string
-          promocao_ativa: string
-          regras_da_promocao?: string | null
+          mais_detalhes?: string | null
           user_id?: string
         }
         Update: {
           created_at?: string
+          horario_ativo?: string
           horario_extra?: string | null
           id?: string
-          promocao_ativa?: string
-          regras_da_promocao?: string | null
+          mais_detalhes?: string | null
           user_id?: string
         }
         Relationships: []

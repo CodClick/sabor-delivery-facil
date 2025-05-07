@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MenuItem, Variation, SelectedVariation } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, VariationGroup } from "@/types/menu";
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Minus } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface ProductVariationDialogProps {
   item: MenuItem;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, selectedVariations: SelectedVariation[]) => void;
+  onAddToCart: (item: MenuItem, selectedVariationGroups: SelectedVariationGroup[]) => void;
   availableVariations: Variation[];
 }
 
@@ -21,76 +22,158 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   onAddToCart,
   availableVariations,
 }) => {
-  const [selectedVariations, setSelectedVariations] = useState<SelectedVariation[]>([]);
-  const [totalSelectedCount, setTotalSelectedCount] = useState(0);
-  const maxAllowed = item.maxVariationCount || 0;
+  const [selectedVariationGroups, setSelectedVariationGroups] = useState<SelectedVariationGroup[]>([]);
+  const [isValid, setIsValid] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isOpen) {
-      // Inicializar com quantidade 0 para cada variação disponível
-      const initialVariations = availableVariations.map(variation => ({
-        variationId: variation.id,
-        quantity: 0,
-      }));
-      setSelectedVariations(initialVariations);
-      setTotalSelectedCount(0);
-    }
-  }, [isOpen, availableVariations]);
+    if (isOpen && item.variationGroups) {
+      // Initialize selected variations for each group
+      const initialGroups = item.variationGroups.map(group => {
+        // Get available variations for this group
+        const groupVariations = availableVariations
+          .filter(variation => group.variations.includes(variation.id))
+          .map(variation => ({
+            variationId: variation.id,
+            quantity: 0
+          }));
 
-  const increaseVariation = (variationId: string) => {
-    if (totalSelectedCount >= maxAllowed) return;
-    
-    setSelectedVariations(prev => 
-      prev.map(variation => 
-        variation.variationId === variationId 
-          ? { ...variation, quantity: variation.quantity + 1 } 
-          : variation
-      )
+        return {
+          groupId: group.id,
+          groupName: group.name,
+          variations: groupVariations
+        };
+      });
+
+      setSelectedVariationGroups(initialGroups);
+    }
+  }, [isOpen, item.variationGroups, availableVariations]);
+
+  // Validate selections whenever they change
+  useEffect(() => {
+    if (!item.variationGroups || selectedVariationGroups.length === 0) {
+      setIsValid(false);
+      return;
+    }
+
+    // Check if all required groups have the correct number of selections
+    const allGroupsValid = item.variationGroups.every(group => {
+      const selectedGroup = selectedVariationGroups.find(sg => sg.groupId === group.id);
+      if (!selectedGroup) return false;
+
+      const totalSelected = selectedGroup.variations.reduce((sum, v) => sum + v.quantity, 0);
+      return totalSelected >= group.minRequired && totalSelected <= group.maxAllowed;
+    });
+
+    setIsValid(allGroupsValid);
+  }, [selectedVariationGroups, item.variationGroups]);
+
+  const increaseVariation = (groupId: string, variationId: string) => {
+    setSelectedVariationGroups(prev => 
+      prev.map(group => {
+        if (group.groupId !== groupId) return group;
+
+        // Find the variation group definition to get max allowed
+        const groupDef = item.variationGroups?.find(g => g.id === groupId);
+        if (!groupDef) return group;
+
+        // Count current selections for this group
+        const currentTotal = group.variations.reduce((sum, v) => sum + v.quantity, 0);
+        
+        // Don't allow increasing if we're already at max
+        if (currentTotal >= groupDef.maxAllowed) return group;
+        
+        // Update the specific variation
+        return {
+          ...group,
+          variations: group.variations.map(variation => 
+            variation.variationId === variationId 
+              ? { ...variation, quantity: variation.quantity + 1 } 
+              : variation
+          )
+        };
+      })
     );
-    setTotalSelectedCount(prev => prev + 1);
   };
 
-  const decreaseVariation = (variationId: string) => {
-    setSelectedVariations(prev => 
-      prev.map(variation => 
-        variation.variationId === variationId && variation.quantity > 0
-          ? { ...variation, quantity: variation.quantity - 1 } 
-          : variation
-      )
+  const decreaseVariation = (groupId: string, variationId: string) => {
+    setSelectedVariationGroups(prev => 
+      prev.map(group => {
+        if (group.groupId !== groupId) return group;
+        
+        return {
+          ...group,
+          variations: group.variations.map(variation => 
+            variation.variationId === variationId && variation.quantity > 0
+              ? { ...variation, quantity: variation.quantity - 1 } 
+              : variation
+          )
+        };
+      })
     );
-
-    // Só diminuímos o total se realmente diminuirmos a quantidade
-    const variation = selectedVariations.find(v => v.variationId === variationId);
-    if (variation && variation.quantity > 0) {
-      setTotalSelectedCount(prev => prev - 1);
-    }
   };
 
   const handleAddToCart = () => {
-    // Filtramos apenas as variações com quantidade > 0
-    const nonZeroVariations = selectedVariations.filter(v => v.quantity > 0);
+    if (!isValid) return;
     
-    // Verificar se o total está de acordo com o esperado
-    if (totalSelectedCount === maxAllowed) {
-      onAddToCart(item, nonZeroVariations);
-      onClose();
-    } else {
-      // Mostrar erro ou alerta aqui se quiser
-      console.log(`Por favor, selecione exatamente ${maxAllowed} itens no total.`);
-    }
+    // Filter out variations with quantity 0
+    const nonZeroGroups = selectedVariationGroups.map(group => ({
+      ...group,
+      variations: group.variations.filter(v => v.quantity > 0)
+    })).filter(group => group.variations.length > 0);
+    
+    onAddToCart(item, nonZeroGroups);
+    onClose();
   };
 
   const getVariationDetails = (variationId: string) => {
     return availableVariations.find(v => v.id === variationId);
   };
 
-  // Default message if no custom message is provided
-  const getVariationMessage = () => {
-    if (item.variationMessage) {
-      return item.variationMessage.replace('{count}', maxAllowed.toString());
-    }
-    return `Selecione ${maxAllowed} opções de recheio (${totalSelectedCount}/${maxAllowed} selecionados)`;
+  const getGroupSelectionStatus = (groupId: string) => {
+    const groupDef = item.variationGroups?.find(g => g.id === groupId);
+    if (!groupDef) return { total: 0, min: 0, max: 0, isValid: false };
+
+    const selectedGroup = selectedVariationGroups.find(sg => sg.groupId === groupId);
+    if (!selectedGroup) return { total: 0, min: groupDef.minRequired, max: groupDef.maxAllowed, isValid: false };
+
+    const totalSelected = selectedGroup.variations.reduce((sum, v) => sum + v.quantity, 0);
+    const isValid = totalSelected >= groupDef.minRequired && totalSelected <= groupDef.maxAllowed;
+
+    return {
+      total: totalSelected,
+      min: groupDef.minRequired,
+      max: groupDef.maxAllowed,
+      isValid
+    };
   };
+
+  // Generate message for a variation group
+  const getVariationGroupMessage = (groupId: string) => {
+    const groupDef = item.variationGroups?.find(g => g.id === groupId);
+    if (!groupDef) return "";
+
+    const { total, min, max } = getGroupSelectionStatus(groupId);
+
+    if (groupDef.customMessage) {
+      let message = groupDef.customMessage;
+      message = message.replace('{min}', min.toString());
+      message = message.replace('{max}', max.toString());
+      message = message.replace('{count}', total.toString());
+      return message;
+    }
+
+    if (min === max) {
+      return `Selecione exatamente ${min} ${groupDef.name.toLowerCase()} (${total}/${min} selecionados)`;
+    } else if (min > 0) {
+      return `Selecione de ${min} a ${max} ${groupDef.name.toLowerCase()} (${total} selecionados)`;
+    } else {
+      return `Selecione até ${max} ${groupDef.name.toLowerCase()} (opcional) (${total} selecionados)`;
+    }
+  };
+
+  if (!item.variationGroups || item.variationGroups.length === 0) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -105,51 +188,76 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
           </div>
           
-          <div className="space-y-4 mt-6">
-            <p className="text-sm text-gray-500">
-              {getVariationMessage()}
-            </p>
+          {item.variationGroups.map((group, groupIndex) => {
+            const groupStatus = getGroupSelectionStatus(group.id);
             
-            {selectedVariations.map((variation) => {
-              const variationDetails = getVariationDetails(variation.variationId);
-              return variationDetails ? (
-                <div key={variation.variationId} className="flex items-center justify-between py-2 border-b">
-                  <div>
-                    <p className="font-medium">{variationDetails.name}</p>
-                    {variationDetails.additionalPrice ? (
-                      <p className="text-sm text-gray-500">
-                        +{formatCurrency(variationDetails.additionalPrice)}
-                      </p>
-                    ) : null}
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-8 w-8 p-0" 
-                      onClick={() => decreaseVariation(variation.variationId)}
-                      disabled={variation.quantity <= 0}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    
-                    <span className="w-6 text-center">{variation.quantity}</span>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-8 w-8 p-0" 
-                      onClick={() => increaseVariation(variation.variationId)}
-                      disabled={totalSelectedCount >= maxAllowed}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+            return (
+              <div key={group.id} className="mt-6">
+                {groupIndex > 0 && <Separator className="my-4" />}
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold">{group.name}</h3>
+                  <span className={`text-sm px-2 py-1 rounded ${
+                    groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {groupStatus.total} / {groupStatus.min === groupStatus.max ? 
+                      `${groupStatus.min} necessários` : 
+                      `${groupStatus.min}-${groupStatus.max} permitidos`
+                    }
+                  </span>
                 </div>
-              ) : null;
-            })}
-          </div>
+                
+                <p className="text-sm text-gray-500 mb-4">
+                  {getVariationGroupMessage(group.id)}
+                </p>
+                
+                <div className="space-y-2">
+                  {selectedVariationGroups
+                    .find(sg => sg.groupId === group.id)?.variations
+                    .map(variation => {
+                      const variationDetails = getVariationDetails(variation.variationId);
+                      if (!variationDetails) return null;
+                      
+                      return (
+                        <div key={variation.variationId} className="flex items-center justify-between py-2 border-b">
+                          <div>
+                            <p className="font-medium">{variationDetails.name}</p>
+                            {variationDetails.additionalPrice ? (
+                              <p className="text-sm text-gray-500">
+                                +{formatCurrency(variationDetails.additionalPrice)}
+                              </p>
+                            ) : null}
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0" 
+                              onClick={() => decreaseVariation(group.id, variation.variationId)}
+                              disabled={variation.quantity <= 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            
+                            <span className="w-6 text-center">{variation.quantity}</span>
+                            
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0" 
+                              onClick={() => increaseVariation(group.id, variation.variationId)}
+                              disabled={groupStatus.total >= groupStatus.max}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            );
+          })}
           
           <div className="mt-6 flex justify-between">
             <Button variant="outline" onClick={onClose}>
@@ -157,7 +265,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
             </Button>
             <Button 
               onClick={handleAddToCart} 
-              disabled={totalSelectedCount !== maxAllowed}
+              disabled={!isValid}
               className="bg-food-green hover:bg-opacity-90"
             >
               Adicionar ao carrinho

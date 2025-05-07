@@ -1,5 +1,6 @@
 
-import { MenuItem, Category, Variation } from "@/types/menu";
+import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
+import { v4 as uuidv4 } from 'uuid';
 
 export const categories: Category[] = [
   { id: "entradas", name: "Entradas", order: 1 },
@@ -19,6 +20,25 @@ export const variations: Variation[] = [
   { id: "var5", name: "Burrito de Carne", available: true, categoryIds: ["burritos", "combos"] },
   { id: "var6", name: "Burrito de Queijo", available: true, categoryIds: ["burritos", "combos"] },
 ];
+
+// Create sample variation groups
+const recheioGroup: VariationGroup = {
+  id: uuidv4(),
+  name: "Recheios",
+  minRequired: 3,
+  maxAllowed: 3,
+  variations: ["var1", "var2", "var3", "var4"],
+  customMessage: "Escolha {min} tipos de recheio ({count}/{min} selecionados)"
+};
+
+const burritoGroup: VariationGroup = {
+  id: uuidv4(),
+  name: "Sabores",
+  minRequired: 2,
+  maxAllowed: 2,
+  variations: ["var5", "var6"],
+  customMessage: "Escolha {min} sabores de burrito ({count}/{min} selecionados)"
+};
 
 export const menuItems: MenuItem[] = [
   {
@@ -71,8 +91,7 @@ export const menuItems: MenuItem[] = [
     image: "/images/trio-mex.png",
     category: "tacos",
     hasVariations: true,
-    variations: ["var1", "var2", "var3", "var4"],
-    maxVariationCount: 3
+    variationGroups: [recheioGroup]
   },
   {
     id: "7",
@@ -91,8 +110,7 @@ export const menuItems: MenuItem[] = [
     image: "/images/burrito.jpg",
     category: "burritos",
     hasVariations: true,
-    variations: ["var5", "var6"],
-    maxVariationCount: 2
+    variationGroups: [burritoGroup]
   },
   {
     id: "9",
@@ -138,13 +156,16 @@ export const getPopularItems = (): MenuItem[] => {
 };
 
 export const getVariationsForItem = (item: MenuItem): Variation[] => {
-  if (!item.variations || item.variations.length === 0) {
+  if (!item.variationGroups) {
     return [];
   }
+  
+  // Get all variation IDs from all groups
+  const variationIds = item.variationGroups.flatMap(group => group.variations);
   
   return variations.filter(
     variation => 
       variation.available && 
-      item.variations?.includes(variation.id)
+      variationIds.includes(variation.id)
   );
 };

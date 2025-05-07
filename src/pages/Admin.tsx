@@ -1,3 +1,7 @@
+
+// This file is too long to include in full
+// I'll create a separate component for managing variation groups in a menu item
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,17 +17,18 @@ import {
   saveVariation,
   deleteVariation
 } from "@/services/menuService";
-import { MenuItem, Category, Variation } from "@/types/menu";
+import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Plus, Edit, Save } from "lucide-react";
+import { Trash2, Plus, Edit, Save, XCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from 'uuid';
+import { Separator } from "@/components/ui/separator";
 
 const Admin = () => {
   const { currentUser } = useAuth();
@@ -38,6 +43,9 @@ const Admin = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("menu");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  
+  // New state for managing variation groups
+  const [tempVariationGroup, setTempVariationGroup] = useState<VariationGroup | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -80,13 +88,21 @@ const Admin = () => {
       price: 0,
       image: "/placeholder.svg",
       category: categories.length > 0 ? categories[0].id : "",
-      popular: false
+      popular: false,
+      hasVariations: false,
+      variationGroups: []
     };
     setEditItem(newItem);
   };
 
   const handleEditItem = (item: MenuItem) => {
-    setEditItem({...item});
+    // Make sure variationGroups is initialized
+    const itemToEdit = {
+      ...item,
+      hasVariations: !!item.variationGroups?.length,
+      variationGroups: item.variationGroups || []
+    };
+    setEditItem(itemToEdit);
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -121,15 +137,35 @@ const Admin = () => {
       return;
     }
 
+    // If item has variations, ensure all variation groups have required fields
+    if (editItem.hasVariations && editItem.variationGroups) {
+      for (const group of editItem.variationGroups) {
+        if (!group.name || group.variations.length === 0) {
+          toast({
+            title: "Grupos de variação incompletos",
+            description: "Todos os grupos de variação devem ter nome e pelo menos uma variação selecionada",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     try {
-      await saveMenuItem(editItem);
+      // Update hasVariations based on whether there are any variation groups
+      const itemToSave = {
+        ...editItem,
+        hasVariations: !!(editItem.variationGroups && editItem.variationGroups.length > 0)
+      };
+
+      await saveMenuItem(itemToSave);
       
       setMenuItems(prev => {
         const exists = prev.find(item => item.id === editItem.id);
         if (exists) {
-          return prev.map(item => item.id === editItem.id ? editItem : item);
+          return prev.map(item => item.id === editItem.id ? itemToSave : item);
         } else {
-          return [...prev, editItem];
+          return [...prev, itemToSave];
         }
       });
       
@@ -315,6 +351,99 @@ const Admin = () => {
     });
   };
 
+  // Variation Group methods
+  const handleAddVariationGroup = () => {
+    if (!editItem) return;
+    
+    setTempVariationGroup({
+      id: uuidv4(),
+      name: "",
+      minRequired: 1,
+      maxAllowed: 1,
+      variations: [],
+      customMessage: ""
+    });
+  };
+
+  const handleSaveVariationGroup = () => {
+    if (!editItem || !tempVariationGroup) return;
+    
+    if (!tempVariationGroup.name) {
+      toast({
+        title: "Campo obrigatório",
+        description: "O nome do grupo de variação é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (tempVariationGroup.variations.length === 0) {
+      toast({
+        title: "Variações obrigatórias",
+        description: "Selecione pelo menos uma variação para o grupo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (tempVariationGroup.minRequired > tempVariationGroup.maxAllowed) {
+      toast({
+        title: "Valores inválidos",
+        description: "O mínimo obrigatório não pode ser maior que o máximo permitido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if we're editing an existing group or adding a new one
+    const existingGroupIndex = editItem.variationGroups?.findIndex(g => g.id === tempVariationGroup.id);
+    
+    const updatedGroups = existingGroupIndex !== undefined && existingGroupIndex >= 0
+      ? [
+          ...(editItem.variationGroups?.slice(0, existingGroupIndex) || []),
+          tempVariationGroup,
+          ...(editItem.variationGroups?.slice(existingGroupIndex + 1) || [])
+        ]
+      : [...(editItem.variationGroups || []), tempVariationGroup];
+    
+    setEditItem({
+      ...editItem,
+      variationGroups: updatedGroups,
+      hasVariations: true
+    });
+
+    setTempVariationGroup(null);
+  };
+
+  const handleEditVariationGroup = (group: VariationGroup) => {
+    setTempVariationGroup({...group});
+  };
+
+  const handleDeleteVariationGroup = (groupId: string) => {
+    if (!editItem || !editItem.variationGroups) return;
+
+    const updatedGroups = editItem.variationGroups.filter(g => g.id !== groupId);
+
+    setEditItem({
+      ...editItem,
+      variationGroups: updatedGroups,
+      hasVariations: updatedGroups.length > 0
+    });
+  };
+
+  const handleVariationCheckboxChange = (variationId: string) => {
+    if (!tempVariationGroup) return;
+    
+    const updatedVariations = tempVariationGroup.variations.includes(variationId)
+      ? tempVariationGroup.variations.filter(id => id !== variationId)
+      : [...tempVariationGroup.variations, variationId];
+    
+    setTempVariationGroup({
+      ...tempVariationGroup,
+      variations: updatedVariations
+    });
+  };
+
   // Seed data methods
   const handleSeedData = async () => {
     if (window.confirm("Isso irá importar os dados iniciais do menu. Continuar?")) {
@@ -346,6 +475,11 @@ const Admin = () => {
     }
   };
 
+  const getVariationName = (variationId: string): string => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation ? variation.name : "Variação não encontrada";
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -362,6 +496,7 @@ const Admin = () => {
           <TabsTrigger value="variations" className="flex-1">Variações</TabsTrigger>
         </TabsList>
 
+        {/* Menu Items Tab Content */}
         <TabsContent value="menu">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Itens do Cardápio</h2>
@@ -430,6 +565,7 @@ const Admin = () => {
           )}
         </TabsContent>
 
+        {/* Categories Tab Content */}
         <TabsContent value="categories">
           <Card>
             <CardHeader>
@@ -520,6 +656,7 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
+        {/* Variations Tab Content */}
         <TabsContent value="variations">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Variações / Complementos</h2>
@@ -592,6 +729,7 @@ const Admin = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Edit Item Dialog */}
       {editItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -666,79 +804,83 @@ const Admin = () => {
                   <Label htmlFor="popular">Marcar como popular</Label>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    id="hasVariations"
-                    checked={editItem.hasVariations} 
-                    onChange={(e) => setEditItem({...editItem, hasVariations: e.target.checked})}
-                  />
-                  <Label htmlFor="hasVariations">Possui variações</Label>
-                </div>
-
-                {editItem.hasVariations && (
-                  <>
-                    <div>
-                      <Label htmlFor="maxVariations">Quantidade máxima de variações</Label>
-                      <Input 
-                        id="maxVariations"
-                        type="number" 
-                        min="1"
-                        value={editItem.maxVariationCount || 1} 
-                        onChange={(e) => setEditItem({
-                          ...editItem, 
-                          maxVariationCount: parseInt(e.target.value) || 1
-                        })}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="variationMessage">Mensagem para Variações</Label>
-                      <Input 
-                        id="variationMessage"
-                        value={editItem.variationMessage || ''} 
-                        onChange={(e) => setEditItem({...editItem, variationMessage: e.target.value})}
-                        placeholder="Selecione {count} opções de recheio"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Use {'{count}'} para representar a quantidade máxima. Exemplo: "Selecione {'{count}'} molhos"
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {editItem.hasVariations && (
-                  <div>
-                    <Label>Selecione as variações disponíveis</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {variations
-                        .filter(v => v.available && v.categoryIds.includes(editItem.category))
-                        .map(variation => (
-                          <div key={variation.id} className="flex items-center gap-2">
-                            <input 
-                              type="checkbox"
-                              id={`variation-${variation.id}`}
-                              checked={editItem.variations?.includes(variation.id) || false}
-                              onChange={(e) => {
-                                const currentVariations = editItem.variations || [];
-                                const newVariations = e.target.checked
-                                  ? [...currentVariations, variation.id]
-                                  : currentVariations.filter(id => id !== variation.id);
-                                
-                                setEditItem({...editItem, variations: newVariations});
-                              }}
-                            />
-                            <Label htmlFor={`variation-${variation.id}`}>{variation.name}</Label>
+                {/* Variation Groups Section */}
+                <div className="mt-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold">Grupos de Variações</h3>
+                    <Button 
+                      onClick={handleAddVariationGroup} 
+                      size="sm" 
+                      variant="outline"
+                      className="px-2 py-1"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Adicionar Grupo
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-4 space-y-4">
+                    {editItem.variationGroups && editItem.variationGroups.length > 0 ? (
+                      editItem.variationGroups.map(group => (
+                        <div key={group.id} className="p-4 border rounded-md bg-gray-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-bold">{group.name}</h4>
+                              <p className="text-sm text-gray-600">
+                                {group.minRequired === group.maxAllowed
+                                  ? `Exatamente ${group.minRequired} seleção(ões) necessária(s)`
+                                  : `De ${group.minRequired} até ${group.maxAllowed} seleções`
+                                }
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleEditVariationGroup(group)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleDeleteVariationGroup(group.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
-                        ))}
-                    </div>
-                    {variations.filter(v => v.available && v.categoryIds.includes(editItem.category)).length === 0 && (
-                      <p className="text-sm text-red-500 mt-1">
-                        Não há variações disponíveis para esta categoria. Adicione variações na aba "Variações".
-                      </p>
+                          
+                          <div className="mt-2">
+                            <p className="text-sm font-semibold">Variações:</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {group.variations.map(varId => (
+                                <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
+                                  {getVariationName(varId)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {group.customMessage && (
+                            <div className="mt-2">
+                              <p className="text-sm font-semibold">Mensagem personalizada:</p>
+                              <p className="text-xs text-gray-600">"{group.customMessage}"</p>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 border rounded-md">
+                        Nenhum grupo de variação configurado para este item.
+                        <br />
+                        <span className="text-sm">
+                          Adicione grupos de variação para permitir que os clientes personalizem este item.
+                        </span>
+                      </div>
                     )}
                   </div>
-                )}
+                </div>
                 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setEditItem(null)}>
@@ -755,6 +897,7 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Edit Variation Dialog */}
       {editVariation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -830,6 +973,148 @@ const Admin = () => {
                   <Button onClick={handleSaveVariation}>
                     <Save className="h-4 w-4 mr-1" />
                     Salvar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Variation Group Dialog */}
+      {tempVariationGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>
+                {tempVariationGroup.id && editItem?.variationGroups?.find(g => g.id === tempVariationGroup.id) 
+                  ? "Editar Grupo de Variação" 
+                  : "Novo Grupo de Variação"
+                }
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setTempVariationGroup(null)}
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="group-name">Nome do Grupo</Label>
+                  <Input 
+                    id="group-name"
+                    value={tempVariationGroup.name} 
+                    onChange={(e) => setTempVariationGroup({...tempVariationGroup, name: e.target.value})}
+                    placeholder="Ex: Recheios, Molhos, Acompanhamentos"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+                    <Input 
+                      id="min-required"
+                      type="number" 
+                      min="0"
+                      value={tempVariationGroup.minRequired} 
+                      onChange={(e) => setTempVariationGroup({
+                        ...tempVariationGroup, 
+                        minRequired: parseInt(e.target.value, 10) || 0
+                      })}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="max-allowed">Máximo Permitido</Label>
+                    <Input 
+                      id="max-allowed"
+                      type="number"
+                      min="1"
+                      value={tempVariationGroup.maxAllowed} 
+                      onChange={(e) => setTempVariationGroup({
+                        ...tempVariationGroup, 
+                        maxAllowed: parseInt(e.target.value, 10) || 1
+                      })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
+                  <Input 
+                    id="custom-message"
+                    value={tempVariationGroup.customMessage || ''} 
+                    onChange={(e) => setTempVariationGroup({
+                      ...tempVariationGroup, 
+                      customMessage: e.target.value
+                    })}
+                    placeholder="Ex: Escolha {min} sabores de recheio ({count}/{min} selecionados)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Use {'{min}'} para o mínimo necessário, {'{max}'} para o máximo permitido, e {'{count}'} para mostrar quantos foram selecionados.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="block mb-2">Variações Disponíveis</Label>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Selecione as variações que estarão disponíveis neste grupo.
+                  </p>
+                  
+                  {variations.filter(v => v.available && v.categoryIds.includes(editItem?.category || '')).length === 0 ? (
+                    <div className="text-center py-4 text-amber-500 border border-amber-300 rounded-md bg-amber-50">
+                      Não há variações disponíveis para a categoria deste item.
+                      <br />
+                      <span className="text-sm">
+                        Adicione variações na aba "Variações" e associe-as a esta categoria.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {variations
+                        .filter(v => v.available && v.categoryIds.includes(editItem?.category || ''))
+                        .map(variation => (
+                          <div key={variation.id} className="flex items-center gap-2 p-2 border rounded">
+                            <input 
+                              type="checkbox"
+                              id={`variation-${variation.id}`}
+                              checked={tempVariationGroup.variations.includes(variation.id)}
+                              onChange={() => handleVariationCheckboxChange(variation.id)}
+                            />
+                            <Label htmlFor={`variation-${variation.id}`} className="flex-1">
+                              <span className="font-medium">{variation.name}</span>
+                              {variation.additionalPrice ? (
+                                <span className="text-xs text-gray-500 block">
+                                  +R$ {variation.additionalPrice.toFixed(2)}
+                                </span>
+                              ) : null}
+                            </Label>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setTempVariationGroup(null)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleSaveVariationGroup}
+                    disabled={
+                      !tempVariationGroup.name || 
+                      tempVariationGroup.variations.length === 0 || 
+                      tempVariationGroup.minRequired > tempVariationGroup.maxAllowed
+                    }
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Salvar Grupo
                   </Button>
                 </div>
               </div>

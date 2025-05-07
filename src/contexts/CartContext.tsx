@@ -1,11 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { CartItem, MenuItem, SelectedVariation } from "@/types/menu";
+import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem & { selectedVariations?: SelectedVariation[] }) => void;
+  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => void;
   addToCart: (item: MenuItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -41,22 +41,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cartItems]);
 
   // Função para gerar ID único para itens com variações
-  const generateCartItemId = (item: MenuItem, selectedVariations?: SelectedVariation[]): string => {
+  const generateCartItemId = (item: MenuItem, selectedVariations?: SelectedVariationGroup[]): string => {
     if (!selectedVariations || selectedVariations.length === 0) {
       return item.id;
     }
 
     // Criar um ID composto do ID do item + IDs das variações selecionadas
     const variationsKey = selectedVariations
-      .filter(v => v.quantity > 0)
-      .sort((a, b) => a.variationId.localeCompare(b.variationId))
-      .map(v => `${v.variationId}-${v.quantity}`)
+      .map(group => {
+        const groupVariations = group.variations
+          .filter(v => v.quantity > 0)
+          .sort((a, b) => a.variationId.localeCompare(b.variationId))
+          .map(v => `${v.variationId}-${v.quantity}`)
+          .join('.');
+        
+        return `${group.groupId}:${groupVariations}`;
+      })
+      .sort()
       .join('_');
     
     return `${item.id}_${variationsKey}`;
   };
 
-  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariation[] }) => {
+  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => {
     const { selectedVariations, ...item } = menuItem;
     const cartItemId = generateCartItemId(item, selectedVariations);
     

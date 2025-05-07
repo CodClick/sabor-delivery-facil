@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getAllVariations, getVariationById } from "@/services/menuService";
 import { Variation } from "@/types/menu";
+import { Separator } from "@/components/ui/separator";
 
 const ShoppingCart: React.FC = () => {
   const {
@@ -166,15 +167,22 @@ const ShoppingCart: React.FC = () => {
                     
                     {item.selectedVariations && item.selectedVariations.length > 0 && (
                       <div className="mt-2 text-sm text-gray-500">
-                        {item.selectedVariations
-                          .filter(v => v.quantity > 0)
-                          .map(v => (
-                            <div key={v.variationId} className="flex justify-between">
-                              <span>{getVariationName(v.variationId)}</span>
-                              <span>x{v.quantity}</span>
-                            </div>
-                          ))
-                        }
+                        {item.selectedVariations.map((group, index) => (
+                          <div key={group.groupId || index} className="mb-1">
+                            {group.groupName && (
+                              <p className="font-medium text-xs">{group.groupName}:</p>
+                            )}
+                            {group.variations
+                              .filter(v => v.quantity > 0)
+                              .map(v => (
+                                <div key={v.variationId} className="flex justify-between pl-2">
+                                  <span>{getVariationName(v.variationId)}</span>
+                                  <span>x{v.quantity}</span>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        ))}
                       </div>
                     )}
                     

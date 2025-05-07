@@ -1,6 +1,7 @@
+
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { MenuItem, Category, Variation } from "@/types/menu";
+import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 
 const MENU_COLLECTION = "menu";
 const CATEGORIES_COLLECTION = "categories";

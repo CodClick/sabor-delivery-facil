@@ -8,14 +8,18 @@ export interface MenuItem {
   category: string;
   popular?: boolean;
   hasVariations?: boolean;
-  variations?: string[];
-  maxVariationCount?: number;
-  variationMessage?: string; // New field for customizable variation message
+  variationGroups?: VariationGroup[];
 }
 
 export interface CartItem extends MenuItem {
   quantity: number;
-  selectedVariations?: SelectedVariation[];
+  selectedVariations?: SelectedVariationGroup[];
+}
+
+export interface SelectedVariationGroup {
+  groupId: string;
+  groupName: string;
+  variations: SelectedVariation[];
 }
 
 export interface SelectedVariation {
@@ -36,4 +40,13 @@ export interface Variation {
   additionalPrice?: number;
   available: boolean;
   categoryIds: string[]; // Categories where this variation can be used
+}
+
+export interface VariationGroup {
+  id: string;
+  name: string;
+  minRequired: number;
+  maxAllowed: number;
+  variations: string[]; // Array of variation IDs
+  customMessage?: string; // Custom message for this variation group
 }
