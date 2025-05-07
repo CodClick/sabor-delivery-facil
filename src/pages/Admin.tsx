@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,6 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const Admin = () => {
   const { currentUser } = useAuth();
@@ -561,7 +563,7 @@ const Admin = () => {
       customMessage: ""
     });
   };
-
+  
   // Update the JSX for the variation groups section in edit item dialog
   const editItemVariationGroupsSection = editItem ? (
     <div className="mt-6">
@@ -768,190 +770,585 @@ const Admin = () => {
               )}
             </div>
           )}
+        </TabsContent>
 
-          {/* Form for adding/editing menu items */}
-          {editItem && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">
-                    {editItem.id && menuItems.some(item => item.id === editItem.id) ? "Editar Item" : "Novo Item"}
-                  </h2>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setEditItem(null)}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
-                </div>
+        {/* Categories Tab Content */}
+        <TabsContent value="categories">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Categorias</h2>
+            <Button onClick={handleSeedData}>
+              <Plus className="h-4 w-4 mr-1" />
+              Importar Dados Iniciais
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{editingCategory ? "Editar Categoria" : "Adicionar Categoria"}</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Nome</Label>
+                    <Label htmlFor="category-name">Nome da Categoria</Label>
                     <Input
-                      id="name"
-                      value={editItem.name}
-                      onChange={(e) => setEditItem({...editItem, name: e.target.value})}
-                      placeholder="Nome do item"
+                      id="category-name"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Ex: Entradas, Pratos Principais, etc"
                     />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="description">Descrição</Label>
-                    <Textarea
-                      id="description"
-                      value={editItem.description}
-                      onChange={(e) => setEditItem({...editItem, description: e.target.value})}
-                      placeholder="Descrição do item"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="price">Preço (R$)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        value={editItem.price}
-                        onChange={(e) => setEditItem({...editItem, price: parseFloat(e.target.value)})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="category">Categoria</Label>
-                      <Select 
-                        value={editItem.category}
-                        onValueChange={(value) => setEditItem({...editItem, category: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="image">URL da Imagem</Label>
-                    <Input
-                      id="image"
-                      value={editItem.image}
-                      onChange={(e) => setEditItem({...editItem, image: e.target.value})}
-                      placeholder="URL da imagem"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="popular"
-                      checked={editItem.popular || false}
-                      onCheckedChange={(checked) => 
-                        setEditItem({...editItem, popular: checked === true})
-                      }
-                    />
-                    <Label htmlFor="popular">Item popular (destacado no cardápio)</Label>
-                  </div>
-
-                  {/* Variation groups section */}
-                  {editItemVariationGroupsSection}
-                  
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setEditItem(null)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleSaveItem}>
+                  <div className="flex justify-end gap-2">
+                    {editingCategory && (
+                      <Button variant="outline" onClick={() => {
+                        setEditingCategory(null);
+                        setNewCategory("");
+                      }}>
+                        Cancelar
+                      </Button>
+                    )}
+                    <Button onClick={handleSaveCategory}>
                       <Save className="h-4 w-4 mr-1" />
-                      Salvar
+                      {editingCategory ? "Atualizar" : "Adicionar"}
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg">Categorias Existentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-4">Carregando...</div>
+                ) : (
+                  <div>
+                    {categories.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>ID</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {categories.map((category) => (
+                            <TableRow key={category.id}>
+                              <TableCell className="font-medium">{category.name}</TableCell>
+                              <TableCell>{category.id}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => handleEditCategory(category)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => handleDeleteCategory(category.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        Nenhuma categoria encontrada.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Variations Tab Content */}
+        <TabsContent value="variations">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Variações</h2>
+            <Button onClick={handleAddVariation}>
+              <Plus className="h-4 w-4 mr-1" />
+              Nova Variação
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {variations.map(variation => (
+              <Card key={variation.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold">{variation.name}</h3>
+                      {variation.description && (
+                        <p className="text-sm text-gray-600 mb-2">{variation.description}</p>
+                      )}
+                      {variation.additionalPrice > 0 && (
+                        <p className="text-sm font-semibold">
+                          + R$ {variation.additionalPrice.toFixed(2)}
+                        </p>
+                      )}
+                      <div className="flex items-center mt-2">
+                        <span className={`inline-block h-2 w-2 rounded-full mr-2 ${variation.available ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        <span className="text-xs text-gray-500">
+                          {variation.available ? 'Disponível' : 'Indisponível'}
+                        </span>
+                      </div>
+                      
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500">
+                          Categorias: {
+                            variation.categoryIds.length > 0 
+                              ? variation.categoryIds.map(id => 
+                                categories.find(c => c.id === id)?.name || id
+                              ).join(", ")
+                              : "Todas"
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => handleEditVariation(variation)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteVariation(variation.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {variations.length === 0 && !loading && (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                Nenhuma variação encontrada. Adicione variações para personalizar os itens do menu.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        {/* Variation Groups Tab Content */}
+        <TabsContent value="groups">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Grupos de Variações</h2>
+            <Button onClick={handleAddNewVariationGroup}>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo Grupo de Variações
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {variationGroups.map(group => (
+              <Card key={group.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold">{group.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {group.minRequired === group.maxAllowed
+                          ? `Exatamente ${group.minRequired} seleção(ões) necessária(s)`
+                          : `De ${group.minRequired} até ${group.maxAllowed} seleções`
+                        }
+                      </p>
+                      
+                      {group.customMessage && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Mensagem: {group.customMessage}
+                        </p>
+                      )}
+
+                      <div className="mt-3">
+                        <p className="text-sm font-semibold mb-1">Variações:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {group.variations.map(varId => (
+                            <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
+                              {getVariationName(varId)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleEditExistingVariationGroup(group)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleDeleteExistingVariationGroup(group.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {variationGroups.length === 0 && !loading && (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                Nenhum grupo de variação encontrado. Adicione grupos para organizar as variações.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Form for editing variation */}
+      {editVariation && (
+        <Dialog open={!!editVariation} onOpenChange={(open) => !open && setEditVariation(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {variations.some(v => v.id === editVariation.id) ? "Editar Variação" : "Nova Variação"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="variation-name">Nome</Label>
+                <Input
+                  id="variation-name"
+                  value={editVariation.name}
+                  onChange={(e) => setEditVariation({...editVariation, name: e.target.value})}
+                  placeholder="Ex: Queijo Extra, Molho Picante, etc"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="variation-description">Descrição (opcional)</Label>
+                <Textarea
+                  id="variation-description"
+                  value={editVariation.description || ""}
+                  onChange={(e) => setEditVariation({...editVariation, description: e.target.value})}
+                  placeholder="Descrição da variação"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="variation-price">Preço Adicional (R$)</Label>
+                <Input
+                  id="variation-price"
+                  type="number"
+                  step="0.01"
+                  value={editVariation.additionalPrice || 0}
+                  onChange={(e) => setEditVariation({
+                    ...editVariation, 
+                    additionalPrice: parseFloat(e.target.value)
+                  })}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="variation-available"
+                  checked={editVariation.available}
+                  onCheckedChange={(checked) => 
+                    setEditVariation({...editVariation, available: checked})
+                  }
+                />
+                <Label htmlFor="variation-available">Disponível</Label>
+              </div>
+              
+              <div>
+                <Label className="block mb-2">Categorias aplicáveis</Label>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2">
+                  {categories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-2 py-1">
+                      <Checkbox 
+                        id={`cat-${category.id}`}
+                        checked={editVariation.categoryIds.includes(category.id)}
+                        onCheckedChange={() => handleCategoryCheckboxChange(category.id)}
+                      />
+                      <Label htmlFor={`cat-${category.id}`}>{category.name}</Label>
+                    </div>
+                  ))}
+                  {categories.length === 0 && (
+                    <p className="text-sm text-gray-500 py-2">
+                      Nenhuma categoria disponível. Adicione categorias primeiro.
+                    </p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Se nenhuma categoria for selecionada, esta variação estará disponível para todas as categorias.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditVariation(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveVariation}>
+                <Save className="h-4 w-4 mr-1" />
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Form for editing variation group */}
+      {editVariationGroup && (
+        <Dialog open={!!editVariationGroup} onOpenChange={(open) => !open && setEditVariationGroup(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {variationGroups.some(g => g.id === editVariationGroup.id) 
+                  ? "Editar Grupo de Variações" 
+                  : "Novo Grupo de Variações"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="group-name">Nome do Grupo</Label>
+                <Input
+                  id="group-name"
+                  value={editVariationGroup.name}
+                  onChange={(e) => setEditVariationGroup({...editVariationGroup, name: e.target.value})}
+                  placeholder="Ex: Sabores, Recheios, Complementos"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+                  <Input
+                    id="min-required"
+                    type="number"
+                    min="0"
+                    value={editVariationGroup.minRequired}
+                    onChange={(e) => setEditVariationGroup({
+                      ...editVariationGroup, 
+                      minRequired: parseInt(e.target.value)
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-allowed">Máximo Permitido</Label>
+                  <Input
+                    id="max-allowed"
+                    type="number"
+                    min="1"
+                    value={editVariationGroup.maxAllowed}
+                    onChange={(e) => setEditVariationGroup({
+                      ...editVariationGroup, 
+                      maxAllowed: parseInt(e.target.value)
+                    })}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
+                <Input
+                  id="custom-message"
+                  value={editVariationGroup.customMessage || ""}
+                  onChange={(e) => setEditVariationGroup({
+                    ...editVariationGroup, 
+                    customMessage: e.target.value
+                  })}
+                  placeholder="Ex: Escolha {min} opções"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use {"{min}"} para o número mínimo, {"{max}"} para o máximo e {"{count}"} para quantidade selecionada
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Variações Disponíveis</Label>
+                <div className="max-h-60 overflow-y-auto border rounded-md p-2">
+                  {variations.map((variation) => (
+                    <div key={variation.id} className="flex items-center space-x-2 py-1">
+                      <Checkbox 
+                        id={`var-${variation.id}`}
+                        checked={editVariationGroup.variations.includes(variation.id)}
+                        onCheckedChange={() => handleVariationCheckboxChangeForGroup(variation.id)}
+                      />
+                      <Label htmlFor={`var-${variation.id}`}>
+                        {variation.name}
+                        {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
+                      </Label>
+                    </div>
+                  ))}
+                  {variations.length === 0 && (
+                    <p className="text-sm text-gray-500 py-2">
+                      Nenhuma variação disponível. Adicione variações primeiro.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-          )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditVariationGroup(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveVariationGroup}>
+                <Save className="h-4 w-4 mr-1" />
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
-          {/* Form for adding new variation group to a menu item */}
-          {tempVariationGroup && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Adicionar Grupo de Variações</h2>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setTempVariationGroup(null)}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
+      {/* Form for adding new variation group to a menu item */}
+      {tempVariationGroup && (
+        <Dialog open={!!tempVariationGroup} onOpenChange={(open) => !open && setTempVariationGroup(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Adicionar Grupo de Variações</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="group-name">Nome do Grupo</Label>
+                <Input
+                  id="group-name"
+                  value={tempVariationGroup.name}
+                  onChange={(e) => setTempVariationGroup({...tempVariationGroup, name: e.target.value})}
+                  placeholder="Ex: Sabores, Recheios, Complementos"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+                  <Input
+                    id="min-required"
+                    type="number"
+                    min="0"
+                    value={tempVariationGroup.minRequired}
+                    onChange={(e) => setTempVariationGroup({
+                      ...tempVariationGroup, 
+                      minRequired: parseInt(e.target.value)
+                    })}
+                  />
                 </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="group-name">Nome do Grupo</Label>
-                    <Input
-                      id="group-name"
-                      value={tempVariationGroup.name}
-                      onChange={(e) => setTempVariationGroup({...tempVariationGroup, name: e.target.value})}
-                      placeholder="Ex: Sabores, Recheios, Complementos"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="min-required">Mínimo Obrigatório</Label>
-                      <Input
-                        id="min-required"
-                        type="number"
-                        min="0"
-                        value={tempVariationGroup.minRequired}
-                        onChange={(e) => setTempVariationGroup({
-                          ...tempVariationGroup, 
-                          minRequired: parseInt(e.target.value)
-                        })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="max-allowed">Máximo Permitido</Label>
-                      <Input
-                        id="max-allowed"
-                        type="number"
-                        min="1"
-                        value={tempVariationGroup.maxAllowed}
-                        onChange={(e) => setTempVariationGroup({
-                          ...tempVariationGroup, 
-                          maxAllowed: parseInt(e.target.value)
-                        })}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
-                    <Input
-                      id="custom-message"
-                      value={tempVariationGroup.customMessage || ""}
-                      onChange={(e) => setTempVariationGroup({
-                        ...tempVariationGroup, 
-                        customMessage: e.target.value
-                      })}
-                      placeholder="Ex: Escolha {min} opções"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Use {min} para o número mínimo, {max} para o máximo e {count} para quantidade selecionada
+                <div>
+                  <Label htmlFor="max-allowed">Máximo Permitido</Label>
+                  <Input
+                    id="max-allowed"
+                    type="number"
+                    min="1"
+                    value={tempVariationGroup.maxAllowed}
+                    onChange={(e) => setTempVariationGroup({
+                      ...tempVariationGroup, 
+                      maxAllowed: parseInt(e.target.value)
+                    })}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
+                <Input
+                  id="custom-message"
+                  value={tempVariationGroup.customMessage || ""}
+                  onChange={(e) => setTempVariationGroup({
+                    ...tempVariationGroup, 
+                    customMessage: e.target.value
+                  })}
+                  placeholder="Ex: Escolha {min} opções"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use {"{min}"} para o número mínimo, {"{max}"} para o máximo e {"{count}"} para quantidade selecionada
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Variações Disponíveis</Label>
+                <div className="max-h-60 overflow-y-auto border rounded-md p-2">
+                  {variations
+                    .filter(v => v.available && (v.categoryIds.length === 0 || v.categoryIds.includes(editItem?.category || "")))
+                    .map(variation => (
+                      <div key={variation.id} className="flex items-center space-x-2 py-1">
+                        <Checkbox 
+                          id={`temp-var-${variation.id}`}
+                          checked={tempVariationGroup.variations.includes(variation.id)}
+                          onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
+                        />
+                        <Label htmlFor={`temp-var-${variation.id}`}>
+                          {variation.name}
+                          {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
+                        </Label>
+                      </div>
+                    ))}
+                  {variations.length === 0 && (
+                    <p className="text-sm text-gray-500 py-2">
+                      Nenhuma variação disponível para esta categoria. Adicione variações primeiro.
                     </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Variações Disponíveis</Label>
-                    <div className="max-h-60 overflow-y-auto border rounded-md p-2">
-                      {variations.map((variation) => (
-                        <div key={variation.id} className="flex items-center space-x-2 py-1">
-                          <Checkbox 
-                            id={`var-${variation.
+                  )}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setTempVariationGroup(null)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (!editItem) return;
+                  if (!tempVariationGroup.name || tempVariationGroup.variations.length === 0) {
+                    toast({
+                      title: "Campos obrigatórios",
+                      description: "Preencha o nome e selecione pelo menos uma variação",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  // First save this as a new variation group
+                  saveVariationGroup(tempVariationGroup).then(() => {
+                    // Then add it to the item
+                    setEditItem({
+                      ...editItem,
+                      hasVariations: true,
+                      variationGroups: [...(editItem.variationGroups || []), tempVariationGroup]
+                    });
+                    
+                    // Add to our list of variation groups
+                    setVariationGroups([...variationGroups, tempVariationGroup]);
+                    
+                    // Close the dialog
+                    setTempVariationGroup(null);
+                    
+                    toast({
+                      title: "Sucesso",
+                      description: "Grupo de variações adicionado com sucesso",
+                    });
+                  }).catch(error => {
+                    console.error("Erro ao salvar grupo de variação:", error);
+                    toast({
+                      title: "Erro",
+                      description: "Não foi possível salvar o grupo de variação",
+                      variant: "destructive",
+                    });
+                  });
+                }}
+              >
+                <Save className="h-4 w-4 mr-1" />
+                Adicionar ao Item
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+};
+
+export default Admin;
