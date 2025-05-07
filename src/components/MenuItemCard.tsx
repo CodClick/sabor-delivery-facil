@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { MenuItem, Variation, SelectedVariationGroup } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariationGroup, VariationGroup } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -34,13 +34,11 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           const groupVariations: {[groupId: string]: Variation[]} = {};
           
           for (const group of item.variationGroups) {
-            // Get full group data
-            const fullGroup = await getVariationGroupById(group.id);
-            if (fullGroup) {
-              // Filter variations that are available and in this group
+            // Filter variations that are available and in this group
+            if (group) {
               groupVariations[group.id] = variations.filter(
                 variation => variation.available && 
-                fullGroup.variations.includes(variation.id) &&
+                group.variations.includes(variation.id) &&
                 variation.categoryIds.includes(item.category)
               );
             }

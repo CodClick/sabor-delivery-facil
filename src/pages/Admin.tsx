@@ -992,7 +992,7 @@ const Admin = () => {
                         Nenhum grupo de variação configurado para este item.
                         <br />
                         <span className="text-sm">
-                          Adicione grupos de variação para permitir que os clientes personalizem este item.
+                          Adicione grupos de variações para permitir que os clientes personalizem este item.
                         </span>
                       </div>
                     )}
@@ -1104,7 +1104,7 @@ const Admin = () => {
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>
-                {tempVariationGroup.id && editItem?.variationGroups?.find(g => g.id === tempVariationGroup.id) 
+                {tempVariationGroup.id && editItem?.variationGroups?.some(g => g?.id === tempVariationGroup.id) 
                   ? "Editar Grupo de Variação" 
                   : "Novo Grupo de Variação"
                 }

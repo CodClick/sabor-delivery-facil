@@ -13,6 +13,7 @@ interface ProductVariationDialogProps {
   onClose: () => void;
   onAddToCart: (item: MenuItem, selectedVariationGroups: SelectedVariationGroup[]) => void;
   availableVariations: Variation[];
+  groupVariations: {[groupId: string]: Variation[]};
 }
 
 const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
@@ -21,6 +22,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   onClose,
   onAddToCart,
   availableVariations,
+  groupVariations
 }) => {
   const [selectedVariationGroups, setSelectedVariationGroups] = useState<SelectedVariationGroup[]>([]);
   const [isValid, setIsValid] = useState<boolean>(false);
@@ -29,24 +31,25 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     if (isOpen && item.variationGroups) {
       // Initialize selected variations for each group
       const initialGroups = item.variationGroups.map(group => {
+        if (!group) return null;
+        
         // Get available variations for this group
-        const groupVariations = availableVariations
-          .filter(variation => group.variations.includes(variation.id))
-          .map(variation => ({
-            variationId: variation.id,
-            quantity: 0
-          }));
+        const groupVars = groupVariations[group.id] || [];
+        const variations = groupVars.map(variation => ({
+          variationId: variation.id,
+          quantity: 0
+        }));
 
         return {
           groupId: group.id,
           groupName: group.name,
-          variations: groupVariations
+          variations: variations
         };
-      });
+      }).filter(Boolean) as SelectedVariationGroup[];
 
       setSelectedVariationGroups(initialGroups);
     }
-  }, [isOpen, item.variationGroups, availableVariations]);
+  }, [isOpen, item.variationGroups, groupVariations]);
 
   // Validate selections whenever they change
   useEffect(() => {
@@ -57,6 +60,8 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 
     // Check if all required groups have the correct number of selections
     const allGroupsValid = item.variationGroups.every(group => {
+      if (!group) return false;
+      
       const selectedGroup = selectedVariationGroups.find(sg => sg.groupId === group.id);
       if (!selectedGroup) return false;
 
@@ -73,7 +78,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
         if (group.groupId !== groupId) return group;
 
         // Find the variation group definition to get max allowed
-        const groupDef = item.variationGroups?.find(g => g.id === groupId);
+        const groupDef = item.variationGroups?.find(g => g?.id === groupId);
         if (!groupDef) return group;
 
         // Count current selections for this group
@@ -130,7 +135,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   };
 
   const getGroupSelectionStatus = (groupId: string) => {
-    const groupDef = item.variationGroups?.find(g => g.id === groupId);
+    const groupDef = item.variationGroups?.find(g => g?.id === groupId);
     if (!groupDef) return { total: 0, min: 0, max: 0, isValid: false };
 
     const selectedGroup = selectedVariationGroups.find(sg => sg.groupId === groupId);
@@ -149,7 +154,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 
   // Generate message for a variation group
   const getVariationGroupMessage = (groupId: string) => {
-    const groupDef = item.variationGroups?.find(g => g.id === groupId);
+    const groupDef = item.variationGroups?.find(g => g?.id === groupId);
     if (!groupDef) return "";
 
     const { total, min, max } = getGroupSelectionStatus(groupId);
@@ -189,6 +194,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
           </div>
           
           {item.variationGroups.map((group, groupIndex) => {
+            if (!group) return null;
             const groupStatus = getGroupSelectionStatus(group.id);
             
             return (

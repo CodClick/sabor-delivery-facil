@@ -8,7 +8,7 @@ export interface MenuItem {
   category: string;
   popular?: boolean;
   hasVariations?: boolean;
-  variationGroups?: string[] | VariationGroup[]; // Can be either IDs or full objects
+  variationGroups?: VariationGroup[]; // Updated to only accept VariationGroup objects, not strings
 }
 
 export interface CartItem extends MenuItem {
