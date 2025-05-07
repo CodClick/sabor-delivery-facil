@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { MenuItem, Variation, SelectedVariationGroup, VariationGroup } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
@@ -35,13 +34,11 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           
           for (const group of item.variationGroups) {
             // Filter variations that are available and in this group
-            if (group) {
-              groupVariations[group.id] = variations.filter(
-                variation => variation.available && 
-                group.variations.includes(variation.id) &&
-                variation.categoryIds.includes(item.category)
-              );
-            }
+            groupVariations[group.id] = variations.filter(
+              variation => variation.available && 
+              group.variations.includes(variation.id) &&
+              variation.categoryIds.includes(item.category)
+            );
           }
           
           setGroups(groupVariations);
@@ -71,10 +68,11 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   ) => {
     addItem({
       ...item,
-      quantity: 1,
       selectedVariations: selectedVariationGroups
     });
   };
+
+  
 
   return (
     <>

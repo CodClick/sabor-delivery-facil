@@ -29,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from 'uuid';
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Admin = () => {
   const { currentUser } = useAuth();
@@ -369,15 +370,35 @@ const Admin = () => {
     });
   };
 
-  const handleAddNewVariationGroup = () => {
-    setEditVariationGroup({
-      id: uuidv4(),
-      name: "",
-      minRequired: 1,
-      maxAllowed: 1,
-      variations: [],
-      customMessage: ""
-    });
+  const handleSelectExistingGroup = (groupId: string) => {
+    if (!editItem) return;
+    
+    const selectedGroup = variationGroups.find(group => group.id === groupId);
+    
+    if (selectedGroup) {
+      // Check if this group is already added to the item
+      const isAlreadyAdded = editItem.variationGroups?.some(g => g.id === selectedGroup.id);
+      
+      if (!isAlreadyAdded) {
+        setEditItem({
+          ...editItem,
+          hasVariations: true,
+          variationGroups: [...(editItem.variationGroups || []), selectedGroup]
+        });
+      }
+    }
+  };
+
+  const handleRemoveAllVariationGroups = () => {
+    if (!editItem) return;
+    
+    if (window.confirm("Tem certeza que deseja remover todos os grupos de variação deste item?")) {
+      setEditItem({
+        ...editItem,
+        hasVariations: false,
+        variationGroups: []
+      });
+    }
   };
 
   const handleEditExistingVariationGroup = (group: VariationGroup) => {
@@ -526,6 +547,125 @@ const Admin = () => {
     const variation = variations.find(v => v.id === variationId);
     return variation ? variation.name : "Variação não encontrada";
   };
+
+  // Update the JSX for the variation groups section in edit item dialog
+  // This replaces the part in editItem dialog that handles variation groups
+  const editItemVariationGroupsSection = editItem ? (
+    <div className="mt-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Grupos de Variações</h3>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRemoveAllVariationGroups} 
+            size="sm" 
+            variant="destructive"
+            className="px-2 py-1"
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Remover Todos
+          </Button>
+          <Button 
+            onClick={handleAddVariationGroup} 
+            size="sm" 
+            variant="outline"
+            className="px-2 py-1"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Adicionar Novo Grupo
+          </Button>
+        </div>
+      </div>
+      
+      {/* Dropdown to select existing variation groups */}
+      <div className="mt-4 space-y-2">
+        <Label>Adicionar Grupo Existente</Label>
+        <div className="flex gap-2">
+          <Select onValueChange={handleSelectExistingGroup}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Selecione um grupo existente" />
+            </SelectTrigger>
+            <SelectContent>
+              {variationGroups
+                .filter(group => !editItem.variationGroups?.some(g => g.id === group.id))
+                .map(group => (
+                <SelectItem key={group.id} value={group.id}>
+                  {group.name} ({group.minRequired}-{group.maxAllowed})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="mt-4 space-y-4">
+        {editItem.variationGroups && editItem.variationGroups.length > 0 ? (
+          editItem.variationGroups.map(group => (
+            <div key={group.id} className="p-4 border rounded-md bg-gray-50">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-bold">{group.name}</h4>
+                  <p className="text-sm text-gray-600">
+                    {group.minRequired === group.maxAllowed
+                      ? `Exatamente ${group.minRequired} seleção(ões) necessária(s)`
+                      : `De ${group.minRequired} até ${group.maxAllowed} seleções`
+                    }
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleEditExistingVariationGroup(group)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => {
+                      // Remove this group from the item's variationGroups array
+                      setEditItem({
+                        ...editItem,
+                        variationGroups: editItem.variationGroups?.filter(g => g.id !== group.id) || []
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="mt-2">
+                <p className="text-sm font-semibold">Variações:</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {group.variations.map(varId => (
+                    <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
+                      {getVariationName(varId)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {group.customMessage && (
+                <div className="mt-2">
+                  <p className="text-sm font-semibold">Mensagem personalizada:</p>
+                  <p className="text-xs text-gray-600">"{group.customMessage}"</p>
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-4 text-gray-500 border rounded-md">
+            Nenhum grupo de variação configurado para este item.
+            <br />
+            <span className="text-sm">
+              Adicione grupos de variações para permitir que os clientes personalizem este item.
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -922,82 +1062,7 @@ const Admin = () => {
                 </div>
 
                 {/* Variation Groups Section */}
-                <div className="mt-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">Grupos de Variações</h3>
-                    <Button 
-                      onClick={handleAddVariationGroup} 
-                      size="sm" 
-                      variant="outline"
-                      className="px-2 py-1"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Adicionar Grupo
-                    </Button>
-                  </div>
-                  
-                  <div className="mt-4 space-y-4">
-                    {editItem.variationGroups && editItem.variationGroups.length > 0 ? (
-                      editItem.variationGroups.map(group => (
-                        <div key={group.id} className="p-4 border rounded-md bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-bold">{group.name}</h4>
-                              <p className="text-sm text-gray-600">
-                                {group.minRequired === group.maxAllowed
-                                  ? `Exatamente ${group.minRequired} seleção(ões) necessária(s)`
-                                  : `De ${group.minRequired} até ${group.maxAllowed} seleções`
-                                }
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => handleEditVariationGroup(group)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => handleDeleteVariationGroup(group.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-2">
-                            <p className="text-sm font-semibold">Variações:</p>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {group.variations.map(varId => (
-                                <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
-                                  {getVariationName(varId)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          {group.customMessage && (
-                            <div className="mt-2">
-                              <p className="text-sm font-semibold">Mensagem personalizada:</p>
-                              <p className="text-xs text-gray-600">"{group.customMessage}"</p>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-gray-500 border rounded-md">
-                        Nenhum grupo de variação configurado para este item.
-                        <br />
-                        <span className="text-sm">
-                          Adicione grupos de variações para permitir que os clientes personalizem este item.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {editItemVariationGroupsSection}
                 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setEditItem(null)}>
