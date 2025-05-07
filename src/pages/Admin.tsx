@@ -548,7 +548,7 @@ const Admin = () => {
     return variation ? variation.name : "Variação não encontrada";
   };
 
-  // Define the missing handleAddNewVariationGroup function
+  // Define the handleAddNewVariationGroup function
   const handleAddNewVariationGroup = () => {
     setEditVariationGroup({
       id: uuidv4(),
@@ -952,4 +952,4 @@ const Admin = () => {
                             "{group.customMessage}"
                           </p>
                         )}
-                        <div className="
+                        <div className="flex
