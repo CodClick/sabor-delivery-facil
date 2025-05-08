@@ -77,7 +77,7 @@ export const deleteMenuItem = async (itemId: string): Promise<void> => {
 export const getAllCategories = async (): Promise<Category[]> => {
   try {
     const categoryCollection = collection(db, CATEGORIES_COLLECTION);
-    const q = query(categoryCollection, orderBy("order"));
+    const q = query(categoryCollection);
     const categorySnapshot = await getDocs(q);
     return categorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
   } catch (error) {
@@ -91,6 +91,11 @@ export const getAllCategories = async (): Promise<Category[]> => {
 // Adicionar ou atualizar uma categoria
 export const saveCategory = async (category: Category): Promise<void> => {
   try {
+    // Make sure order is a number, not undefined
+    if (category.order === undefined) {
+      category.order = 0;
+    }
+    
     const categoryRef = doc(db, CATEGORIES_COLLECTION, category.id);
     await setDoc(categoryRef, category);
   } catch (error) {
@@ -113,6 +118,11 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
 // Update a category
 export const updateCategory = async (category: Category): Promise<void> => {
   try {
+    // Make sure order is a number, not undefined
+    if (category.order === undefined) {
+      category.order = 0;
+    }
+    
     const categoryRef = doc(db, CATEGORIES_COLLECTION, category.id);
     await setDoc(categoryRef, category);
   } catch (error) {

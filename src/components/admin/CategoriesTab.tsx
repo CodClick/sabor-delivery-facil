@@ -26,11 +26,12 @@ export const CategoriesTab = ({
   const { toast } = useToast();
   const [newCategory, setNewCategory] = useState<string>("");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Sort categories by order
   const sortedCategories = [...categories].sort((a, b) => {
-    const orderA = a.order || 0;
-    const orderB = b.order || 0;
+    const orderA = a.order !== undefined ? a.order : 0;
+    const orderB = b.order !== undefined ? b.order : 0;
     return orderA - orderB;
   });
 
@@ -59,10 +60,15 @@ export const CategoriesTab = ({
         await updateCategory(updatedCategory);
       } else {
         // Add new category
+        // Find the highest order value and add 1
+        const highestOrder = categories.length > 0
+          ? Math.max(...categories.map(cat => cat.order !== undefined ? cat.order : 0))
+          : -1;
+          
         const newCat: Category = {
           id: newCategory.toLowerCase().replace(/\s+/g, '-'),
           name: newCategory,
-          order: categories.length
+          order: highestOrder + 1
         };
         await saveCategory(newCat);
       }
@@ -110,28 +116,40 @@ export const CategoriesTab = ({
 
   // Function to handle reordering categories
   const handleReorderCategory = async (category: Category, direction: 'up' | 'down') => {
-    const currentIndex = sortedCategories.findIndex(c => c.id === category.id);
-    
-    if ((direction === 'up' && currentIndex === 0) || 
-        (direction === 'down' && currentIndex === sortedCategories.length - 1)) {
-      return; // Can't move beyond boundaries
-    }
-    
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const targetCategory = sortedCategories[newIndex];
-    
-    // Swap orders
-    const updatedCategory = {
-      ...category,
-      order: targetCategory.order
-    };
-    
-    const updatedTargetCategory = {
-      ...targetCategory,
-      order: category.order
-    };
-    
     try {
+      setIsReordering(true);
+      
+      // Find the current index of the category
+      const currentIndex = sortedCategories.findIndex(c => c.id === category.id);
+      
+      // Determine if we can move up or down
+      if ((direction === 'up' && currentIndex === 0) || 
+          (direction === 'down' && currentIndex === sortedCategories.length - 1)) {
+        setIsReordering(false);
+        return; // Can't move beyond boundaries
+      }
+      
+      // Calculate new index
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      // Get the target category to swap with
+      const targetCategory = sortedCategories[newIndex];
+      
+      // Store original orders
+      const categoryOrder = category.order !== undefined ? category.order : currentIndex;
+      const targetOrder = targetCategory.order !== undefined ? targetCategory.order : newIndex;
+      
+      // Swap orders
+      const updatedCategory = {
+        ...category,
+        order: targetOrder
+      };
+      
+      const updatedTargetCategory = {
+        ...targetCategory,
+        order: categoryOrder
+      };
+      
       // Update both categories with new orders
       await updateCategory(updatedCategory);
       await updateCategory(updatedTargetCategory);
@@ -141,7 +159,7 @@ export const CategoriesTab = ({
         description: "Ordem das categorias atualizada",
       });
       
-      onDataChange();
+      await onDataChange(); // Refresh data
     } catch (error) {
       console.error("Erro ao reordenar categorias:", error);
       toast({
@@ -149,6 +167,8 @@ export const CategoriesTab = ({
         description: "Não foi possível reordenar as categorias. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsReordering(false);
     }
   };
 
@@ -218,14 +238,14 @@ export const CategoriesTab = ({
                       {sortedCategories.map((category) => (
                         <TableRow key={category.id}>
                           <TableCell className="font-medium">{category.name}</TableCell>
-                          <TableCell>{category.order}</TableCell>
+                          <TableCell>{category.order !== undefined ? category.order : 'N/A'}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button 
                                 size="sm" 
                                 variant="ghost"
                                 onClick={() => handleReorderCategory(category, 'up')}
-                                disabled={sortedCategories.indexOf(category) === 0}
+                                disabled={isReordering || sortedCategories.indexOf(category) === 0}
                               >
                                 <ArrowUp className="h-4 w-4" />
                               </Button>
@@ -233,7 +253,7 @@ export const CategoriesTab = ({
                                 size="sm" 
                                 variant="ghost"
                                 onClick={() => handleReorderCategory(category, 'down')}
-                                disabled={sortedCategories.indexOf(category) === sortedCategories.length - 1}
+                                disabled={isReordering || sortedCategories.indexOf(category) === sortedCategories.length - 1}
                               >
                                 <ArrowDown className="h-4 w-4" />
                               </Button>

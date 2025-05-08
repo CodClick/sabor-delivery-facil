@@ -29,8 +29,8 @@ const Index = () => {
       const firebaseCategories = await getAllCategories();
       if (firebaseCategories.length > 0) {
         const sortedCategories = [...firebaseCategories].sort((a, b) => {
-          const orderA = a.order || 0;
-          const orderB = b.order || 0;
+          const orderA = a.order !== undefined ? a.order : 0;
+          const orderB = b.order !== undefined ? b.order : 0;
           return orderA - orderB;
         });
         setMenuCategories(sortedCategories);
