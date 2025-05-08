@@ -21,16 +21,7 @@ const Index = () => {
   // Load data on component mount
   useEffect(() => {
     loadData();
-    
-    // Ordenação de categorias por ordem (se definida)
-    const sortedCategories = [...menuCategories].sort((a, b) => {
-      const orderA = a.order || 0;
-      const orderB = b.order || 0;
-      return orderA - orderB;
-    });
-    
-    setMenuCategories(sortedCategories);
-  }, []); // Removed menuCategories from dependency array to prevent infinite loop
+  }, []); 
 
   const loadData = async () => {
     try {
@@ -43,10 +34,13 @@ const Index = () => {
           return orderA - orderB;
         });
         setMenuCategories(sortedCategories);
+        
+        // Set active category to the first category if available
+        if (sortedCategories.length > 0 && sortedCategories[0]?.id) {
+          setActiveCategory(sortedCategories[0].id);
+          loadCategoryItems(sortedCategories[0].id);
+        }
       }
-
-      // Load initial category items
-      loadCategoryItems(activeCategory);
 
       // Load popular items
       const firebasePopularItems = await getFirebasePopularItems();

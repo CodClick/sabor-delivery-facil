@@ -172,6 +172,27 @@ export type Database = {
         }
         Relationships: []
       }
+      saudacoes: {
+        Row: {
+          created_at: string
+          id: string
+          texto_da_saudacao: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          texto_da_saudacao?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          texto_da_saudacao?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
