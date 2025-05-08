@@ -1,3 +1,4 @@
+
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -54,7 +55,9 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
     if (menuItem.id) {
       // Update existing menu item
       const menuItemDocRef = doc(db, "menuItems", menuItem.id);
-      await updateDoc(menuItemDocRef, menuItem);
+      // Remove id from the object before updating (to prevent Firebase errors)
+      const { id, ...menuItemData } = menuItem;
+      await updateDoc(menuItemDocRef, menuItemData);
       return menuItem.id;
     } else {
       // Create new menu item
@@ -119,7 +122,9 @@ export const saveCategory = async (category: Category): Promise<string> => {
     if (category.id) {
       // Update existing category
       const categoryDocRef = doc(db, "categories", category.id);
-      await updateDoc(categoryDocRef, category);
+      // Remove id from the object before updating
+      const { id, ...categoryData } = category;
+      await updateDoc(categoryDocRef, categoryData);
       return category.id;
     } else {
       // Create new category
@@ -132,6 +137,9 @@ export const saveCategory = async (category: Category): Promise<string> => {
     throw error;
   }
 };
+
+// Alias for saveCategory for better API naming consistency
+export const updateCategory = saveCategory;
 
 export const deleteCategory = async (id: string): Promise<void> => {
   try {
@@ -177,12 +185,17 @@ export const getVariation = async (id: string): Promise<Variation | null> => {
   }
 };
 
+// Alias for getVariation for better API naming consistency
+export const getVariationById = getVariation;
+
 export const saveVariation = async (variation: Variation): Promise<string> => {
   try {
     if (variation.id) {
       // Update existing variation
       const variationDocRef = doc(db, "variations", variation.id);
-      await updateDoc(variationDocRef, variation);
+      // Remove id from the object before updating
+      const { id, ...variationData } = variation;
+      await updateDoc(variationDocRef, variationData);
       return variation.id;
     } else {
       // Create new variation
@@ -244,6 +257,9 @@ export const getVariationGroup = async (
   }
 };
 
+// Alias for getVariationGroup for better API naming consistency
+export const getVariationGroupById = getVariationGroup;
+
 export const saveVariationGroup = async (
   variationGroup: VariationGroup
 ): Promise<string> => {
@@ -255,7 +271,9 @@ export const saveVariationGroup = async (
         "variationGroups",
         variationGroup.id
       );
-      await updateDoc(variationGroupDocRef, variationGroup);
+      // Remove id from the object before updating
+      const { id, ...variationGroupData } = variationGroup;
+      await updateDoc(variationGroupDocRef, variationGroupData);
       return variationGroup.id;
     } else {
       // Create new variation group
@@ -269,12 +287,49 @@ export const saveVariationGroup = async (
   }
 };
 
+// Alias for saveVariationGroup for better API naming consistency
+export const updateVariationGroup = saveVariationGroup;
+
 export const deleteVariationGroup = async (id: string): Promise<void> => {
   try {
     const variationGroupDocRef = doc(db, "variationGroups", id);
     await deleteDoc(variationGroupDocRef);
   } catch (error) {
     console.error("Error deleting variation group:", error);
+    throw error;
+  }
+};
+
+// Get menu items by category
+export const getMenuItemsByCategory = async (categoryId: string): Promise<MenuItem[]> => {
+  try {
+    const menuItemsCollection = collection(db, "menuItems");
+    const menuItemsSnapshot = await getDocs(
+      query(menuItemsCollection, where("category", "==", categoryId))
+    );
+    return menuItemsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as MenuItem[];
+  } catch (error) {
+    console.error("Error getting menu items by category:", error);
+    throw error;
+  }
+};
+
+// Get popular items
+export const getPopularItems = async (): Promise<MenuItem[]> => {
+  try {
+    const menuItemsCollection = collection(db, "menuItems");
+    const menuItemsSnapshot = await getDocs(
+      query(menuItemsCollection, where("popular", "==", true))
+    );
+    return menuItemsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as MenuItem[];
+  } catch (error) {
+    console.error("Error getting popular items:", error);
     throw error;
   }
 };

@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
-import { categories, getMenuItemsByCategory, getPopularItems } from "@/data/menuData";
-import { getAllCategories, getMenuItemsByCategory as getFirebaseMenuItemsByCategory, getPopularItems as getFirebasePopularItems } from "@/services/menuService";
+import { categories, getMenuItemsByCategory as getLocalMenuItemsByCategory, getPopularItems as getLocalPopularItems } from "@/data/menuData";
+import { 
+  getAllCategories, 
+  getMenuItemsByCategory, 
+  getPopularItems 
+} from "@/services/menuService";
 import { Category } from "@/types/menu";
 import { useAuth } from "@/hooks/useAuth";
 import { LogIn, LogOut } from "lucide-react";
@@ -14,8 +18,8 @@ import { LogIn, LogOut } from "lucide-react";
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState<string>("entradas");
   const [menuCategories, setMenuCategories] = useState<Category[]>(categories);
-  const [menuItems, setMenuItems] = useState(getMenuItemsByCategory("entradas"));
-  const [popularItems, setPopularItems] = useState(getPopularItems());
+  const [menuItems, setMenuItems] = useState(getLocalMenuItemsByCategory("entradas"));
+  const [popularItems, setPopularItems] = useState(getLocalPopularItems());
   const { currentUser, logOut } = useAuth();
 
   // Load data on component mount
@@ -43,7 +47,7 @@ const Index = () => {
       }
 
       // Load popular items
-      const firebasePopularItems = await getFirebasePopularItems();
+      const firebasePopularItems = await getPopularItems();
       if (firebasePopularItems.length > 0) {
         setPopularItems(firebasePopularItems);
       }
@@ -55,17 +59,17 @@ const Index = () => {
 
   const loadCategoryItems = async (categoryId: string) => {
     try {
-      const firebaseCategoryItems = await getFirebaseMenuItemsByCategory(categoryId);
+      const firebaseCategoryItems = await getMenuItemsByCategory(categoryId);
       if (firebaseCategoryItems.length > 0) {
         setMenuItems(firebaseCategoryItems);
       } else {
         // Fallback to local data
-        setMenuItems(getMenuItemsByCategory(categoryId));
+        setMenuItems(getLocalMenuItemsByCategory(categoryId));
       }
     } catch (error) {
       console.error("Erro ao carregar itens da categoria:", error);
       // Fallback to local data
-      setMenuItems(getMenuItemsByCategory(categoryId));
+      setMenuItems(getLocalMenuItemsByCategory(categoryId));
     }
   };
 
