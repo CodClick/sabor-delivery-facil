@@ -41,12 +41,20 @@ const Admin = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log("Loading menu data...");
+      
       const [items, cats, vars, groups] = await Promise.all([
         getAllMenuItems(),
         getAllCategories(),
         getAllVariations(),
         getAllVariationGroups()
       ]);
+      
+      console.log("Loaded items:", items.length);
+      console.log("Loaded categories:", cats.length);
+      console.log("Loaded variations:", vars.length);
+      console.log("Loaded variation groups:", groups.length);
+      
       setMenuItems(items);
       setCategories(cats);
       setVariations(vars);
@@ -67,7 +75,12 @@ const Admin = () => {
   const handleSeedData = async () => {
     if (window.confirm("Isso irá importar os dados iniciais do menu. Continuar?")) {
       try {
+        setLoading(true);
         const { categories, menuItems } = await import("@/data/menuData");
+        
+        console.log("Importing initial data...");
+        console.log("Categories to import:", categories.length);
+        console.log("Menu items to import:", menuItems.length);
         
         for (const category of categories) {
           await import("@/services/menuService").then(module => 
@@ -86,7 +99,7 @@ const Admin = () => {
           description: "Dados iniciais importados com sucesso",
         });
         
-        loadData();
+        await loadData();
       } catch (error) {
         console.error("Erro ao importar dados iniciais:", error);
         toast({
@@ -94,6 +107,8 @@ const Admin = () => {
           description: "Não foi possível importar os dados iniciais. Tente novamente.",
           variant: "destructive",
         });
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -102,11 +117,14 @@ const Admin = () => {
   const handleFixCategoryOrders = async () => {
     try {
       setLoading(true);
-      await fixCategoryOrders();
+      const result = await fixCategoryOrders();
+      console.log("Fix category orders result:", result);
+      
       toast({
         title: "Sucesso",
-        description: "Ordem das categorias corrigida com sucesso",
+        description: `Ordem das categorias corrigida com sucesso. ${result.updatedCount} categorias atualizadas.`,
       });
+      
       await loadData();
     } catch (error) {
       console.error("Erro ao corrigir ordem das categorias:", error);
@@ -128,6 +146,8 @@ const Admin = () => {
           Voltar para o Cardápio
         </Button>
       </div>
+
+      {loading && <div className="text-center py-4">Carregando dados...</div>}
 
       <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4 w-full">
