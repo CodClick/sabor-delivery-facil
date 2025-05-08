@@ -1,3 +1,4 @@
+
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
@@ -127,6 +128,40 @@ export const updateCategory = async (category: Category): Promise<void> => {
     await setDoc(categoryRef, category);
   } catch (error) {
     console.error("Erro ao atualizar categoria:", error);
+    throw error;
+  }
+};
+
+// Fix category orders to ensure no duplicates
+export const fixCategoryOrders = async (): Promise<void> => {
+  try {
+    // Get all categories
+    const categoryCollection = collection(db, CATEGORIES_COLLECTION);
+    const categorySnapshot = await getDocs(query(categoryCollection));
+    const categories = categorySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Category[];
+    
+    // Sort by current order (with fallback to 0 for undefined order)
+    const sortedCategories = [...categories].sort((a, b) => {
+      const orderA = a.order !== undefined ? a.order : 0;
+      const orderB = b.order !== undefined ? b.order : 0;
+      return orderA - orderB;
+    });
+    
+    // Assign new sequential order values
+    for (let i = 0; i < sortedCategories.length; i++) {
+      const category = sortedCategories[i];
+      if (category.order === i) continue; // Skip if already correct
+      
+      await updateCategory({
+        ...category,
+        order: i
+      });
+    }
+  } catch (error) {
+    console.error('Error fixing category orders:', error);
     throw error;
   }
 };

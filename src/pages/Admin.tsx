@@ -7,6 +7,7 @@ import {
   getAllCategories, 
   getAllVariations,
   getAllVariationGroups,
+  fixCategoryOrders,
 } from "@/services/menuService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,28 @@ const Admin = () => {
     }
   };
 
+  // Function to fix category orders
+  const handleFixCategoryOrders = async () => {
+    try {
+      setLoading(true);
+      await fixCategoryOrders();
+      toast({
+        title: "Sucesso",
+        description: "Ordem das categorias corrigida com sucesso",
+      });
+      await loadData();
+    } catch (error) {
+      console.error("Erro ao corrigir ordem das categorias:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível corrigir a ordem das categorias. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -134,6 +157,11 @@ const Admin = () => {
             onDataChange={loadData}
             onSeedData={handleSeedData}
           />
+          <div className="mt-4 flex justify-end">
+            <Button variant="outline" onClick={handleFixCategoryOrders} disabled={loading}>
+              Corrigir Ordem das Categorias
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Variations Tab Content */}

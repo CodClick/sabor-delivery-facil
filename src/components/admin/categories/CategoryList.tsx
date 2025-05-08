@@ -76,12 +76,12 @@ export const CategoryList = ({
       
       // Store original orders
       const categoryOrder = category.order !== undefined ? category.order : currentIndex;
-      const targetOrder = targetCategory.order !== undefined ? targetOrder : newIndex;
+      const targetCategoryOrder = targetCategory.order !== undefined ? targetCategory.order : newIndex;
       
       // Swap orders
       const updatedCategory = {
         ...category,
-        order: targetOrder
+        order: targetCategoryOrder
       };
       
       const updatedTargetCategory = {
