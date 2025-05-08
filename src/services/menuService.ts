@@ -1,325 +1,367 @@
-
-import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  orderBy,
+  DocumentReference,
+  runTransaction,
+} from "firebase/firestore";
+import { Category, MenuItem, Variation, VariationGroup } from "@/types/menu";
 
-const MENU_COLLECTION = "menu";
-const CATEGORIES_COLLECTION = "categories";
-const VARIATIONS_COLLECTION = "variations";
-const VARIATION_GROUPS_COLLECTION = "variation_groups";
-
-// Obter todos os itens do menu
+// Menu Items
 export const getAllMenuItems = async (): Promise<MenuItem[]> => {
   try {
-    const menuCollection = collection(db, MENU_COLLECTION);
-    const menuSnapshot = await getDocs(menuCollection);
-    return menuSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
+    const menuItemsCollection = collection(db, "menuItems");
+    const menuItemsSnapshot = await getDocs(query(menuItemsCollection));
+    return menuItemsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as MenuItem[];
   } catch (error) {
-    console.error("Erro ao obter itens do menu:", error);
-    // Retornar dados locais como fallback
-    const { menuItems } = await import("@/data/menuData");
-    return menuItems;
-  }
-};
-
-// Obter itens do menu por categoria
-export const getMenuItemsByCategory = async (categoryId: string): Promise<MenuItem[]> => {
-  try {
-    const menuCollection = collection(db, MENU_COLLECTION);
-    const q = query(menuCollection, where("category", "==", categoryId));
-    const menuSnapshot = await getDocs(q);
-    return menuSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
-  } catch (error) {
-    console.error("Erro ao obter itens por categoria:", error);
-    // Retornar dados locais como fallback
-    const { getMenuItemsByCategory } = await import("@/data/menuData");
-    return getMenuItemsByCategory(categoryId);
-  }
-};
-
-// Obter itens populares
-export const getPopularItems = async (): Promise<MenuItem[]> => {
-  try {
-    const menuCollection = collection(db, MENU_COLLECTION);
-    const q = query(menuCollection, where("popular", "==", true));
-    const menuSnapshot = await getDocs(q);
-    return menuSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
-  } catch (error) {
-    console.error("Erro ao obter itens populares:", error);
-    // Retornar dados locais como fallback
-    const { getPopularItems } = await import("@/data/menuData");
-    return getPopularItems();
-  }
-};
-
-// Adicionar ou atualizar um item do menu
-export const saveMenuItem = async (item: MenuItem): Promise<void> => {
-  try {
-    const menuRef = doc(db, MENU_COLLECTION, item.id);
-    await setDoc(menuRef, item);
-  } catch (error) {
-    console.error("Erro ao salvar item do menu:", error);
+    console.error("Error getting menu items:", error);
     throw error;
   }
 };
 
-// Excluir um item do menu
-export const deleteMenuItem = async (itemId: string): Promise<void> => {
+export const getMenuItem = async (id: string): Promise<MenuItem | null> => {
   try {
-    const menuRef = doc(db, MENU_COLLECTION, itemId);
-    await deleteDoc(menuRef);
+    const menuItemDoc = doc(db, "menuItems", id);
+    const menuItemSnapshot = await getDoc(menuItemDoc);
+
+    if (menuItemSnapshot.exists()) {
+      return {
+        id: menuItemSnapshot.id,
+        ...menuItemSnapshot.data(),
+      } as MenuItem;
+    } else {
+      return null;
+    }
   } catch (error) {
-    console.error("Erro ao excluir item do menu:", error);
+    console.error("Error getting menu item:", error);
     throw error;
   }
 };
 
-// Obter todas as categorias
+export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
+  try {
+    if (menuItem.id) {
+      // Update existing menu item
+      const menuItemDocRef = doc(db, "menuItems", menuItem.id);
+      await updateDoc(menuItemDocRef, menuItem);
+      return menuItem.id;
+    } else {
+      // Create new menu item
+      const menuItemsCollection = collection(db, "menuItems");
+      const docRef = await addDoc(menuItemsCollection, menuItem);
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error("Error saving menu item:", error);
+    throw error;
+  }
+};
+
+export const deleteMenuItem = async (id: string): Promise<void> => {
+  try {
+    const menuItemDocRef = doc(db, "menuItems", id);
+    await deleteDoc(menuItemDocRef);
+  } catch (error) {
+    console.error("Error deleting menu item:", error);
+    throw error;
+  }
+};
+
+// Categories
 export const getAllCategories = async (): Promise<Category[]> => {
   try {
-    const categoryCollection = collection(db, CATEGORIES_COLLECTION);
-    const q = query(categoryCollection);
-    const categorySnapshot = await getDocs(q);
-    return categorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+    const categoriesCollection = collection(db, "categories");
+    const categoriesSnapshot = await getDocs(
+      query(categoriesCollection, orderBy("order", "asc"))
+    );
+    return categoriesSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Category[];
   } catch (error) {
-    console.error("Erro ao obter categorias:", error);
-    // Retornar dados locais como fallback
-    const { categories } = await import("@/data/menuData");
-    return categories;
+    console.error("Error getting categories:", error);
+    throw error;
   }
 };
 
-// Adicionar ou atualizar uma categoria
-export const saveCategory = async (category: Category): Promise<void> => {
+export const getCategory = async (id: string): Promise<Category | null> => {
   try {
-    // Make sure order is a number, not undefined
-    if (category.order === undefined) {
-      category.order = 0;
+    const categoryDoc = doc(db, "categories", id);
+    const categorySnapshot = await getDoc(categoryDoc);
+
+    if (categorySnapshot.exists()) {
+      return {
+        id: categorySnapshot.id,
+        ...categorySnapshot.data(),
+      } as Category;
+    } else {
+      return null;
     }
-    
-    const categoryRef = doc(db, CATEGORIES_COLLECTION, category.id);
-    await setDoc(categoryRef, category);
   } catch (error) {
-    console.error("Erro ao salvar categoria:", error);
+    console.error("Error getting category:", error);
     throw error;
   }
 };
 
-// Excluir uma categoria
-export const deleteCategory = async (categoryId: string): Promise<void> => {
+export const saveCategory = async (category: Category): Promise<string> => {
   try {
-    const categoryRef = doc(db, CATEGORIES_COLLECTION, categoryId);
-    await deleteDoc(categoryRef);
-  } catch (error) {
-    console.error("Erro ao excluir categoria:", error);
-    throw error;
-  }
-};
-
-// Update a category
-export const updateCategory = async (category: Category): Promise<void> => {
-  try {
-    // Make sure order is a number, not undefined
-    if (category.order === undefined) {
-      category.order = 0;
+    if (category.id) {
+      // Update existing category
+      const categoryDocRef = doc(db, "categories", category.id);
+      await updateDoc(categoryDocRef, category);
+      return category.id;
+    } else {
+      // Create new category
+      const categoriesCollection = collection(db, "categories");
+      const docRef = await addDoc(categoriesCollection, category);
+      return docRef.id;
     }
-    
-    const categoryRef = doc(db, CATEGORIES_COLLECTION, category.id);
-    await setDoc(categoryRef, category);
   } catch (error) {
-    console.error("Erro ao atualizar categoria:", error);
+    console.error("Error saving category:", error);
     throw error;
   }
 };
 
-// Fix category orders to ensure no duplicates
-export const fixCategoryOrders = async (): Promise<void> => {
+export const deleteCategory = async (id: string): Promise<void> => {
+  try {
+    const categoryDocRef = doc(db, "categories", id);
+    await deleteDoc(categoryDocRef);
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    throw error;
+  }
+};
+
+// Variations
+export const getAllVariations = async (): Promise<Variation[]> => {
+  try {
+    const variationsCollection = collection(db, "variations");
+    const variationsSnapshot = await getDocs(query(variationsCollection));
+    return variationsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Variation[];
+  } catch (error) {
+    console.error("Error getting variations:", error);
+    throw error;
+  }
+};
+
+export const getVariation = async (id: string): Promise<Variation | null> => {
+  try {
+    const variationDoc = doc(db, "variations", id);
+    const variationSnapshot = await getDoc(variationDoc);
+
+    if (variationSnapshot.exists()) {
+      return {
+        id: variationSnapshot.id,
+        ...variationSnapshot.data(),
+      } as Variation;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error getting variation:", error);
+    throw error;
+  }
+};
+
+export const saveVariation = async (variation: Variation): Promise<string> => {
+  try {
+    if (variation.id) {
+      // Update existing variation
+      const variationDocRef = doc(db, "variations", variation.id);
+      await updateDoc(variationDocRef, variation);
+      return variation.id;
+    } else {
+      // Create new variation
+      const variationsCollection = collection(db, "variations");
+      const docRef = await addDoc(variationsCollection, variation);
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error("Error saving variation:", error);
+    throw error;
+  }
+};
+
+export const deleteVariation = async (id: string): Promise<void> => {
+  try {
+    const variationDocRef = doc(db, "variations", id);
+    await deleteDoc(variationDocRef);
+  } catch (error) {
+    console.error("Error deleting variation:", error);
+    throw error;
+  }
+};
+
+// Variation Groups
+export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
+  try {
+    const variationGroupsCollection = collection(db, "variationGroups");
+    const variationGroupsSnapshot = await getDocs(
+      query(variationGroupsCollection)
+    );
+    return variationGroupsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as VariationGroup[];
+  } catch (error) {
+    console.error("Error getting variation groups:", error);
+    throw error;
+  }
+};
+
+export const getVariationGroup = async (
+  id: string
+): Promise<VariationGroup | null> => {
+  try {
+    const variationGroupDoc = doc(db, "variationGroups", id);
+    const variationGroupSnapshot = await getDoc(variationGroupDoc);
+
+    if (variationGroupSnapshot.exists()) {
+      return {
+        id: variationGroupSnapshot.id,
+        ...variationGroupSnapshot.data(),
+      } as VariationGroup;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error getting variation group:", error);
+    throw error;
+  }
+};
+
+export const saveVariationGroup = async (
+  variationGroup: VariationGroup
+): Promise<string> => {
+  try {
+    if (variationGroup.id) {
+      // Update existing variation group
+      const variationGroupDocRef = doc(
+        db,
+        "variationGroups",
+        variationGroup.id
+      );
+      await updateDoc(variationGroupDocRef, variationGroup);
+      return variationGroup.id;
+    } else {
+      // Create new variation group
+      const variationGroupsCollection = collection(db, "variationGroups");
+      const docRef = await addDoc(variationGroupsCollection, variationGroup);
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error("Error saving variation group:", error);
+    throw error;
+  }
+};
+
+export const deleteVariationGroup = async (id: string): Promise<void> => {
+  try {
+    const variationGroupDocRef = doc(db, "variationGroups", id);
+    await deleteDoc(variationGroupDocRef);
+  } catch (error) {
+    console.error("Error deleting variation group:", error);
+    throw error;
+  }
+};
+
+// Seed data functions
+export const seedMenuItems = async (menuItems: MenuItem[]): Promise<void> => {
+  try {
+    for (const item of menuItems) {
+      await saveMenuItem(item);
+    }
+  } catch (error) {
+    console.error("Error seeding menu items:", error);
+    throw error;
+  }
+};
+
+export const seedCategories = async (categories: Category[]): Promise<void> => {
+  try {
+    for (const category of categories) {
+      await saveCategory(category);
+    }
+  } catch (error) {
+    console.error("Error seeding categories:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fixes category ordering by ensuring each category has a unique sequential order value
+ * @returns Object containing success status, message, and number of categories updated
+ */
+export const fixCategoryOrders = async (): Promise<{ 
+  success: boolean; 
+  message: string; 
+  updatedCount: number 
+}> => {
   try {
     // Get all categories
-    const categoryCollection = collection(db, CATEGORIES_COLLECTION);
+    const categoryCollection = collection(db, "categories");
     const categorySnapshot = await getDocs(query(categoryCollection));
     const categories = categorySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    })) as Category[];
+    }));
     
     // Sort by current order (with fallback to 0 for undefined order)
-    const sortedCategories = [...categories].sort((a, b) => {
+    const sortedCategories = [...categories].sort((a: any, b: any) => {
       const orderA = a.order !== undefined ? a.order : 0;
       const orderB = b.order !== undefined ? b.order : 0;
       return orderA - orderB;
     });
     
     // Assign new sequential order values
-    for (let i = 0; i < sortedCategories.length; i++) {
-      const category = sortedCategories[i];
-      if (category.order === i) continue; // Skip if already correct
+    const updates = sortedCategories.map(async (category: any, index: number) => {
+      if (category.order === index) return null; // Skip if already correct
       
-      await updateCategory({
-        ...category,
-        order: i
-      });
-    }
+      const categoryRef = doc(db, "categories", category.id);
+      return updateDoc(categoryRef, { order: index });
+    });
+    
+    // Execute all updates
+    const completedUpdates = await Promise.all(updates.filter(Boolean));
+    
+    return { 
+      success: true, 
+      message: 'Category orders updated successfully',
+      updatedCount: completedUpdates.length
+    };
   } catch (error) {
     console.error('Error fixing category orders:', error);
-    throw error;
+    throw new Error('Failed to update category orders');
   }
 };
 
-// Obter todas as variações
-export const getAllVariations = async (): Promise<Variation[]> => {
+// Get the highest order value among categories
+export const getHighestCategoryOrder = async (): Promise<number> => {
   try {
-    const variationCollection = collection(db, VARIATIONS_COLLECTION);
-    const variationSnapshot = await getDocs(variationCollection);
-    return variationSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Variation));
-  } catch (error) {
-    console.error("Erro ao obter variações:", error);
-    // Retornar dados locais como fallback
-    const { variations } = await import("@/data/menuData");
-    return variations;
-  }
-};
-
-// Obter uma variação específica pelo ID
-export const getVariationById = async (variationId: string): Promise<Variation | null> => {
-  try {
-    const variationRef = doc(db, VARIATIONS_COLLECTION, variationId);
-    const variationSnapshot = await getDoc(variationRef);
+    const categories = await getAllCategories();
+    if (categories.length === 0) return -1;
     
-    if (variationSnapshot.exists()) {
-      return { id: variationSnapshot.id, ...variationSnapshot.data() } as Variation;
-    }
-    return null;
-  } catch (error) {
-    console.error("Erro ao obter variação:", error);
-    return null;
-  }
-};
-
-// Adicionar ou atualizar uma variação
-export const saveVariation = async (variation: Variation): Promise<void> => {
-  try {
-    const variationRef = doc(db, VARIATIONS_COLLECTION, variation.id);
-    await setDoc(variationRef, variation);
-  } catch (error) {
-    console.error("Erro ao salvar variação:", error);
-    throw error;
-  }
-};
-
-// Excluir uma variação
-export const deleteVariation = async (variationId: string): Promise<void> => {
-  try {
-    const variationRef = doc(db, VARIATIONS_COLLECTION, variationId);
-    await deleteDoc(variationRef);
-  } catch (error) {
-    console.error("Erro ao excluir variação:", error);
-    throw error;
-  }
-};
-
-// NOVO - Métodos para gerenciar grupos de variações
-// Obter todos os grupos de variações
-export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
-  try {
-    const groupsCollection = collection(db, VARIATION_GROUPS_COLLECTION);
-    const groupsSnapshot = await getDocs(groupsCollection);
-    return groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VariationGroup));
-  } catch (error) {
-    console.error("Erro ao obter grupos de variações:", error);
-    // Return empty array as fallback for now
-    return [];
-  }
-};
-
-// Obter um grupo de variação específico pelo ID
-export const getVariationGroupById = async (groupId: string): Promise<VariationGroup | null> => {
-  try {
-    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, groupId);
-    const groupSnapshot = await getDoc(groupRef);
+    const highestOrder = Math.max(...categories.map(cat => 
+      typeof cat.order === 'number' ? cat.order : -1
+    ));
     
-    if (groupSnapshot.exists()) {
-      return { id: groupSnapshot.id, ...groupSnapshot.data() } as VariationGroup;
-    }
-    return null;
+    return highestOrder;
   } catch (error) {
-    console.error("Erro ao obter grupo de variação:", error);
-    return null;
-  }
-};
-
-// Adicionar um novo grupo de variação
-export const saveVariationGroup = async (group: VariationGroup): Promise<void> => {
-  try {
-    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, group.id);
-    await setDoc(groupRef, group);
-  } catch (error) {
-    console.error("Erro ao salvar grupo de variação:", error);
+    console.error("Error getting highest category order:", error);
     throw error;
-  }
-};
-
-// Atualizar um grupo de variação existente
-export const updateVariationGroup = async (group: VariationGroup): Promise<void> => {
-  try {
-    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, group.id);
-    await setDoc(groupRef, group);
-  } catch (error) {
-    console.error("Erro ao atualizar grupo de variação:", error);
-    throw error;
-  }
-};
-
-// Excluir um grupo de variação
-export const deleteVariationGroup = async (groupId: string): Promise<void> => {
-  try {
-    // TODO: Consider checking if this group is used by any menu items before deleting
-    const groupRef = doc(db, VARIATION_GROUPS_COLLECTION, groupId);
-    await deleteDoc(groupRef);
-  } catch (error) {
-    console.error("Erro ao excluir grupo de variação:", error);
-    throw error;
-  }
-};
-
-// Modificar o item selection dialog para associar grupos de variações nos itens do menu
-export const getVariationsForGroup = async (groupId: string): Promise<Variation[]> => {
-  try {
-    const group = await getVariationGroupById(groupId);
-    if (!group) return [];
-    
-    const allVariations = await getAllVariations();
-    return allVariations.filter(variation => 
-      variation.available && group.variations.includes(variation.id)
-    );
-  } catch (error) {
-    console.error("Erro ao obter variações para grupo:", error);
-    return [];
-  }
-};
-
-// Utility function to get all variations that can be used in a menu item based on its assigned variation groups
-export const getAvailableVariationsForMenuItem = async (menuItem: MenuItem): Promise<{[groupId: string]: Variation[]}> => {
-  if (!menuItem.variationGroups || menuItem.variationGroups.length === 0) {
-    return {};
-  }
-
-  try {
-    const result: {[groupId: string]: Variation[]} = {};
-    const allVariations = await getAllVariations();
-    
-    for (const groupId of menuItem.variationGroups.map(g => g.id)) {
-      const group = await getVariationGroupById(groupId);
-      if (group) {
-        result[groupId] = allVariations.filter(
-          v => v.available && group.variations.includes(v.id)
-        );
-      }
-    }
-    
-    return result;
-  } catch (error) {
-    console.error("Erro ao obter variações para item do menu:", error);
-    return {};
   }
 };
