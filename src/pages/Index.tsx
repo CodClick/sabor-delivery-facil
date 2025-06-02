@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ const Index = () => {
 
   const loadData = async () => {
     try {
-      // Try to get data from Firebase, fallback to local data
+      // Try to get categories from Firebase
       const firebaseCategories = await getAllCategories();
       if (firebaseCategories.length > 0) {
         const sortedCategories = [...firebaseCategories].sort((a, b) => {
@@ -40,16 +41,30 @@ const Index = () => {
           setActiveCategory(sortedCategories[0].id);
           loadCategoryItems(sortedCategories[0].id);
         }
+      } else {
+        // Use local categories as fallback
+        console.log("Using local categories as fallback");
+        setMenuCategories(categories);
+        setActiveCategory("entradas");
+        setMenuItems(getLocalMenuItemsByCategory("entradas"));
       }
 
-      // Load popular items
+      // Try to load popular items from Firebase
       const firebasePopularItems = await getPopularItems();
       if (firebasePopularItems.length > 0) {
         setPopularItems(firebasePopularItems);
+      } else {
+        // Use local popular items as fallback
+        console.log("Using local popular items as fallback");
+        setPopularItems(getLocalPopularItems());
       }
     } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      // Already using local data as fallback
+      console.error("Error loading data, using local fallback:", error);
+      // Use local data as complete fallback
+      setMenuCategories(categories);
+      setActiveCategory("entradas");
+      setMenuItems(getLocalMenuItemsByCategory("entradas"));
+      setPopularItems(getLocalPopularItems());
     }
   };
 
@@ -59,12 +74,13 @@ const Index = () => {
       if (firebaseCategoryItems.length > 0) {
         setMenuItems(firebaseCategoryItems);
       } else {
-        // Fallback to local data
+        // Always fallback to local data
+        console.log(`Using local items for category ${categoryId}`);
         setMenuItems(getLocalMenuItemsByCategory(categoryId));
       }
     } catch (error) {
-      console.error("Erro ao carregar itens da categoria:", error);
-      // Fallback to local data
+      console.error("Error loading category items, using local fallback:", error);
+      // Always fallback to local data
       setMenuItems(getLocalMenuItemsByCategory(categoryId));
     }
   };

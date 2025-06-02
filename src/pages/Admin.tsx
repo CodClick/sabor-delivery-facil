@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getAllMenuItems } from "@/services/menuItemService";
-import { getAllCategories, fixCategoryOrders } from "@/services/categoryService";
+import { getAllCategories } from "@/services/categoryService";
 import { getAllVariations } from "@/services/variationService";
 import { getAllVariationGroups } from "@/services/variationGroupService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
@@ -13,6 +14,7 @@ import { MenuItemsTab } from "@/components/admin/MenuItemsTab";
 import { CategoriesTab } from "@/components/admin/CategoriesTab";
 import { VariationsTab } from "@/components/admin/VariationsTab";
 import { VariationGroupsTab } from "@/components/admin/VariationGroupsTab";
+import { categories as localCategories, menuItems as localMenuItems } from "@/data/menuData";
 
 const Admin = () => {
   const { currentUser } = useAuth();
@@ -39,11 +41,24 @@ const Admin = () => {
       setLoading(true);
       console.log("Admin: Loading menu data...");
       
+      // Load data with local fallbacks
       const [items, cats, vars, groups] = await Promise.all([
-        getAllMenuItems(),
-        getAllCategories(),
-        getAllVariations(),
-        getAllVariationGroups()
+        getAllMenuItems().catch(() => {
+          console.log("Using local menu items as fallback");
+          return localMenuItems;
+        }),
+        getAllCategories().catch(() => {
+          console.log("Using local categories as fallback");
+          return localCategories;
+        }),
+        getAllVariations().catch(() => {
+          console.log("No variations found, using empty array");
+          return [];
+        }),
+        getAllVariationGroups().catch(() => {
+          console.log("No variation groups found, using empty array");
+          return [];
+        })
       ]);
       
       console.log("Admin: Loaded items:", items.length, items);
@@ -56,11 +71,17 @@ const Admin = () => {
       setVariations(vars);
       setVariationGroups(groups);
     } catch (error) {
-      console.error("Admin: Erro ao carregar dados:", error);
+      console.error("Admin: Error loading data, using local fallback:", error);
+      // Complete fallback to local data
+      setMenuItems(localMenuItems);
+      setCategories(localCategories);
+      setVariations([]);
+      setVariationGroups([]);
+      
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os dados. Tente novamente.",
-        variant: "destructive",
+        title: "Aviso",
+        description: "Carregando dados locais. Algumas funcionalidades podem estar limitadas.",
+        variant: "default",
       });
     } finally {
       setLoading(false);
@@ -72,19 +93,18 @@ const Admin = () => {
     if (window.confirm("Isso irá importar os dados iniciais do menu. Continuar?")) {
       try {
         setLoading(true);
-        const { categories, menuItems } = await import("@/data/menuData");
         
         console.log("Importing initial data...");
-        console.log("Categories to import:", categories.length);
-        console.log("Menu items to import:", menuItems.length);
+        console.log("Categories to import:", localCategories.length);
+        console.log("Menu items to import:", localMenuItems.length);
         
-        for (const category of categories) {
+        for (const category of localCategories) {
           await import("@/services/categoryService").then(module => 
-            module.saveCategory({...category, order: categories.indexOf(category)})
+            module.saveCategory({...category, order: localCategories.indexOf(category)})
           );
         }
         
-        for (const item of menuItems) {
+        for (const item of localMenuItems) {
           await import("@/services/menuItemService").then(module => 
             module.saveMenuItem(item)
           );
@@ -109,31 +129,6 @@ const Admin = () => {
     }
   };
 
-  // Function to fix category orders
-  const handleFixCategoryOrders = async () => {
-    try {
-      setLoading(true);
-      const result = await fixCategoryOrders();
-      console.log("Fix category orders result:", result);
-      
-      toast({
-        title: "Sucesso",
-        description: `Ordem das categorias corrigida com sucesso. ${result.updatedCount} categorias atualizadas.`,
-      });
-      
-      await loadData();
-    } catch (error) {
-      console.error("Erro ao corrigir ordem das categorias:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível corrigir a ordem das categorias. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -153,7 +148,6 @@ const Admin = () => {
           <TabsTrigger value="groups" className="flex-1">Grupos de Variações</TabsTrigger>
         </TabsList>
 
-        {/* Menu Items Tab Content */}
         <TabsContent value="menu">
           <MenuItemsTab 
             menuItems={menuItems}
@@ -165,7 +159,6 @@ const Admin = () => {
           />
         </TabsContent>
 
-        {/* Categories Tab Content */}
         <TabsContent value="categories">
           <CategoriesTab 
             categories={categories}
@@ -173,14 +166,8 @@ const Admin = () => {
             onDataChange={loadData}
             onSeedData={handleSeedData}
           />
-          <div className="mt-4 flex justify-end">
-            <Button variant="outline" onClick={handleFixCategoryOrders} disabled={loading}>
-              Corrigir Ordem das Categorias
-            </Button>
-          </div>
         </TabsContent>
 
-        {/* Variations Tab Content */}
         <TabsContent value="variations">
           <VariationsTab 
             variations={variations}
@@ -190,7 +177,6 @@ const Admin = () => {
           />
         </TabsContent>
         
-        {/* Variation Groups Tab Content */}
         <TabsContent value="groups">
           <VariationGroupsTab 
             variationGroups={variationGroups}
