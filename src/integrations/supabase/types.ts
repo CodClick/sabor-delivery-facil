@@ -94,6 +94,189 @@ export type Database = {
         }
         Relationships: []
       }
+      cardapio_accon_kasuosushi: {
+        Row: {
+          ativo: boolean | null
+          cod_grupo: string
+          cod_produto: string
+          created_at: string | null
+          id: string
+          nome_grupo: string
+          nome_produto: string
+          valor_kasuo_sushi: number | null
+          valor_produto: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cod_grupo: string
+          cod_produto: string
+          created_at?: string | null
+          id?: string
+          nome_grupo: string
+          nome_produto: string
+          valor_kasuo_sushi?: number | null
+          valor_produto?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cod_grupo?: string
+          cod_produto?: string
+          created_at?: string | null
+          id?: string
+          nome_grupo?: string
+          nome_produto?: string
+          valor_kasuo_sushi?: number | null
+          valor_produto?: number | null
+        }
+        Relationships: []
+      }
+      cardapio_codclick: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          id: string
+          nome_do_prato: string
+          preco_do_prato: number
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          id?: string
+          nome_do_prato: string
+          preco_do_prato: number
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          id?: string
+          nome_do_prato?: string
+          preco_do_prato?: number
+        }
+        Relationships: []
+      }
+      cardapio_kasuo_sushi: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome_do_prato: string
+          preco: number
+          qtde: number | null
+          serve: string | null
+          tipo: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_do_prato: string
+          preco: number
+          qtde?: number | null
+          serve?: string | null
+          tipo?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_do_prato?: string
+          preco?: number
+          qtde?: number | null
+          serve?: string | null
+          tipo?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      cardapio_villa_mex: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome_do_prato: string
+          preco: number
+          qtde: string | null
+          serve: string | null
+          tipo: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_do_prato: string
+          preco: number
+          qtde?: string | null
+          serve?: string | null
+          tipo?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome_do_prato?: string
+          preco?: number
+          qtde?: string | null
+          serve?: string | null
+          tipo?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      cardapio_zombie_burger: {
+        Row: {
+          descricao: string | null
+          id: number
+          nome_do_prato: string
+          preco_do_prato: number | null
+        }
+        Insert: {
+          descricao?: string | null
+          id?: number
+          nome_do_prato: string
+          preco_do_prato?: number | null
+        }
+        Update: {
+          descricao?: string | null
+          id?: number
+          nome_do_prato?: string
+          preco_do_prato?: number | null
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          conta_instagram: string | null
+          id: string
+          nome: string
+          pagina_facebook: string | null
+          parametros: string | null
+          pixel: string | null
+          url_destino: string | null
+        }
+        Insert: {
+          conta_instagram?: string | null
+          id?: string
+          nome: string
+          pagina_facebook?: string | null
+          parametros?: string | null
+          pixel?: string | null
+          url_destino?: string | null
+        }
+        Update: {
+          conta_instagram?: string | null
+          id?: string
+          nome?: string
+          pagina_facebook?: string | null
+          parametros?: string | null
+          pixel?: string | null
+          url_destino?: string | null
+        }
+        Relationships: []
+      }
       faixas_ceps_atendidos: {
         Row: {
           cep_fim: string
@@ -145,6 +328,147 @@ export type Database = {
         }
         Relationships: []
       }
+      informacoes_empresa: {
+        Row: {
+          area_entrega: string | null
+          cidade_estado: string
+          criado_em: string | null
+          descricao_ambiente: string | null
+          endereco: string
+          estacionamento: string | null
+          formas_pagamento: string
+          horario_funcionamento: string
+          id: string
+          informacoes_extras: string | null
+          link_cardapio: string | null
+          link_reservas: string | null
+          media_preco: string
+          modalidade_atendimento: string
+          nome_restaurante: string
+          principais_pratos: string
+          telefone: string
+          tempo_entrega: string | null
+          tipo_culinaria: string
+          whatsapp: string
+        }
+        Insert: {
+          area_entrega?: string | null
+          cidade_estado: string
+          criado_em?: string | null
+          descricao_ambiente?: string | null
+          endereco: string
+          estacionamento?: string | null
+          formas_pagamento: string
+          horario_funcionamento: string
+          id?: string
+          informacoes_extras?: string | null
+          link_cardapio?: string | null
+          link_reservas?: string | null
+          media_preco: string
+          modalidade_atendimento: string
+          nome_restaurante: string
+          principais_pratos: string
+          telefone: string
+          tempo_entrega?: string | null
+          tipo_culinaria: string
+          whatsapp: string
+        }
+        Update: {
+          area_entrega?: string | null
+          cidade_estado?: string
+          criado_em?: string | null
+          descricao_ambiente?: string | null
+          endereco?: string
+          estacionamento?: string | null
+          formas_pagamento?: string
+          horario_funcionamento?: string
+          id?: string
+          informacoes_extras?: string | null
+          link_cardapio?: string | null
+          link_reservas?: string | null
+          media_preco?: string
+          modalidade_atendimento?: string
+          nome_restaurante?: string
+          principais_pratos?: string
+          telefone?: string
+          tempo_entrega?: string | null
+          tipo_culinaria?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      informacoes_pedido: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          created_at: string | null
+          id: string
+          itens_pedido: string | null
+          nome: string | null
+          numero_casa: string | null
+          preco_final: number | null
+          sessao: string
+          street: string | null
+          telefone: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string | null
+          id?: string
+          itens_pedido?: string | null
+          nome?: string | null
+          numero_casa?: string | null
+          preco_final?: number | null
+          sessao: string
+          street?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string | null
+          id?: string
+          itens_pedido?: string | null
+          nome?: string | null
+          numero_casa?: string | null
+          preco_final?: number | null
+          sessao?: string
+          street?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      instancias: {
+        Row: {
+          apikey: string
+          created_at: string | null
+          id: string
+          instancia: string
+          status: string | null
+        }
+        Insert: {
+          apikey: string
+          created_at?: string | null
+          id?: string
+          instancia: string
+          status?: string | null
+        }
+        Update: {
+          apikey?: string
+          created_at?: string | null
+          id?: string
+          instancia?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       promocoes: {
         Row: {
           created_at: string
@@ -172,23 +496,61 @@ export type Database = {
         }
         Relationships: []
       }
-      saudacoes: {
+      prompts: {
         Row: {
-          created_at: string
+          atualizado_em: string | null
+          conteudo: string
+          criado_em: string | null
           id: string
-          texto_da_saudacao: string | null
+          titulo: string
           user_id: string
         }
         Insert: {
+          atualizado_em?: string | null
+          conteudo: string
+          criado_em?: string | null
+          id?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          conteudo?: string
+          criado_em?: string | null
+          id?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saudacoes: {
+        Row: {
+          ativa: string | null
+          created_at: string
+          id: string
+          saudacao: string | null
+          user_id: string
+        }
+        Insert: {
+          ativa?: string | null
           created_at?: string
           id?: string
-          texto_da_saudacao?: string | null
+          saudacao?: string | null
           user_id?: string
         }
         Update: {
+          ativa?: string | null
           created_at?: string
           id?: string
-          texto_da_saudacao?: string | null
+          saudacao?: string | null
           user_id?: string
         }
         Relationships: []
@@ -220,6 +582,33 @@ export type Database = {
           last_sign_in?: string | null
           name?: string | null
           phone?: string | null
+        }
+        Relationships: []
+      }
+      usuarios: {
+        Row: {
+          created_at: string | null
+          email: string
+          empresa: string | null
+          id: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          empresa?: string | null
+          id?: string
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          empresa?: string | null
+          id?: string
+          user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }

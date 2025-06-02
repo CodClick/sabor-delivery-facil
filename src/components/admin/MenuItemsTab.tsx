@@ -29,6 +29,9 @@ export const MenuItemsTab = ({
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
+  console.log("MenuItemsTab - menuItems:", menuItems);
+  console.log("MenuItemsTab - categories:", categories);
+
   const toggleCategory = (categoryId: string) => {
     setCollapsedCategories(prev => ({
       ...prev,
@@ -38,6 +41,10 @@ export const MenuItemsTab = ({
 
   // Group items by category
   const itemsByCategory = useMemo(() => {
+    console.log("Grouping items by category...");
+    console.log("Available categories:", categories.map(cat => ({ id: cat.id, name: cat.name })));
+    console.log("Available menu items:", menuItems.map(item => ({ id: item.id, name: item.name, category: item.category })));
+
     // Sort categories by order
     const sortedCategories = [...categories].sort((a, b) => {
       const orderA = a.order !== undefined ? a.order : 0;
@@ -57,9 +64,12 @@ export const MenuItemsTab = ({
     
     // Add items to their respective categories
     menuItems.forEach(item => {
+      console.log(`Processing item "${item.name}" with category "${item.category}"`);
       if (grouped[item.category]) {
         grouped[item.category].items.push(item);
+        console.log(`Added item "${item.name}" to category "${item.category}"`);
       } else {
+        console.log(`Category "${item.category}" not found for item "${item.name}"`);
         // Handle items with unknown categories
         const unknownCategoryId = 'unknown';
         if (!grouped[unknownCategoryId]) {
@@ -71,6 +81,8 @@ export const MenuItemsTab = ({
         grouped[unknownCategoryId].items.push(item);
       }
     });
+    
+    console.log("Final grouped items:", grouped);
     
     // Convert to array and ensure it's sorted by category order
     return Object.values(grouped);
@@ -125,120 +137,99 @@ export const MenuItemsTab = ({
     return <div className="text-center py-8">Carregando...</div>;
   }
 
-  if (menuItems.length === 0) {
-    return (
-      <>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Itens do Cardápio</h2>
-          <Button onClick={handleAddItem}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Item
-          </Button>
-        </div>
-        <div className="text-center py-8 text-gray-500">
-          Nenhum item encontrado. Adicione itens ou importe os dados iniciais.
-        </div>
-        {editItem && (
-          <EditMenuItemModal
-            editItem={editItem}
-            setEditItem={setEditItem}
-            menuItems={menuItems}
-            categories={categories}
-            variations={variations}
-            variationGroups={variationGroups}
-            onSuccess={onDataChange}
-          />
-        )}
-      </>
-    );
-  }
-
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Itens do Cardápio</h2>
+        <h2 className="text-xl font-bold">Itens do Cardápio ({menuItems.length} itens)</h2>
         <Button onClick={handleAddItem}>
           <Plus className="h-4 w-4 mr-1" />
           Novo Item
         </Button>
       </div>
 
-      <div className="space-y-8">
-        {itemsByCategory.map(({category, items}) => (
-          <div key={category.id} className="border rounded-lg overflow-hidden">
-            <div 
-              className="flex justify-between items-center bg-gray-100 p-4 cursor-pointer"
-              onClick={() => toggleCategory(category.id)}
-            >
-              <h3 className="font-bold text-lg">
-                {category.name} 
-                <span className="ml-2 text-gray-500 text-sm">
-                  ({items.length} {items.length === 1 ? "item" : "itens"})
-                </span>
-                {items.length === 0 && <span className="ml-2 text-gray-500 text-sm">(vazio)</span>}
-              </h3>
-              <Button variant="ghost" size="sm">
-                {collapsedCategories[category.id] ? 
-                  <ChevronDown className="h-5 w-5" /> : 
-                  <ChevronUp className="h-5 w-5" />
-                }
-              </Button>
-            </div>
-            
-            {!collapsedCategories[category.id] && items.length > 0 && (
-              <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {items.map((item) => (
-                    <Card key={item.id} className="overflow-hidden">
-                      <div className="h-40 bg-gray-200">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-bold">{item.name}</h3>
-                            <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
-                            <p className="mt-2 font-semibold text-brand">R$ {item.price.toFixed(2)}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
-                            </p>
-                            {item.popular && (
-                              <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
-                                Popular
-                              </span>
-                            )}
-                            {item.hasVariations && (
-                              <span className="inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded mt-2 ml-2">
-                                Com variações
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+      {menuItems.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>Nenhum item encontrado.</p>
+          <p className="mt-2">Adicione itens ou importe os dados iniciais na aba "Categorias".</p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {itemsByCategory.map(({category, items}) => (
+            <div key={category.id} className="border rounded-lg overflow-hidden">
+              <div 
+                className="flex justify-between items-center bg-gray-100 p-4 cursor-pointer"
+                onClick={() => toggleCategory(category.id)}
+              >
+                <h3 className="font-bold text-lg">
+                  {category.name} 
+                  <span className="ml-2 text-gray-500 text-sm">
+                    ({items.length} {items.length === 1 ? "item" : "itens"})
+                  </span>
+                  {items.length === 0 && <span className="ml-2 text-gray-500 text-sm">(vazio)</span>}
+                </h3>
+                <Button variant="ghost" size="sm">
+                  {collapsedCategories[category.id] ? 
+                    <ChevronDown className="h-5 w-5" /> : 
+                    <ChevronUp className="h-5 w-5" />
+                  }
+                </Button>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+              
+              {!collapsedCategories[category.id] && items.length > 0 && (
+                <div className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map((item) => (
+                      <Card key={item.id} className="overflow-hidden">
+                        <div className="h-40 bg-gray-200">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-bold">{item.name}</h3>
+                              <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+                              <p className="mt-2 font-semibold text-brand">R$ {item.price.toFixed(2)}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
+                              </p>
+                              {item.popular && (
+                                <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
+                                  Popular
+                                </span>
+                              )}
+                              {item.hasVariations && (
+                                <span className="inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded mt-2 ml-2">
+                                  Com variações
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Form for adding/editing menu items */}
       {editItem && (

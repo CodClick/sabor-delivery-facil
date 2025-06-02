@@ -41,7 +41,7 @@ const Admin = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log("Loading menu data...");
+      console.log("Admin: Loading menu data...");
       
       const [items, cats, vars, groups] = await Promise.all([
         getAllMenuItems(),
@@ -50,17 +50,17 @@ const Admin = () => {
         getAllVariationGroups()
       ]);
       
-      console.log("Loaded items:", items.length);
-      console.log("Loaded categories:", cats.length);
-      console.log("Loaded variations:", vars.length);
-      console.log("Loaded variation groups:", groups.length);
+      console.log("Admin: Loaded items:", items.length, items);
+      console.log("Admin: Loaded categories:", cats.length, cats);
+      console.log("Admin: Loaded variations:", vars.length, vars);
+      console.log("Admin: Loaded variation groups:", groups.length, groups);
       
       setMenuItems(items);
       setCategories(cats);
       setVariations(vars);
       setVariationGroups(groups);
     } catch (error) {
-      console.error("Erro ao carregar dados:", error);
+      console.error("Admin: Erro ao carregar dados:", error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dados. Tente novamente.",
