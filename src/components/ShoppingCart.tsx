@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { getAllVariations, getVariationById } from "@/services/menuService";
+import { getAllVariations, getVariationById } from "@/services/variationService";
 import { Variation } from "@/types/menu";
 import { Separator } from "@/components/ui/separator";
 

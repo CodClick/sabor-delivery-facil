@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import ProductVariationDialog from "./ProductVariationDialog";
-import { getAllVariations, getVariationGroupById } from "@/services/menuService";
+import { getAllVariations } from "@/services/variationService";
+import { getVariationGroupById } from "@/services/variationGroupService";
 
 interface MenuItemCardProps {
   item: MenuItem;

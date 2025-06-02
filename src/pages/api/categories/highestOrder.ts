@@ -1,20 +1,17 @@
 
-import { getAllCategories } from "@/services/menuService";
+import { Request, Response } from 'express';
+import { getHighestCategoryOrder } from '@/services/categoryService';
 
-export default async function handler(req, res) {
-  if (req.method === 'GET') {
-    try {
-      const categories = await getAllCategories();
-      const highestOrder = categories.length > 0
-        ? Math.max(...categories.map(cat => cat.order !== undefined ? cat.order : 0))
-        : -1;
-      
-      res.status(200).json({ highestOrder });
-    } catch (error) {
-      console.error("Error fetching highest order:", error);
-      res.status(500).json({ error: "Failed to get highest order" });
-    }
-  } else {
-    res.status(405).json({ error: "Method not allowed" });
+export default async function handler(req: Request, res: Response) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  try {
+    const highestOrder = await getHighestCategoryOrder();
+    res.status(200).json({ highestOrder });
+  } catch (error) {
+    console.error('Error getting highest category order:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }

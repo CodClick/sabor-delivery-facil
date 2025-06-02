@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Plus, Trash2 } from "lucide-react";
-import { deleteVariation } from "@/services/menuService";
+import { deleteVariation } from "@/services/variationService";
 import { EditVariationModal } from "./EditVariationModal";
 
 interface VariationsTabProps {

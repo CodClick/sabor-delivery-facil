@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle } from "lucide-react";
-import { saveVariationGroup, updateVariationGroup } from "@/services/menuService";
+import { saveVariationGroup, updateVariationGroup } from "@/services/variationGroupService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface EditVariationGroupModalProps {

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { MenuItem, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { saveVariationGroup } from "@/services/menuService";
+import { saveVariationGroup } from "@/services/variationGroupService";
 
 interface AddVariationGroupModalProps {
   tempVariationGroup: VariationGroup;

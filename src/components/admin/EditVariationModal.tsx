@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle } from "lucide-react";
-import { saveVariation } from "@/services/menuService";
+import { saveVariation } from "@/services/variationService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface EditVariationModalProps {

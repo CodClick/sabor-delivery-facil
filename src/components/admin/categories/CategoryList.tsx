@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Category } from "@/types/menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
-import { deleteCategory, updateCategory } from "@/services/menuService";
+import { deleteCategory, updateCategory } from "@/services/categoryService";
 
 interface CategoryListProps {
   categories: Category[];
