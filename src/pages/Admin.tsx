@@ -1,14 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  getAllMenuItems, 
-  getAllCategories, 
-  getAllVariations,
-  getAllVariationGroups,
-  fixCategoryOrders,
-} from "@/services/menuService";
+import { getAllMenuItems } from "@/services/menuItemService";
+import { getAllCategories, fixCategoryOrders } from "@/services/categoryService";
+import { getAllVariations } from "@/services/variationService";
+import { getAllVariationGroups } from "@/services/variationGroupService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -83,13 +79,13 @@ const Admin = () => {
         console.log("Menu items to import:", menuItems.length);
         
         for (const category of categories) {
-          await import("@/services/menuService").then(module => 
+          await import("@/services/categoryService").then(module => 
             module.saveCategory({...category, order: categories.indexOf(category)})
           );
         }
         
         for (const item of menuItems) {
-          await import("@/services/menuService").then(module => 
+          await import("@/services/menuItemService").then(module => 
             module.saveMenuItem(item)
           );
         }

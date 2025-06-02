@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,8 @@ import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
 import { categories, getMenuItemsByCategory as getLocalMenuItemsByCategory, getPopularItems as getLocalPopularItems } from "@/data/menuData";
-import { 
-  getAllCategories, 
-  getMenuItemsByCategory, 
-  getPopularItems 
-} from "@/services/menuService";
+import { getAllCategories } from "@/services/categoryService";
+import { getMenuItemsByCategory, getPopularItems } from "@/services/menuItemService";
 import { Category } from "@/types/menu";
 import { useAuth } from "@/hooks/useAuth";
 import { LogIn, LogOut } from "lucide-react";

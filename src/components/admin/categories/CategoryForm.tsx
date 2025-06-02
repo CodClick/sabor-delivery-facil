@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Category } from "@/types/menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
-import { saveCategory, updateCategory } from "@/services/menuService";
+import { saveCategory, updateCategory } from "@/services/categoryService";
 
 interface CategoryFormProps {
   editingCategory: Category | null;

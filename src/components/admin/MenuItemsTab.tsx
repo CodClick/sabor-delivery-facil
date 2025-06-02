@@ -1,11 +1,10 @@
-
 import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { deleteMenuItem } from "@/services/menuService";
+import { deleteMenuItem } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
 
 interface MenuItemsTabProps {
