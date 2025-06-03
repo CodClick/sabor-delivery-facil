@@ -40,20 +40,36 @@ export const VariationsTab = ({
     setEditVariation({...variation});
   };
 
-  const handleDeleteVariation = async (variationId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir esta variação?")) {
+  const handleDeleteVariation = async (variation: Variation) => {
+    console.log("VariationsTab: Tentando deletar variação:", variation);
+    console.log("VariationsTab: ID da variação:", variation.id);
+    console.log("VariationsTab: Tipo do ID:", typeof variation.id);
+    
+    if (!variation.id) {
+      console.error("VariationsTab: Variação não possui ID válido:", variation);
+      toast({
+        title: "Erro",
+        description: "Variação não possui ID válido para exclusão",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (window.confirm(`Tem certeza que deseja excluir a variação "${variation.name}"?`)) {
       try {
-        await deleteVariation(variationId);
+        console.log("VariationsTab: Confirmação recebida, chamando deleteVariation com ID:", variation.id);
+        await deleteVariation(variation.id);
         toast({
           title: "Sucesso",
           description: "Variação excluída com sucesso",
         });
+        console.log("VariationsTab: Variação deletada com sucesso, chamando onDataChange");
         onDataChange();
       } catch (error) {
-        console.error("Erro ao excluir variação:", error);
+        console.error("VariationsTab: Erro ao excluir variação:", error);
         toast({
           title: "Erro",
-          description: "Não foi possível excluir a variação. Tente novamente.",
+          description: `Não foi possível excluir a variação: ${error.message}`,
           variant: "destructive",
         });
       }
@@ -103,12 +119,16 @@ export const VariationsTab = ({
                       }
                     </p>
                   </div>
+                  
+                  <p className="text-xs text-gray-400 mt-1">
+                    ID: {variation.id}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" onClick={() => handleEditVariation(variation)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDeleteVariation(variation.id)}>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteVariation(variation)}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>

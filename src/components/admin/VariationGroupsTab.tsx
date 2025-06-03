@@ -39,20 +39,36 @@ export const VariationGroupsTab = ({
     setEditVariationGroup({...group});
   };
 
-  const handleDeleteExistingVariationGroup = async (groupId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este grupo de variação? Isso pode afetar itens do menu que o utilizam.")) {
+  const handleDeleteExistingVariationGroup = async (group: VariationGroup) => {
+    console.log("VariationGroupsTab: Tentando deletar grupo:", group);
+    console.log("VariationGroupsTab: ID do grupo:", group.id);
+    console.log("VariationGroupsTab: Tipo do ID:", typeof group.id);
+    
+    if (!group.id) {
+      console.error("VariationGroupsTab: Grupo não possui ID válido:", group);
+      toast({
+        title: "Erro",
+        description: "Grupo não possui ID válido para exclusão",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (window.confirm(`Tem certeza que deseja excluir o grupo "${group.name}"? Isso pode afetar itens do menu que o utilizam.`)) {
       try {
-        await deleteVariationGroup(groupId);
+        console.log("VariationGroupsTab: Confirmação recebida, chamando deleteVariationGroup com ID:", group.id);
+        await deleteVariationGroup(group.id);
         toast({
           title: "Sucesso",
           description: "Grupo de variação excluído com sucesso",
         });
+        console.log("VariationGroupsTab: Grupo deletado com sucesso, chamando onDataChange");
         onDataChange();
       } catch (error) {
-        console.error("Erro ao excluir grupo de variação:", error);
+        console.error("VariationGroupsTab: Erro ao excluir grupo de variação:", error);
         toast({
           title: "Erro",
-          description: "Não foi possível excluir o grupo de variação. Verifique se ele está sendo usado em algum item do menu.",
+          description: `Não foi possível excluir o grupo: ${error.message}`,
           variant: "destructive",
         });
       }
@@ -104,6 +120,10 @@ export const VariationGroupsTab = ({
                       ))}
                     </div>
                   </div>
+                  
+                  <p className="text-xs text-gray-400 mt-2">
+                    ID: {group.id}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button 
@@ -116,7 +136,7 @@ export const VariationGroupsTab = ({
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    onClick={() => handleDeleteExistingVariationGroup(group.id)}
+                    onClick={() => handleDeleteExistingVariationGroup(group)}
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>

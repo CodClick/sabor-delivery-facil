@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
@@ -112,20 +113,36 @@ export const MenuItemsTab = ({
     setEditItem(itemToEdit);
   };
 
-  const handleDeleteItem = async (itemId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este item?")) {
+  const handleDeleteItem = async (item: MenuItem) => {
+    console.log("MenuItemsTab: Tentando deletar item:", item);
+    console.log("MenuItemsTab: ID do item:", item.id);
+    console.log("MenuItemsTab: Tipo do ID:", typeof item.id);
+    
+    if (!item.id) {
+      console.error("MenuItemsTab: Item não possui ID válido:", item);
+      toast({
+        title: "Erro",
+        description: "Item não possui ID válido para exclusão",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (window.confirm(`Tem certeza que deseja excluir o item "${item.name}"?`)) {
       try {
-        await deleteMenuItem(itemId);
+        console.log("MenuItemsTab: Confirmação recebida, chamando deleteMenuItem com ID:", item.id);
+        await deleteMenuItem(item.id);
         toast({
           title: "Sucesso",
           description: "Item excluído com sucesso",
         });
+        console.log("MenuItemsTab: Item deletado com sucesso, chamando onDataChange");
         onDataChange();
       } catch (error) {
-        console.error("Erro ao excluir item:", error);
+        console.error("MenuItemsTab: Erro ao excluir item:", error);
         toast({
           title: "Erro",
-          description: "Não foi possível excluir o item. Tente novamente.",
+          description: `Não foi possível excluir o item: ${error.message}`,
           variant: "destructive",
         });
       }
@@ -199,6 +216,9 @@ export const MenuItemsTab = ({
                               <p className="text-xs text-gray-500 mt-1">
                                 Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
                               </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                ID: {item.id}
+                              </p>
                               {item.popular && (
                                 <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
                                   Popular
@@ -214,7 +234,7 @@ export const MenuItemsTab = ({
                               <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)}>
+                              <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item)}>
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
