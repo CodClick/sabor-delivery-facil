@@ -88,18 +88,26 @@ export const saveVariationGroup = async (
     }
 
     if (variationGroup.id) {
-      // Update existing variation group
-      console.log("Atualizando grupo existente:", variationGroup.id);
-      const variationGroupDocRef = doc(
-        db,
-        "variationGroups",
-        variationGroup.id
-      );
-      // Remove id from the object before updating
-      const { id, ...variationGroupData } = variationGroup;
-      await updateDoc(variationGroupDocRef, variationGroupData);
-      console.log("Grupo atualizado com sucesso");
-      return variationGroup.id;
+      // Check if the document actually exists before trying to update
+      console.log("Verificando se o grupo de variação existe:", variationGroup.id);
+      const variationGroupDocRef = doc(db, "variationGroups", variationGroup.id);
+      const existingDoc = await getDoc(variationGroupDocRef);
+      
+      if (existingDoc.exists()) {
+        // Update existing variation group
+        console.log("Atualizando grupo existente:", variationGroup.id);
+        const { id, ...variationGroupData } = variationGroup;
+        await updateDoc(variationGroupDocRef, variationGroupData);
+        console.log("Grupo atualizado com sucesso");
+        return variationGroup.id;
+      } else {
+        // Document doesn't exist, create a new one instead
+        console.log("Documento não existe, criando novo grupo em vez de atualizar");
+        const variationGroupsCollection = collection(db, "variationGroups");
+        const docRef = await addDoc(variationGroupsCollection, variationGroup);
+        console.log("Novo grupo criado com ID:", docRef.id);
+        return docRef.id;
+      }
     } else {
       // Create new variation group
       console.log("Criando novo grupo de variação");

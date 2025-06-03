@@ -75,14 +75,26 @@ export const saveVariation = async (variation: Variation): Promise<string> => {
     }
 
     if (variation.id) {
-      // Update existing variation
-      console.log("Atualizando variação existente:", variation.id);
+      // Check if the document actually exists before trying to update
+      console.log("Verificando se a variação existe:", variation.id);
       const variationDocRef = doc(db, "variations", variation.id);
-      // Remove id from the object before updating
-      const { id, ...variationData } = variation;
-      await updateDoc(variationDocRef, variationData);
-      console.log("Variação atualizada com sucesso");
-      return variation.id;
+      const existingDoc = await getDoc(variationDocRef);
+      
+      if (existingDoc.exists()) {
+        // Update existing variation
+        console.log("Atualizando variação existente:", variation.id);
+        const { id, ...variationData } = variation;
+        await updateDoc(variationDocRef, variationData);
+        console.log("Variação atualizada com sucesso");
+        return variation.id;
+      } else {
+        // Document doesn't exist, create a new one instead
+        console.log("Documento não existe, criando nova variação em vez de atualizar");
+        const variationsCollection = collection(db, "variations");
+        const docRef = await addDoc(variationsCollection, variation);
+        console.log("Nova variação criada com ID:", docRef.id);
+        return docRef.id;
+      }
     } else {
       // Create new variation
       console.log("Criando nova variação");

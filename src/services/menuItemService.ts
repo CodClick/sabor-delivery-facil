@@ -67,21 +67,36 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
     }
 
     if (menuItem.id) {
-      // Update existing menu item
-      console.log("Atualizando item existente:", menuItem.id);
+      // Check if the document actually exists before trying to update
+      console.log("Verificando se o documento existe:", menuItem.id);
       const menuItemDocRef = doc(db, "menuItems", menuItem.id);
-      // Remove id from the object before updating (to prevent Firebase errors)
-      const { id, ...menuItemData } = menuItem;
-      await updateDoc(menuItemDocRef, menuItemData);
-      console.log("Item atualizado com sucesso");
-      return menuItem.id;
+      const existingDoc = await getDoc(menuItemDocRef);
+      
+      if (existingDoc.exists()) {
+        // Update existing menu item
+        console.log("Atualizando item existente:", menuItem.id);
+        const { id, ...menuItemData } = menuItem;
+        await updateDoc(menuItemDocRef, menuItemData);
+        console.log("Item atualizado com sucesso");
+        return menuItem.id;
+      } else {
+        // Document doesn't exist, create a new one instead
+        console.log("Documento não existe, criando novo item em vez de atualizar");
+        const menuItemsCollection = collection(db, "menuItems");
+        const docRef = await addDoc(menuItemsCollection, {
+          ...menuItem,
+          image: menuItem.image || "/placeholder.svg"
+        });
+        console.log("Novo item criado com ID:", docRef.id);
+        return docRef.id;
+      }
     } else {
       // Create new menu item
       console.log("Criando novo item do menu");
       const menuItemsCollection = collection(db, "menuItems");
       const docRef = await addDoc(menuItemsCollection, {
         ...menuItem,
-        image: menuItem.image || "/placeholder.svg" // Default image if not provided
+        image: menuItem.image || "/placeholder.svg"
       });
       console.log("Novo item criado com ID:", docRef.id);
       return docRef.id;
