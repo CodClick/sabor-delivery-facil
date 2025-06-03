@@ -111,12 +111,26 @@ export const saveVariation = async (variation: Variation): Promise<string> => {
 
 export const deleteVariation = async (id: string): Promise<void> => {
   try {
-    console.log("Deletando variação:", id);
+    console.log("Tentando deletar variação com ID:", id);
+    
+    if (!id || id.trim() === "") {
+      throw new Error("ID da variação é obrigatório para exclusão");
+    }
+
+    // Verificar se o documento existe antes de tentar deletar
     const variationDocRef = doc(db, "variations", id);
+    const docSnapshot = await getDoc(variationDocRef);
+    
+    if (!docSnapshot.exists()) {
+      console.log("Documento de variação não encontrado para exclusão:", id);
+      throw new Error("Variação não encontrada no banco de dados");
+    }
+    
+    console.log("Documento de variação encontrado, procedendo com a exclusão...");
     await deleteDoc(variationDocRef);
-    console.log("Variação deletada com sucesso");
+    console.log("Variação deletada com sucesso:", id);
   } catch (error) {
-    console.error("Erro ao deletar variação:", error);
-    throw error;
+    console.error("Erro detalhado ao deletar variação:", error);
+    throw new Error(`Falha ao deletar variação: ${error.message}`);
   }
 };

@@ -1,4 +1,3 @@
-
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -109,13 +108,27 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
 
 export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
-    console.log("Deletando item do menu:", id);
+    console.log("Tentando deletar item do menu com ID:", id);
+    
+    if (!id || id.trim() === "") {
+      throw new Error("ID do item é obrigatório para exclusão");
+    }
+
+    // Verificar se o documento existe antes de tentar deletar
     const menuItemDocRef = doc(db, "menuItems", id);
+    const docSnapshot = await getDoc(menuItemDocRef);
+    
+    if (!docSnapshot.exists()) {
+      console.log("Documento não encontrado para exclusão:", id);
+      throw new Error("Item não encontrado no banco de dados");
+    }
+    
+    console.log("Documento encontrado, procedendo com a exclusão...");
     await deleteDoc(menuItemDocRef);
-    console.log("Item deletado com sucesso");
+    console.log("Item deletado com sucesso:", id);
   } catch (error) {
-    console.error("Erro ao deletar item do menu:", error);
-    throw error;
+    console.error("Erro detalhado ao deletar item do menu:", error);
+    throw new Error(`Falha ao deletar item: ${error.message}`);
   }
 };
 

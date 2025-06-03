@@ -127,12 +127,26 @@ export const updateVariationGroup = saveVariationGroup;
 
 export const deleteVariationGroup = async (id: string): Promise<void> => {
   try {
-    console.log("Deletando grupo de variação:", id);
+    console.log("Tentando deletar grupo de variação com ID:", id);
+    
+    if (!id || id.trim() === "") {
+      throw new Error("ID do grupo de variação é obrigatório para exclusão");
+    }
+
+    // Verificar se o documento existe antes de tentar deletar
     const variationGroupDocRef = doc(db, "variationGroups", id);
+    const docSnapshot = await getDoc(variationGroupDocRef);
+    
+    if (!docSnapshot.exists()) {
+      console.log("Documento de grupo de variação não encontrado para exclusão:", id);
+      throw new Error("Grupo de variação não encontrado no banco de dados");
+    }
+    
+    console.log("Documento de grupo de variação encontrado, procedendo com a exclusão...");
     await deleteDoc(variationGroupDocRef);
-    console.log("Grupo deletado com sucesso");
+    console.log("Grupo de variação deletado com sucesso:", id);
   } catch (error) {
-    console.error("Erro ao deletar grupo de variação:", error);
-    throw error;
+    console.error("Erro detalhado ao deletar grupo de variação:", error);
+    throw new Error(`Falha ao deletar grupo de variação: ${error.message}`);
   }
 };
