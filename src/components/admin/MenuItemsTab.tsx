@@ -90,7 +90,7 @@ export const MenuItemsTab = ({
 
   const handleAddItem = () => {
     const newItem: MenuItem = {
-      id: crypto.randomUUID(),
+      id: `temp-${Date.now()}`, // Use temporary ID
       name: "",
       description: "",
       price: 0,
@@ -114,17 +114,28 @@ export const MenuItemsTab = ({
   };
 
   const handleDeleteItem = async (item: MenuItem) => {
-    console.log("MenuItemsTab: Tentando deletar item:", item);
+    console.log("=== INÍCIO handleDeleteItem ===");
+    console.log("MenuItemsTab: Item recebido para exclusão:", item);
     console.log("MenuItemsTab: ID do item:", item.id);
     console.log("MenuItemsTab: Tipo do ID:", typeof item.id);
+    console.log("MenuItemsTab: ID é string?", typeof item.id === "string");
+    console.log("MenuItemsTab: ID não está vazio?", !!item.id);
+    console.log("MenuItemsTab: ID não é só espaços?", item.id && item.id.trim() !== "");
     
-    if (!item.id) {
+    if (!item.id || typeof item.id !== "string" || item.id.trim() === "") {
       console.error("MenuItemsTab: Item não possui ID válido:", item);
       toast({
         title: "Erro",
         description: "Item não possui ID válido para exclusão",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check if it's a temporary ID (shouldn't be deleted from Firebase)
+    if (item.id.startsWith("temp-")) {
+      console.log("MenuItemsTab: Item com ID temporário, removendo apenas da interface");
+      onDataChange(); // Refresh the data
       return;
     }
 
@@ -147,6 +158,7 @@ export const MenuItemsTab = ({
         });
       }
     }
+    console.log("=== FIM handleDeleteItem ===");
   };
 
   if (loading) {
@@ -216,8 +228,11 @@ export const MenuItemsTab = ({
                               <p className="text-xs text-gray-500 mt-1">
                                 Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
                               </p>
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className="text-xs text-gray-400 mt-1 break-all">
                                 ID: {item.id}
+                              </p>
+                              <p className="text-xs text-red-500 mt-1">
+                                Tipo ID: {typeof item.id} | Temp: {item.id?.startsWith("temp-") ? "Sim" : "Não"}
                               </p>
                               {item.popular && (
                                 <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">

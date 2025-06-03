@@ -1,3 +1,4 @@
+
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -65,7 +66,7 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
       throw new Error("O preço deve ser maior que zero");
     }
 
-    if (menuItem.id) {
+    if (menuItem.id && menuItem.id !== "" && !menuItem.id.startsWith("temp-")) {
       // Check if the document actually exists before trying to update
       console.log("Verificando se o documento existe:", menuItem.id);
       const menuItemDocRef = doc(db, "menuItems", menuItem.id);
@@ -79,11 +80,12 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
         console.log("Item atualizado com sucesso");
         return menuItem.id;
       } else {
-        // Document doesn't exist, create a new one instead
         console.log("Documento não existe, criando novo item em vez de atualizar");
+        // Document doesn't exist, create a new one instead
         const menuItemsCollection = collection(db, "menuItems");
+        const { id, ...menuItemData } = menuItem;
         const docRef = await addDoc(menuItemsCollection, {
-          ...menuItem,
+          ...menuItemData,
           image: menuItem.image || "/placeholder.svg"
         });
         console.log("Novo item criado com ID:", docRef.id);
@@ -91,10 +93,11 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
       }
     } else {
       // Create new menu item
-      console.log("Criando novo item do menu");
+      console.log("Criando novo item do menu (ID temporário ou vazio)");
       const menuItemsCollection = collection(db, "menuItems");
+      const { id, ...menuItemData } = menuItem;
       const docRef = await addDoc(menuItemsCollection, {
-        ...menuItem,
+        ...menuItemData,
         image: menuItem.image || "/placeholder.svg"
       });
       console.log("Novo item criado com ID:", docRef.id);
@@ -108,26 +111,58 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
 
 export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
-    console.log("Tentando deletar item do menu com ID:", id);
+    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO ===");
+    console.log("deleteMenuItem chamado com ID:", id);
+    console.log("Tipo do ID:", typeof id);
+    console.log("ID válido?", !!id);
+    console.log("ID não é string vazia?", id !== "");
+    console.log("ID não é apenas espaços?", id.trim() !== "");
     
-    if (!id || id.trim() === "") {
-      throw new Error("ID do item é obrigatório para exclusão");
+    if (!id || id.trim() === "" || typeof id !== "string") {
+      console.error("ID inválido fornecido:", { id, tipo: typeof id });
+      throw new Error("ID do item é obrigatório para exclusão e deve ser uma string válida");
     }
 
+    const cleanId = id.trim();
+    console.log("ID limpo:", cleanId);
+    
     // Verificar se o documento existe antes de tentar deletar
-    const menuItemDocRef = doc(db, "menuItems", id);
+    console.log("Criando referência do documento...");
+    const menuItemDocRef = doc(db, "menuItems", cleanId);
+    console.log("Referência criada:", menuItemDocRef.path);
+    
+    console.log("Verificando se documento existe...");
     const docSnapshot = await getDoc(menuItemDocRef);
+    console.log("Snapshot obtido, existe?", docSnapshot.exists());
     
     if (!docSnapshot.exists()) {
-      console.log("Documento não encontrado para exclusão:", id);
-      throw new Error("Item não encontrado no banco de dados");
+      console.log("=== DOCUMENTO NÃO ENCONTRADO ===");
+      console.log("Tentando buscar todos os documentos para verificar...");
+      
+      // Buscar todos os documentos para debug
+      const allItemsSnapshot = await getDocs(collection(db, "menuItems"));
+      const allItems = allItemsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name
+      }));
+      console.log("Todos os itens no banco:", allItems);
+      console.log("ID procurado:", cleanId);
+      console.log("IDs disponíveis:", allItems.map(item => item.id));
+      
+      const foundItem = allItems.find(item => item.id === cleanId);
+      console.log("Item encontrado na busca geral?", !!foundItem);
+      
+      throw new Error(`Item não encontrado no banco de dados. ID procurado: ${cleanId}`);
     }
     
-    console.log("Documento encontrado, procedendo com a exclusão...");
+    console.log("Documento encontrado! Dados:", docSnapshot.data());
+    console.log("Procedendo com a exclusão...");
     await deleteDoc(menuItemDocRef);
-    console.log("Item deletado com sucesso:", id);
+    console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
   } catch (error) {
+    console.error("=== ERRO NA EXCLUSÃO ===");
     console.error("Erro detalhado ao deletar item do menu:", error);
+    console.error("Stack trace:", error.stack);
     throw new Error(`Falha ao deletar item: ${error.message}`);
   }
 };
