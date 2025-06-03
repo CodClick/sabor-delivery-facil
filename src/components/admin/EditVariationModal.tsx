@@ -39,7 +39,10 @@ export const EditVariationModal = ({
   };
 
   const handleSaveVariation = async () => {
+    console.log("Tentando salvar variação:", editVariation);
+    
     if (!editVariation.name) {
+      console.log("Validação falhou - nome obrigatório");
       toast({
         title: "Campo obrigatório",
         description: "O nome da variação é obrigatório",
@@ -49,7 +52,18 @@ export const EditVariationModal = ({
     }
 
     try {
-      await saveVariation(editVariation);
+      console.log("Iniciando salvamento da variação...");
+      
+      // Ensure additionalPrice is a valid number
+      const variationToSave = {
+        ...editVariation,
+        additionalPrice: editVariation.additionalPrice || 0
+      };
+      
+      console.log("Variação preparada para salvar:", variationToSave);
+      
+      const savedId = await saveVariation(variationToSave);
+      console.log("Variação salva com sucesso, ID:", savedId);
       
       setEditVariation(null);
       toast({
@@ -58,10 +72,10 @@ export const EditVariationModal = ({
       });
       onSuccess();
     } catch (error) {
-      console.error("Erro ao salvar variação:", error);
+      console.error("Erro detalhado ao salvar variação:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível salvar a variação. Tente novamente.",
+        description: `Não foi possível salvar a variação: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }
@@ -84,12 +98,13 @@ export const EditVariationModal = ({
         </div>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="variation-name">Nome</Label>
+            <Label htmlFor="variation-name">Nome *</Label>
             <Input
               id="variation-name"
               value={editVariation.name}
               onChange={(e) => setEditVariation({...editVariation, name: e.target.value})}
               placeholder="Ex: Queijo Extra, Molho Picante, etc"
+              required
             />
           </div>
           
@@ -109,10 +124,11 @@ export const EditVariationModal = ({
               id="variation-price"
               type="number"
               step="0.01"
+              min="0"
               value={editVariation.additionalPrice || 0}
               onChange={(e) => setEditVariation({
                 ...editVariation, 
-                additionalPrice: parseFloat(e.target.value)
+                additionalPrice: parseFloat(e.target.value) || 0
               })}
               placeholder="0.00"
             />

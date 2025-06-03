@@ -35,10 +35,23 @@ export const EditMenuItemModal = ({
   const { toast } = useToast();
 
   const handleSaveItem = async () => {
+    console.log("Tentando salvar item:", editItem);
+    
     if (!editItem.name || !editItem.description || editItem.price <= 0) {
+      console.log("Validação falhou - campos obrigatórios");
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editItem.category) {
+      console.log("Validação falhou - categoria não selecionada");
+      toast({
+        title: "Categoria obrigatória",
+        description: "Selecione uma categoria para o item",
         variant: "destructive",
       });
       return;
@@ -48,6 +61,7 @@ export const EditMenuItemModal = ({
     if (editItem.hasVariations && editItem.variationGroups) {
       for (const group of editItem.variationGroups) {
         if (!group.name || group.variations.length === 0) {
+          console.log("Validação falhou - grupo de variação incompleto:", group);
           toast({
             title: "Grupos de variação incompletos",
             description: "Todos os grupos de variação devem ter nome e pelo menos uma variação selecionada",
@@ -59,13 +73,18 @@ export const EditMenuItemModal = ({
     }
 
     try {
+      console.log("Iniciando salvamento do item...");
+      
       // Update hasVariations based on whether there are any variation groups
       const itemToSave = {
         ...editItem,
         hasVariations: !!(editItem.variationGroups && editItem.variationGroups.length > 0)
       };
 
-      await saveMenuItem(itemToSave);
+      console.log("Item preparado para salvar:", itemToSave);
+
+      const savedId = await saveMenuItem(itemToSave);
+      console.log("Item salvo com sucesso, ID:", savedId);
       
       setEditItem(null);
       toast({
@@ -74,10 +93,10 @@ export const EditMenuItemModal = ({
       });
       onSuccess();
     } catch (error) {
-      console.error("Erro ao salvar item:", error);
+      console.error("Erro detalhado ao salvar item:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível salvar o item. Tente novamente.",
+        description: `Não foi possível salvar o item: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }
@@ -100,43 +119,48 @@ export const EditMenuItemModal = ({
         </div>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Nome</Label>
+            <Label htmlFor="name">Nome *</Label>
             <Input
               id="name"
               value={editItem.name}
               onChange={(e) => setEditItem({...editItem, name: e.target.value})}
               placeholder="Nome do item"
+              required
             />
           </div>
           
           <div>
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição *</Label>
             <Textarea
               id="description"
               value={editItem.description}
               onChange={(e) => setEditItem({...editItem, description: e.target.value})}
               placeholder="Descrição do item"
+              required
             />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="price">Preço (R$)</Label>
+              <Label htmlFor="price">Preço (R$) *</Label>
               <Input
                 id="price"
                 type="number"
                 step="0.01"
+                min="0.01"
                 value={editItem.price}
-                onChange={(e) => setEditItem({...editItem, price: parseFloat(e.target.value)})}
+                onChange={(e) => setEditItem({...editItem, price: parseFloat(e.target.value) || 0})}
                 placeholder="0.00"
+                required
               />
             </div>
             
             <div>
-              <Label htmlFor="category">Categoria</Label>
+              <Label htmlFor="category">Categoria *</Label>
               <Select 
                 value={editItem.category}
                 onValueChange={(value) => setEditItem({...editItem, category: value})}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
@@ -158,7 +182,7 @@ export const EditMenuItemModal = ({
               id="image"
               value={editItem.image}
               onChange={(e) => setEditItem({...editItem, image: e.target.value})}
-              placeholder="URL da imagem"
+              placeholder="URL da imagem ou deixe em branco para usar placeholder"
             />
           </div>
           
