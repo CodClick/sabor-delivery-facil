@@ -111,7 +111,7 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
 
 export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
-    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO ===");
+    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO DETALHADO ===");
     console.log("deleteMenuItem chamado com ID:", id);
     console.log("Tipo do ID:", typeof id);
     console.log("ID válido?", !!id);
@@ -124,45 +124,66 @@ export const deleteMenuItem = async (id: string): Promise<void> => {
     }
 
     const cleanId = id.trim();
-    console.log("ID limpo:", cleanId);
+    console.log("ID limpo para busca:", cleanId);
     
-    // Verificar se o documento existe antes de tentar deletar
-    console.log("Criando referência do documento...");
+    // Primeiro, vamos buscar TODOS os documentos para ver se conseguimos encontrar o item
+    console.log("=== BUSCANDO TODOS OS DOCUMENTOS PARA VERIFICAÇÃO ===");
+    const menuItemsCollection = collection(db, "menuItems");
+    const allItemsSnapshot = await getDocs(menuItemsCollection);
+    const allItems = allItemsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      name: doc.data().name,
+      docExists: true
+    }));
+    
+    console.log("=== TODOS OS ITENS NO BANCO ===");
+    console.log("Total de itens encontrados:", allItems.length);
+    allItems.forEach((item, index) => {
+      console.log(`${index + 1}. ID: "${item.id}" | Nome: "${item.name}"`);
+      console.log(`   ID procurado: "${cleanId}"`);
+      console.log(`   São iguais?: ${item.id === cleanId}`);
+      console.log(`   Tamanho ID banco: ${item.id.length} | Tamanho ID procurado: ${cleanId.length}`);
+    });
+    
+    // Verificar se encontramos o item na lista geral
+    const foundInList = allItems.find(item => item.id === cleanId);
+    console.log("Item encontrado na lista geral?", !!foundInList);
+    
+    if (foundInList) {
+      console.log("=== ITEM ENCONTRADO NA LISTA! Tentando exclusão ===");
+      console.log("Dados do item encontrado:", foundInList);
+    } else {
+      console.log("=== ITEM NÃO ENCONTRADO NA LISTA ===");
+      console.log("IDs disponíveis:", allItems.map(item => `"${item.id}"`));
+      throw new Error(`Item não encontrado no banco de dados. ID procurado: ${cleanId}. IDs disponíveis: ${allItems.map(item => item.id).join(', ')}`);
+    }
+    
+    // Agora vamos tentar buscar o documento específico
+    console.log("=== VERIFICANDO DOCUMENTO ESPECÍFICO ===");
     const menuItemDocRef = doc(db, "menuItems", cleanId);
     console.log("Referência criada:", menuItemDocRef.path);
     
-    console.log("Verificando se documento existe...");
     const docSnapshot = await getDoc(menuItemDocRef);
     console.log("Snapshot obtido, existe?", docSnapshot.exists());
     
     if (!docSnapshot.exists()) {
-      console.log("=== DOCUMENTO NÃO ENCONTRADO ===");
-      console.log("Tentando buscar todos os documentos para verificar...");
-      
-      // Buscar todos os documentos para debug
-      const allItemsSnapshot = await getDocs(collection(db, "menuItems"));
-      const allItems = allItemsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        name: doc.data().name
-      }));
-      console.log("Todos os itens no banco:", allItems);
-      console.log("ID procurado:", cleanId);
-      console.log("IDs disponíveis:", allItems.map(item => item.id));
-      
-      const foundItem = allItems.find(item => item.id === cleanId);
-      console.log("Item encontrado na busca geral?", !!foundItem);
-      
-      throw new Error(`Item não encontrado no banco de dados. ID procurado: ${cleanId}`);
+      console.log("=== DOCUMENTO ESPECÍFICO NÃO ENCONTRADO ===");
+      console.log("Isso é estranho porque o item aparece na lista geral...");
+      throw new Error(`Documento não encontrado mesmo estando na lista. ID: ${cleanId}`);
     }
     
-    console.log("Documento encontrado! Dados:", docSnapshot.data());
-    console.log("Procedendo com a exclusão...");
+    console.log("=== DOCUMENTO ENCONTRADO! PROCEDENDO COM EXCLUSÃO ===");
+    console.log("Dados do documento:", docSnapshot.data());
+    
     await deleteDoc(menuItemDocRef);
     console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
+    
   } catch (error) {
-    console.error("=== ERRO NA EXCLUSÃO ===");
-    console.error("Erro detalhado ao deletar item do menu:", error);
+    console.error("=== ERRO DETALHADO NA EXCLUSÃO ===");
+    console.error("Mensagem do erro:", error.message);
     console.error("Stack trace:", error.stack);
+    console.error("Tipo do erro:", typeof error);
+    console.error("Erro completo:", error);
     throw new Error(`Falha ao deletar item: ${error.message}`);
   }
 };
@@ -187,7 +208,6 @@ export const getMenuItemsByCategory = async (categoryId: string): Promise<MenuIt
   }
 };
 
-// Get popular items
 export const getPopularItems = async (): Promise<MenuItem[]> => {
   try {
     console.log("Buscando itens populares...");

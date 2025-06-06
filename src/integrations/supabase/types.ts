@@ -247,6 +247,27 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_status: {
+        Row: {
+          chat_user: string
+          created_at: string
+          id: number
+          status: boolean | null
+        }
+        Insert: {
+          chat_user: string
+          created_at?: string
+          id?: number
+          status?: boolean | null
+        }
+        Update: {
+          chat_user?: string
+          created_at?: string
+          id?: number
+          status?: boolean | null
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           conta_instagram: string | null
