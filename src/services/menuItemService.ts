@@ -1,3 +1,4 @@
+
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -21,6 +22,24 @@ export const getAllMenuItems = async (): Promise<MenuItem[]> => {
       id: doc.id,
       ...doc.data(),
     })) as MenuItem[];
+    
+    // Detectar duplicatas
+    const duplicateCheck = new Map();
+    const duplicates = [];
+    
+    items.forEach(item => {
+      if (duplicateCheck.has(item.id)) {
+        duplicates.push(item.id);
+        console.warn(`DUPLICATA DETECTADA: ID ${item.id} aparece múltiplas vezes`);
+      } else {
+        duplicateCheck.set(item.id, true);
+      }
+    });
+    
+    if (duplicates.length > 0) {
+      console.warn("IDs duplicados encontrados:", duplicates);
+    }
+    
     console.log("Itens carregados:", items.length);
     return items;
   } catch (error) {
@@ -110,7 +129,7 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
 
 export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
-    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO ===");
+    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO MELHORADO ===");
     console.log("deleteMenuItem chamado com ID:", id);
     
     if (!id || id.trim() === "" || typeof id !== "string") {
@@ -121,37 +140,46 @@ export const deleteMenuItem = async (id: string): Promise<void> => {
     const cleanId = id.trim();
     console.log("ID limpo para busca:", cleanId);
     
-    // First, let's check if the document exists in Firestore
-    console.log("=== VERIFICANDO SE DOCUMENTO EXISTE ===");
-    const menuItemDocRef = doc(db, "menuItems", cleanId);
-    const docSnapshot = await getDoc(menuItemDocRef);
+    // Buscar TODOS os documentos para identificar possíveis duplicatas
+    console.log("=== BUSCANDO TODOS OS DOCUMENTOS PARA VERIFICAR DUPLICATAS ===");
+    const menuItemsCollection = collection(db, "menuItems");
+    const allItemsSnapshot = await getDocs(menuItemsCollection);
     
-    if (!docSnapshot.exists()) {
-      console.log("=== DOCUMENTO NÃO ENCONTRADO NO FIRESTORE ===");
-      
-      // Let's check what items actually exist in Firestore
-      const menuItemsCollection = collection(db, "menuItems");
-      const allItemsSnapshot = await getDocs(menuItemsCollection);
-      const allItems = allItemsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        name: doc.data().name
-      }));
-      
-      console.log("Itens disponíveis no Firestore:", allItems);
-      console.log("ID procurado:", cleanId);
-      
-      // If the item doesn't exist in Firestore, it might be a local/cache item
-      // In this case, we'll just log it and let the frontend handle removal
+    // Encontrar todos os documentos que correspondem ao ID (podem haver duplicatas)
+    const matchingDocs = allItemsSnapshot.docs.filter(doc => doc.id === cleanId);
+    
+    console.log(`Documentos encontrados com ID ${cleanId}:`, matchingDocs.length);
+    
+    if (matchingDocs.length === 0) {
+      console.log("=== NENHUM DOCUMENTO ENCONTRADO ===");
       console.log("Item não existe no Firestore - pode ser um item local/cache");
       console.log("Retornando sucesso para permitir remoção da interface");
       return; // Return successfully to allow UI removal
     }
     
-    console.log("=== DOCUMENTO ENCONTRADO! PROCEDENDO COM EXCLUSÃO ===");
-    console.log("Dados do documento:", docSnapshot.data());
+    if (matchingDocs.length > 1) {
+      console.warn(`=== DUPLICATAS DETECTADAS! ${matchingDocs.length} documentos com o mesmo ID ===`);
+      matchingDocs.forEach((doc, index) => {
+        console.log(`Documento ${index + 1}:`, {
+          id: doc.id,
+          data: doc.data()
+        });
+      });
+    }
     
-    await deleteDoc(menuItemDocRef);
+    // Excluir TODOS os documentos encontrados com o ID
+    console.log(`=== EXCLUINDO ${matchingDocs.length} DOCUMENTO(S) ===`);
+    
+    const deletePromises = matchingDocs.map(async (docToDelete, index) => {
+      console.log(`Excluindo documento ${index + 1} de ${matchingDocs.length}`);
+      await deleteDoc(docToDelete.ref);
+      console.log(`Documento ${index + 1} excluído com sucesso`);
+    });
+    
+    await Promise.all(deletePromises);
+    
     console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
+    console.log(`Total de ${matchingDocs.length} documento(s) excluído(s)`);
     
   } catch (error) {
     console.error("=== ERRO NA EXCLUSÃO ===");

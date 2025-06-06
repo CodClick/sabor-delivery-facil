@@ -3,7 +3,7 @@ import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteMenuItem } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
@@ -31,6 +31,24 @@ export const MenuItemsTab = ({
 
   console.log("MenuItemsTab - menuItems:", menuItems);
   console.log("MenuItemsTab - categories:", categories);
+
+  // Detectar duplicatas
+  const duplicateIds = useMemo(() => {
+    const idCount = new Map();
+    menuItems.forEach(item => {
+      idCount.set(item.id, (idCount.get(item.id) || 0) + 1);
+    });
+    
+    const duplicates = [];
+    idCount.forEach((count, id) => {
+      if (count > 1) {
+        duplicates.push(id);
+        console.warn(`DUPLICATA DETECTADA na interface: ID ${id} aparece ${count} vezes`);
+      }
+    });
+    
+    return duplicates;
+  }, [menuItems]);
 
   const toggleCategory = (categoryId: string) => {
     setCollapsedCategories(prev => ({
@@ -117,10 +135,6 @@ export const MenuItemsTab = ({
     console.log("=== INÍCIO handleDeleteItem ===");
     console.log("MenuItemsTab: Item recebido para exclusão:", item);
     console.log("MenuItemsTab: ID do item:", item.id);
-    console.log("MenuItemsTab: Tipo do ID:", typeof item.id);
-    console.log("MenuItemsTab: ID é string?", typeof item.id === "string");
-    console.log("MenuItemsTab: ID não está vazio?", !!item.id);
-    console.log("MenuItemsTab: ID não é só espaços?", item.id && item.id.trim() !== "");
     
     if (!item.id || typeof item.id !== "string" || item.id.trim() === "") {
       console.error("MenuItemsTab: Item não possui ID válido:", item);
@@ -139,13 +153,21 @@ export const MenuItemsTab = ({
       return;
     }
 
-    if (window.confirm(`Tem certeza que deseja excluir o item "${item.name}"?`)) {
+    // Verificar se é uma duplicata
+    const isDuplicate = duplicateIds.includes(item.id);
+    const confirmMessage = isDuplicate 
+      ? `ATENÇÃO: Este item tem duplicatas! Tem certeza que deseja excluir TODAS as versões do item "${item.name}"? Isso removerá todas as duplicatas com o ID ${item.id}.`
+      : `Tem certeza que deseja excluir o item "${item.name}"?`;
+
+    if (window.confirm(confirmMessage)) {
       try {
         console.log("MenuItemsTab: Confirmação recebida, chamando deleteMenuItem com ID:", item.id);
         await deleteMenuItem(item.id);
         toast({
           title: "Sucesso",
-          description: "Item excluído com sucesso",
+          description: isDuplicate 
+            ? "Todas as duplicatas do item foram excluídas com sucesso"
+            : "Item excluído com sucesso",
         });
         console.log("MenuItemsTab: Item deletado com sucesso, chamando onDataChange");
         onDataChange();
@@ -168,12 +190,35 @@ export const MenuItemsTab = ({
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Itens do Cardápio ({menuItems.length} itens)</h2>
+        <h2 className="text-xl font-bold">
+          Itens do Cardápio ({menuItems.length} itens)
+          {duplicateIds.length > 0 && (
+            <span className="ml-2 text-red-500 text-sm">
+              ({duplicateIds.length} {duplicateIds.length === 1 ? 'duplicata detectada' : 'duplicatas detectadas'})
+            </span>
+          )}
+        </h2>
         <Button onClick={handleAddItem}>
           <Plus className="h-4 w-4 mr-1" />
           Novo Item
         </Button>
       </div>
+
+      {duplicateIds.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+            <h3 className="font-semibold text-yellow-800">Duplicatas Detectadas</h3>
+          </div>
+          <p className="text-yellow-700 mt-1">
+            Foram encontrados {duplicateIds.length} itens com IDs duplicados. 
+            Ao excluir um item duplicado, todas as versões serão removidas.
+          </p>
+          <p className="text-yellow-600 text-sm mt-1">
+            IDs duplicados: {duplicateIds.join(', ')}
+          </p>
+        </div>
+      )}
 
       {menuItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
@@ -206,57 +251,71 @@ export const MenuItemsTab = ({
               {!collapsedCategories[category.id] && items.length > 0 && (
                 <div className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {items.map((item) => (
-                      <Card key={item.id} className="overflow-hidden">
-                        <div className="h-40 bg-gray-200">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = "/placeholder.svg";
-                            }}
-                          />
-                        </div>
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-bold">{item.name}</h3>
-                              <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
-                              <p className="mt-2 font-semibold text-brand">R$ {item.price.toFixed(2)}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1 break-all">
-                                ID: {item.id}
-                              </p>
-                              <p className="text-xs text-red-500 mt-1">
-                                Tipo ID: {typeof item.id} | Temp: {item.id?.startsWith("temp-") ? "Sim" : "Não"}
-                              </p>
-                              {item.popular && (
-                                <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
-                                  Popular
-                                </span>
-                              )}
-                              {item.hasVariations && (
-                                <span className="inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded mt-2 ml-2">
-                                  Com variações
-                                </span>
-                              )}
+                    {items.map((item, index) => {
+                      const isDuplicate = duplicateIds.includes(item.id);
+                      return (
+                        <Card key={`${item.id}-${index}`} className={`overflow-hidden ${isDuplicate ? 'border-red-300 bg-red-50' : ''}`}>
+                          {isDuplicate && (
+                            <div className="bg-red-100 text-red-800 text-xs px-2 py-1 flex items-center">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Duplicata detectada
                             </div>
-                            <div className="flex flex-col gap-2">
-                              <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
+                          )}
+                          <div className="h-40 bg-gray-200">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-bold">{item.name}</h3>
+                                <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+                                <p className="mt-2 font-semibold text-brand">R$ {item.price.toFixed(2)}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1 break-all">
+                                  ID: {item.id}
+                                </p>
+                                <p className="text-xs text-red-500 mt-1">
+                                  Tipo ID: {typeof item.id} | Temp: {item.id?.startsWith("temp-") ? "Sim" : "Não"}
+                                </p>
+                                {item.popular && (
+                                  <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
+                                    Popular
+                                  </span>
+                                )}
+                                {item.hasVariations && (
+                                  <span className="inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded mt-2 ml-2">
+                                    Com variações
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleDeleteItem(item)}
+                                  className={isDuplicate ? 'text-red-600 hover:text-red-700' : ''}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               )}
