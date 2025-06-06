@@ -134,7 +134,7 @@ export const VariationGroupsTab = ({
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold">{group.name}</h3>
                       {isDuplicate && (
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" title="Grupo duplicado" />
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
