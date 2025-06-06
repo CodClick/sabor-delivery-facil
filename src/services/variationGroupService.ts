@@ -23,6 +23,24 @@ export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
       id: doc.id,
       ...doc.data(),
     })) as VariationGroup[];
+    
+    // Detectar duplicatas
+    const duplicateCheck = new Map();
+    const duplicates = [];
+    
+    groups.forEach(group => {
+      if (duplicateCheck.has(group.id)) {
+        duplicates.push(group.id);
+        console.warn(`DUPLICATA DETECTADA: ID ${group.id} aparece múltiplas vezes`);
+      } else {
+        duplicateCheck.set(group.id, true);
+      }
+    });
+    
+    if (duplicates.length > 0) {
+      console.warn("IDs duplicados encontrados:", duplicates);
+    }
+    
     console.log("Grupos de variação carregados:", groups.length);
     return groups;
   } catch (error) {
@@ -127,26 +145,62 @@ export const updateVariationGroup = saveVariationGroup;
 
 export const deleteVariationGroup = async (id: string): Promise<void> => {
   try {
-    console.log("Tentando deletar grupo de variação com ID:", id);
+    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
+    console.log("deleteVariationGroup chamado com ID:", id);
     
-    if (!id || id.trim() === "") {
-      throw new Error("ID do grupo de variação é obrigatório para exclusão");
+    if (!id || id.trim() === "" || typeof id !== "string") {
+      console.error("ID inválido fornecido:", { id, tipo: typeof id });
+      throw new Error("ID do grupo de variação é obrigatório para exclusão e deve ser uma string válida");
     }
 
-    // Verificar se o documento existe antes de tentar deletar
-    const variationGroupDocRef = doc(db, "variationGroups", id);
-    const docSnapshot = await getDoc(variationGroupDocRef);
+    const cleanId = id.trim();
+    console.log("ID limpo para busca:", cleanId);
     
-    if (!docSnapshot.exists()) {
-      console.log("Documento de grupo de variação não encontrado para exclusão:", id);
-      throw new Error("Grupo de variação não encontrado no banco de dados");
+    // Buscar TODOS os documentos para identificar possíveis duplicatas
+    console.log("=== BUSCANDO TODOS OS DOCUMENTOS PARA VERIFICAR DUPLICATAS ===");
+    const variationGroupsCollection = collection(db, "variationGroups");
+    const allGroupsSnapshot = await getDocs(variationGroupsCollection);
+    
+    // Encontrar todos os documentos que correspondem ao ID (podem haver duplicatas)
+    const matchingDocs = allGroupsSnapshot.docs.filter(doc => doc.id === cleanId);
+    
+    console.log(`Documentos encontrados com ID ${cleanId}:`, matchingDocs.length);
+    
+    if (matchingDocs.length === 0) {
+      console.log("=== NENHUM DOCUMENTO ENCONTRADO ===");
+      console.log("Grupo não existe no Firestore - pode ser um grupo local/cache");
+      console.log("Retornando sucesso para permitir remoção da interface");
+      return; // Return successfully to allow UI removal
     }
     
-    console.log("Documento de grupo de variação encontrado, procedendo com a exclusão...");
-    await deleteDoc(variationGroupDocRef);
-    console.log("Grupo de variação deletado com sucesso:", id);
+    if (matchingDocs.length > 1) {
+      console.warn(`=== DUPLICATAS DETECTADAS! ${matchingDocs.length} documentos com o mesmo ID ===`);
+      matchingDocs.forEach((doc, index) => {
+        console.log(`Documento ${index + 1}:`, {
+          id: doc.id,
+          data: doc.data()
+        });
+      });
+    }
+    
+    // Excluir TODOS os documentos encontrados com o ID
+    console.log(`=== EXCLUINDO ${matchingDocs.length} DOCUMENTO(S) ===`);
+    
+    const deletePromises = matchingDocs.map(async (docToDelete, index) => {
+      console.log(`Excluindo documento ${index + 1} de ${matchingDocs.length}`);
+      await deleteDoc(docToDelete.ref);
+      console.log(`Documento ${index + 1} excluído com sucesso`);
+    });
+    
+    await Promise.all(deletePromises);
+    
+    console.log("=== EXCLUSÃO DE GRUPO DE VARIAÇÃO CONCLUÍDA COM SUCESSO ===");
+    console.log(`Total de ${matchingDocs.length} documento(s) excluído(s)`);
+    
   } catch (error) {
-    console.error("Erro detalhado ao deletar grupo de variação:", error);
+    console.error("=== ERRO NA EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
+    console.error("Mensagem do erro:", error.message);
+    console.error("Erro completo:", error);
     throw new Error(`Falha ao deletar grupo de variação: ${error.message}`);
   }
 };
