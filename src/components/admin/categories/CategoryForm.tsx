@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Category } from "@/types/menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -39,7 +38,7 @@ export const CategoryForm = ({
 
     try {
       if (editingCategory) {
-        // Update existing category
+        // Update existing category - keep the same ID and order, just change the name
         const updatedCategory = {
           ...editingCategory,
           name: newCategory,

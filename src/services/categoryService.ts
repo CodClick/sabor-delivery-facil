@@ -1,4 +1,3 @@
-
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -90,16 +89,12 @@ export const updateCategory = async (category: Category): Promise<string> => {
     const categorySnapshot = await getDoc(categoryDoc);
     
     if (categorySnapshot.exists()) {
-      // Update existing category
+      // Update existing category - preserve all existing data, just update what's provided
       const { id, ...categoryData } = category;
       await updateDoc(categoryDoc, categoryData);
       return category.id;
     } else {
-      // Document doesn't exist, create new one
-      const categoriesCollection = collection(db, "categories");
-      const { id, ...categoryData } = category;
-      const docRef = await addDoc(categoriesCollection, categoryData);
-      return docRef.id;
+      throw new Error(`Category with ID ${category.id} not found`);
     }
   } catch (error) {
     console.error("Error updating category:", error);
