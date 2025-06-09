@@ -24,25 +24,27 @@ export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
       ...doc.data(),
     })) as VariationGroup[];
     
-    // Detectar duplicatas
-    const duplicateCheck = new Map();
+    // Detectar e remover duplicatas locais
+    const uniqueGroups = new Map();
     const duplicates = [];
     
     groups.forEach(group => {
-      if (duplicateCheck.has(group.id)) {
+      if (uniqueGroups.has(group.id)) {
         duplicates.push(group.id);
         console.warn(`DUPLICATA DETECTADA: ID ${group.id} aparece múltiplas vezes`);
       } else {
-        duplicateCheck.set(group.id, true);
+        uniqueGroups.set(group.id, group);
       }
     });
     
     if (duplicates.length > 0) {
       console.warn("IDs duplicados encontrados:", duplicates);
+      console.log("Removendo duplicatas e retornando apenas grupos únicos");
     }
     
-    console.log("Grupos de variação carregados:", groups.length);
-    return groups;
+    const cleanGroups = Array.from(uniqueGroups.values());
+    console.log("Grupos de variação carregados (limpos):", cleanGroups.length);
+    return cleanGroups;
   } catch (error) {
     console.error("Erro ao buscar grupos de variação:", error);
     throw error;
@@ -167,14 +169,14 @@ export const deleteVariationGroup = async (id: string): Promise<void> => {
     console.log(`Documentos encontrados com ID ${cleanId}:`, matchingDocs.length);
     
     if (matchingDocs.length === 0) {
-      console.log("=== NENHUM DOCUMENTO ENCONTRADO ===");
+      console.log("=== NENHUM DOCUMENTO ENCONTRADO NO FIRESTORE ===");
       console.log("Grupo não existe no Firestore - pode ser um grupo local/cache");
-      console.log("Retornando sucesso para permitir remoção da interface");
-      return; // Return successfully to allow UI removal
+      console.log("Considerando exclusão bem-sucedida para limpeza da interface");
+      return; // Return successfully to allow UI cleanup
     }
     
     if (matchingDocs.length > 1) {
-      console.warn(`=== DUPLICATAS DETECTADAS! ${matchingDocs.length} documentos com o mesmo ID ===`);
+      console.warn(`=== DUPLICATAS NO FIRESTORE DETECTADAS! ${matchingDocs.length} documentos com o mesmo ID ===`);
       matchingDocs.forEach((doc, index) => {
         console.log(`Documento ${index + 1}:`, {
           id: doc.id,
@@ -184,7 +186,7 @@ export const deleteVariationGroup = async (id: string): Promise<void> => {
     }
     
     // Excluir TODOS os documentos encontrados com o ID
-    console.log(`=== EXCLUINDO ${matchingDocs.length} DOCUMENTO(S) ===`);
+    console.log(`=== EXCLUINDO ${matchingDocs.length} DOCUMENTO(S) DO FIRESTORE ===`);
     
     const deletePromises = matchingDocs.map(async (docToDelete, index) => {
       console.log(`Excluindo documento ${index + 1} de ${matchingDocs.length}`);
@@ -195,7 +197,7 @@ export const deleteVariationGroup = async (id: string): Promise<void> => {
     await Promise.all(deletePromises);
     
     console.log("=== EXCLUSÃO DE GRUPO DE VARIAÇÃO CONCLUÍDA COM SUCESSO ===");
-    console.log(`Total de ${matchingDocs.length} documento(s) excluído(s)`);
+    console.log(`Total de ${matchingDocs.length} documento(s) excluído(s) do Firestore`);
     
   } catch (error) {
     console.error("=== ERRO NA EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
