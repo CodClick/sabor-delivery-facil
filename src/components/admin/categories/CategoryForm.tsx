@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Category } from "@/types/menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
-import { saveCategory, updateCategory } from "@/services/categoryService";
+import { saveCategory, updateCategory, getHighestCategoryOrder } from "@/services/categoryService";
 
 interface CategoryFormProps {
   editingCategory: Category | null;
@@ -45,12 +46,8 @@ export const CategoryForm = ({
         };
         await updateCategory(updatedCategory);
       } else {
-        // Add new category
-        const highestOrder = await fetch('/api/categories/highestOrder')
-          .then(res => res.json())
-          .then(data => data.highestOrder)
-          .catch(() => 0);
-          
+        // Add new category - get highest order and add 1
+        const highestOrder = await getHighestCategoryOrder();
         const newCat: Category = {
           id: newCategory.toLowerCase().replace(/\s+/g, '-'),
           name: newCategory,

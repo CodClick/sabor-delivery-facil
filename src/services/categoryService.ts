@@ -51,12 +51,22 @@ export const getCategory = async (id: string): Promise<Category | null> => {
 export const saveCategory = async (category: Category): Promise<string> => {
   try {
     if (category.id) {
-      // Update existing category
-      const categoryDocRef = doc(db, "categories", category.id);
-      // Remove id from the object before updating
-      const { id, ...categoryData } = category;
-      await updateDoc(categoryDocRef, categoryData);
-      return category.id;
+      // Check if document exists before updating
+      const categoryDoc = doc(db, "categories", category.id);
+      const categorySnapshot = await getDoc(categoryDoc);
+      
+      if (categorySnapshot.exists()) {
+        // Update existing category
+        const { id, ...categoryData } = category;
+        await updateDoc(categoryDoc, categoryData);
+        return category.id;
+      } else {
+        // Document doesn't exist, create new one with the specified ID
+        const categoriesCollection = collection(db, "categories");
+        const { id, ...categoryData } = category;
+        const docRef = await addDoc(categoriesCollection, categoryData);
+        return docRef.id;
+      }
     } else {
       // Create new category
       const categoriesCollection = collection(db, "categories");
@@ -69,8 +79,33 @@ export const saveCategory = async (category: Category): Promise<string> => {
   }
 };
 
-// Alias for saveCategory for better API naming consistency
-export const updateCategory = saveCategory;
+export const updateCategory = async (category: Category): Promise<string> => {
+  try {
+    if (!category.id) {
+      throw new Error("Category ID is required for updates");
+    }
+    
+    // Check if document exists
+    const categoryDoc = doc(db, "categories", category.id);
+    const categorySnapshot = await getDoc(categoryDoc);
+    
+    if (categorySnapshot.exists()) {
+      // Update existing category
+      const { id, ...categoryData } = category;
+      await updateDoc(categoryDoc, categoryData);
+      return category.id;
+    } else {
+      // Document doesn't exist, create new one
+      const categoriesCollection = collection(db, "categories");
+      const { id, ...categoryData } = category;
+      const docRef = await addDoc(categoriesCollection, categoryData);
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error("Error updating category:", error);
+    throw error;
+  }
+};
 
 export const deleteCategory = async (id: string): Promise<void> => {
   try {
