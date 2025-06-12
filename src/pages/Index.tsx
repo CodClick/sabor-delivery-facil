@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import RestaurantHeader from "@/components/RestaurantHeader";
-import { categories, getMenuItemsByCategory as getLocalMenuItemsByCategory, getPopularItems as getLocalPopularItems } from "@/data/menuData";
+import { categories, getMenuItemsByCategory as getLocalMenuItemsByCategory } from "@/data/menuData";
 import { getAllCategories } from "@/services/categoryService";
-import { getMenuItemsByCategory, getPopularItems } from "@/services/menuItemService";
+import { getMenuItemsByCategory } from "@/services/menuItemService";
 import { Category } from "@/types/menu";
 import { useAuth } from "@/hooks/useAuth";
 import { LogIn, LogOut } from "lucide-react";
@@ -16,7 +16,6 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState<string>("entradas");
   const [menuCategories, setMenuCategories] = useState<Category[]>(categories);
   const [menuItems, setMenuItems] = useState(getLocalMenuItemsByCategory("entradas"));
-  const [popularItems, setPopularItems] = useState(getLocalPopularItems());
   const [refreshKey, setRefreshKey] = useState(0);
   const { currentUser, logOut } = useAuth();
 
@@ -57,25 +56,12 @@ const Index = () => {
         setActiveCategory("entradas");
         setMenuItems(getLocalMenuItemsByCategory("entradas"));
       }
-
-      // Always try to load popular items from Firebase first
-      console.log("Carregando itens populares do Firebase...");
-      const firebasePopularItems = await getPopularItems();
-      if (firebasePopularItems.length > 0) {
-        console.log("Itens populares carregados do Firebase:", firebasePopularItems.length);
-        setPopularItems(firebasePopularItems);
-      } else {
-        // Use local popular items as fallback
-        console.log("Nenhum item popular no Firebase, usando dados locais");
-        setPopularItems(getLocalPopularItems());
-      }
     } catch (error) {
       console.error("Error loading data, using local fallback:", error);
       // Use local data as complete fallback
       setMenuCategories(categories);
       setActiveCategory("entradas");
       setMenuItems(getLocalMenuItemsByCategory("entradas"));
-      setPopularItems(getLocalPopularItems());
     }
   };
 
@@ -164,9 +150,7 @@ const Index = () => {
         title={menuCategories.find(cat => cat.id === activeCategory)?.name || ""}
         items={menuItems} 
       />
-      {popularItems.length > 0 && (
-        <MenuSection title="Mais Populares" items={popularItems} />
-      )}
+      {/* Seção "Mais Populares" temporariamente removida */}
     </div>
   );
 };
