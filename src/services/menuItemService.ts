@@ -114,8 +114,6 @@ export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
     console.log("=== INICIANDO EXCLUSÃO DE ITEM ===");
     console.log("ID recebido para exclusão:", id);
-    console.log("Tipo do ID:", typeof id);
-    console.log("ID limpo:", id?.trim());
     
     if (!id || typeof id !== "string" || id.trim() === "") {
       console.error("ID inválido fornecido:", id);
@@ -130,40 +128,36 @@ export const deleteMenuItem = async (id: string): Promise<void> => {
       return;
     }
     
-    console.log("Criando referência do documento...");
     const menuItemDocRef = doc(db, "menuItems", cleanId);
-    console.log("Referência criada:", menuItemDocRef.path);
     
     // First verify the document exists
     console.log("Verificando se o documento existe...");
     const existingDoc = await getDoc(menuItemDocRef);
-    console.log("Documento existe?", existingDoc.exists());
     
     if (!existingDoc.exists()) {
       console.log("Documento não encontrado no Firestore");
       throw new Error("Item não encontrado no banco de dados");
     }
     
-    console.log("Dados do documento encontrado:", existingDoc.data());
+    const itemData = existingDoc.data();
+    console.log("Dados do documento encontrado:", itemData);
     
     // Delete the document
     console.log("Executando exclusão...");
     await deleteDoc(menuItemDocRef);
-    console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
+    console.log("Documento deletado do Firestore");
     
-    // Verify deletion
-    console.log("Verificando se a exclusão foi bem-sucedida...");
+    // Verify deletion was successful
     const verificationDoc = await getDoc(menuItemDocRef);
-    console.log("Documento ainda existe após exclusão?", verificationDoc.exists());
-    
     if (verificationDoc.exists()) {
       throw new Error("Falha na exclusão: o documento ainda existe após a operação de exclusão");
     }
     
+    console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
+    
   } catch (error) {
     console.error("=== ERRO NA EXCLUSÃO ===");
     console.error("Erro detalhado:", error);
-    console.error("Stack trace:", error.stack);
     throw error;
   }
 };
@@ -199,10 +193,61 @@ export const getPopularItems = async (): Promise<MenuItem[]> => {
       id: doc.id,
       ...doc.data(),
     })) as MenuItem[];
-    console.log("Itens populares encontrados:", items.length);
-    return items;
+    
+    // Verificação de integridade - confirmar que os itens realmente existem
+    console.log("Verificando integridade dos itens populares...");
+    const validItems = [];
+    for (const item of items) {
+      try {
+        const itemDoc = await getDoc(doc(db, "menuItems", item.id));
+        if (itemDoc.exists()) {
+          validItems.push(item);
+        } else {
+          console.warn("Item popular com ID inválido encontrado e removido da lista:", item.id);
+        }
+      } catch (error) {
+        console.warn("Erro ao verificar item popular:", item.id, error);
+      }
+    }
+    
+    console.log("Itens populares válidos encontrados:", validItems.length);
+    return validItems;
   } catch (error) {
     console.error("Erro ao buscar itens populares:", error);
+    throw error;
+  }
+};
+
+export const cleanupPopularItems = async (): Promise<{ cleaned: number; total: number }> => {
+  try {
+    console.log("Iniciando limpeza de itens populares...");
+    
+    // Get all items marked as popular
+    const menuItemsCollection = collection(db, "menuItems");
+    const popularQuery = query(menuItemsCollection, where("popular", "==", true));
+    const popularSnapshot = await getDocs(popularQuery);
+    
+    const total = popularSnapshot.docs.length;
+    let cleaned = 0;
+    
+    for (const docSnapshot of popularSnapshot.docs) {
+      try {
+        // Verify if the document still exists
+        const freshDoc = await getDoc(doc(db, "menuItems", docSnapshot.id));
+        if (!freshDoc.exists()) {
+          console.log("Item popular órfão encontrado e será ignorado:", docSnapshot.id);
+          cleaned++;
+        }
+      } catch (error) {
+        console.warn("Erro ao verificar item durante limpeza:", docSnapshot.id, error);
+        cleaned++;
+      }
+    }
+    
+    console.log(`Limpeza concluída: ${cleaned} itens órfãos de ${total} total`);
+    return { cleaned, total };
+  } catch (error) {
+    console.error("Erro durante limpeza de itens populares:", error);
     throw error;
   }
 };

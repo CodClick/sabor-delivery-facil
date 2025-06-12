@@ -3,9 +3,9 @@ import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { deleteMenuItem } from "@/services/menuItemService";
+import { deleteMenuItem, cleanupPopularItems } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
 
 interface MenuItemsTabProps {
@@ -29,6 +29,7 @@ export const MenuItemsTab = ({
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   // Detectar duplicatas
   const duplicateIds = useMemo(() => {
@@ -119,7 +120,8 @@ export const MenuItemsTab = ({
     console.log("Item selecionado para exclusão:", {
       id: item.id,
       name: item.name,
-      category: item.category
+      category: item.category,
+      popular: item.popular
     });
     
     if (!item.id || typeof item.id !== "string" || item.id.trim() === "") {
@@ -138,7 +140,7 @@ export const MenuItemsTab = ({
       return;
     }
 
-    const confirmMessage = `Tem certeza que deseja excluir o item "${item.name}"?\n\nID: ${item.id}`;
+    const confirmMessage = `Tem certeza que deseja excluir o item "${item.name}"?\n\nID: ${item.id}${item.popular ? '\n\nEste item é marcado como popular e será removido da lista "Mais Populares".' : ''}`;
 
     if (window.confirm(confirmMessage)) {
       try {
@@ -157,6 +159,16 @@ export const MenuItemsTab = ({
         
         console.log("Forçando reload dos dados...");
         await onDataChange();
+        
+        // Trigger update for frontend menu if popular item was deleted
+        if (item.popular) {
+          console.log("Item popular deletado, notificando frontend...");
+          // Trigger storage event for other tabs
+          localStorage.setItem('menuDataChanged', Date.now().toString());
+          // Trigger custom event for same tab
+          window.dispatchEvent(new CustomEvent('menuDataChanged'));
+        }
+        
         console.log("Reload dos dados concluído");
         
       } catch (error) {
@@ -179,6 +191,41 @@ export const MenuItemsTab = ({
     }
   };
 
+  const handleCleanupPopularItems = async () => {
+    if (isCleaningUp) return;
+    
+    if (window.confirm("Deseja executar a limpeza de itens populares? Isso irá verificar e remover referências órfãs.")) {
+      try {
+        setIsCleaningUp(true);
+        console.log("Iniciando limpeza de itens populares...");
+        
+        const result = await cleanupPopularItems();
+        
+        toast({
+          title: "Limpeza Concluída",
+          description: `${result.cleaned} itens órfãos foram identificados de ${result.total} itens populares totais.`,
+        });
+        
+        // Force refresh of data
+        await onDataChange();
+        
+        // Notify frontend to refresh
+        localStorage.setItem('menuDataChanged', Date.now().toString());
+        window.dispatchEvent(new CustomEvent('menuDataChanged'));
+        
+      } catch (error) {
+        console.error("Erro durante limpeza:", error);
+        toast({
+          title: "Erro na Limpeza",
+          description: `Erro ao executar limpeza: ${error.message}`,
+          variant: "destructive",
+        });
+      } finally {
+        setIsCleaningUp(false);
+      }
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Carregando...</div>;
   }
@@ -194,10 +241,21 @@ export const MenuItemsTab = ({
             </span>
           )}
         </h2>
-        <Button onClick={handleAddItem}>
-          <Plus className="h-4 w-4 mr-1" />
-          Novo Item
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleCleanupPopularItems}
+            variant="outline"
+            disabled={isCleaningUp}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
+            {isCleaningUp ? 'Limpando...' : 'Limpar Populares'}
+          </Button>
+          <Button onClick={handleAddItem}>
+            <Plus className="h-4 w-4 mr-1" />
+            Novo Item
+          </Button>
+        </div>
       </div>
 
       {duplicateIds.length > 0 && (

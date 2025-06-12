@@ -17,15 +17,24 @@ const Index = () => {
   const [menuCategories, setMenuCategories] = useState<Category[]>(categories);
   const [menuItems, setMenuItems] = useState(getLocalMenuItemsByCategory("entradas"));
   const [popularItems, setPopularItems] = useState(getLocalPopularItems());
+  const [refreshKey, setRefreshKey] = useState(0);
   const { currentUser, logOut } = useAuth();
 
-  // Load data on component mount
+  // Load data on component mount and when refreshKey changes
   useEffect(() => {
     loadData();
-  }, []); 
+  }, [refreshKey]); 
+
+  // Function to force refresh of all data
+  const forceRefresh = () => {
+    console.log("Forçando atualização de todos os dados...");
+    setRefreshKey(prev => prev + 1);
+  };
 
   const loadData = async () => {
     try {
+      console.log("Carregando dados do menu...");
+      
       // Try to get categories from Firebase
       const firebaseCategories = await getAllCategories();
       if (firebaseCategories.length > 0) {
@@ -49,13 +58,15 @@ const Index = () => {
         setMenuItems(getLocalMenuItemsByCategory("entradas"));
       }
 
-      // Try to load popular items from Firebase
+      // Always try to load popular items from Firebase first
+      console.log("Carregando itens populares do Firebase...");
       const firebasePopularItems = await getPopularItems();
       if (firebasePopularItems.length > 0) {
+        console.log("Itens populares carregados do Firebase:", firebasePopularItems.length);
         setPopularItems(firebasePopularItems);
       } else {
         // Use local popular items as fallback
-        console.log("Using local popular items as fallback");
+        console.log("Nenhum item popular no Firebase, usando dados locais");
         setPopularItems(getLocalPopularItems());
       }
     } catch (error) {
@@ -89,6 +100,31 @@ const Index = () => {
     setActiveCategory(categoryId);
     loadCategoryItems(categoryId);
   };
+
+  // Listen for storage events to detect when admin makes changes
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'menuDataChanged') {
+        console.log("Detectada mudança nos dados do menu, recarregando...");
+        forceRefresh();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events from the same tab
+    const handleCustomEvent = () => {
+      console.log("Evento customizado detectado, recarregando...");
+      forceRefresh();
+    };
+    
+    window.addEventListener('menuDataChanged', handleCustomEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('menuDataChanged', handleCustomEvent);
+    };
+  }, []);
 
   return (
     <div className="container mx-auto px-4">
