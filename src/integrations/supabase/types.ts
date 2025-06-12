@@ -195,7 +195,9 @@ export type Database = {
           created_at: string | null
           descricao: string | null
           id: string
+          link: string | null
           nome_do_prato: string
+          observacoes: string | null
           preco: number
           qtde: string | null
           serve: string | null
@@ -206,7 +208,9 @@ export type Database = {
           created_at?: string | null
           descricao?: string | null
           id?: string
+          link?: string | null
           nome_do_prato: string
+          observacoes?: string | null
           preco: number
           qtde?: string | null
           serve?: string | null
@@ -217,7 +221,9 @@ export type Database = {
           created_at?: string | null
           descricao?: string | null
           id?: string
+          link?: string | null
           nome_do_prato?: string
+          observacoes?: string | null
           preco?: number
           qtde?: string | null
           serve?: string | null
@@ -244,6 +250,42 @@ export type Database = {
           id?: number
           nome_do_prato?: string
           preco_do_prato?: number | null
+        }
+        Relationships: []
+      }
+      categorias: {
+        Row: {
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
+      }
+      categorias_ks: {
+        Row: {
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          ordem?: number | null
         }
         Relationships: []
       }
@@ -490,6 +532,74 @@ export type Database = {
         }
         Relationships: []
       }
+      "kasuo_wi-fi_users": {
+        Row: {
+          created_at: string
+          data_de_nascimento: string | null
+          email: string | null
+          id: number
+          nome: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_de_nascimento?: string | null
+          email?: string | null
+          id?: number
+          nome?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_de_nascimento?: string | null
+          email?: string | null
+          id?: number
+          nome?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      produtos_ks: {
+        Row: {
+          ativo: boolean | null
+          categoria_id: string | null
+          descricao: string | null
+          em_promocao: boolean | null
+          id: string
+          nome: string
+          preco_normal: number | null
+          preco_promocional: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria_id?: string | null
+          descricao?: string | null
+          em_promocao?: boolean | null
+          id?: string
+          nome: string
+          preco_normal?: number | null
+          preco_promocional?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria_id?: string | null
+          descricao?: string | null
+          em_promocao?: boolean | null
+          id?: string
+          nome?: string
+          preco_normal?: number | null
+          preco_promocional?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_ks_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_ks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promocoes: {
         Row: {
           created_at: string
@@ -632,6 +742,35 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      variacoes_produto_ks: {
+        Row: {
+          id: string
+          nome: string
+          preco: number | null
+          produto_id: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          preco?: number | null
+          produto_id?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          preco?: number | null
+          produto_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variacoes_produto_ks_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos_ks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

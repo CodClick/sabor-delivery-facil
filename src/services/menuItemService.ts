@@ -1,4 +1,3 @@
-
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -22,23 +21,6 @@ export const getAllMenuItems = async (): Promise<MenuItem[]> => {
       id: doc.id,
       ...doc.data(),
     })) as MenuItem[];
-    
-    // Detectar duplicatas
-    const duplicateCheck = new Map();
-    const duplicates = [];
-    
-    items.forEach(item => {
-      if (duplicateCheck.has(item.id)) {
-        duplicates.push(item.id);
-        console.warn(`DUPLICATA DETECTADA: ID ${item.id} aparece múltiplas vezes`);
-      } else {
-        duplicateCheck.set(item.id, true);
-      }
-    });
-    
-    if (duplicates.length > 0) {
-      console.warn("IDs duplicados encontrados:", duplicates);
-    }
     
     console.log("Itens carregados:", items.length);
     return items;
@@ -129,62 +111,35 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
 
 export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
-    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO MELHORADO ===");
-    console.log("deleteMenuItem chamado com ID:", id);
+    console.log("Deletando item do menu com ID:", id);
     
     if (!id || id.trim() === "" || typeof id !== "string") {
-      console.error("ID inválido fornecido:", { id, tipo: typeof id });
-      throw new Error("ID do item é obrigatório para exclusão e deve ser uma string válida");
+      throw new Error("ID do item é obrigatório para exclusão");
     }
 
     const cleanId = id.trim();
-    console.log("ID limpo para busca:", cleanId);
     
-    // Buscar TODOS os documentos para identificar possíveis duplicatas
-    console.log("=== BUSCANDO TODOS OS DOCUMENTOS PARA VERIFICAR DUPLICATAS ===");
-    const menuItemsCollection = collection(db, "menuItems");
-    const allItemsSnapshot = await getDocs(menuItemsCollection);
-    
-    // Encontrar todos os documentos que correspondem ao ID (podem haver duplicatas)
-    const matchingDocs = allItemsSnapshot.docs.filter(doc => doc.id === cleanId);
-    
-    console.log(`Documentos encontrados com ID ${cleanId}:`, matchingDocs.length);
-    
-    if (matchingDocs.length === 0) {
-      console.log("=== NENHUM DOCUMENTO ENCONTRADO ===");
-      console.log("Item não existe no Firestore - pode ser um item local/cache");
-      console.log("Retornando sucesso para permitir remoção da interface");
-      return; // Return successfully to allow UI removal
+    // Skip deletion if it's a temporary ID
+    if (cleanId.startsWith("temp-")) {
+      console.log("Item com ID temporário, não será deletado do Firestore");
+      return;
     }
     
-    if (matchingDocs.length > 1) {
-      console.warn(`=== DUPLICATAS DETECTADAS! ${matchingDocs.length} documentos com o mesmo ID ===`);
-      matchingDocs.forEach((doc, index) => {
-        console.log(`Documento ${index + 1}:`, {
-          id: doc.id,
-          data: doc.data()
-        });
-      });
+    // First verify the document exists
+    const menuItemDocRef = doc(db, "menuItems", cleanId);
+    const existingDoc = await getDoc(menuItemDocRef);
+    
+    if (!existingDoc.exists()) {
+      console.log("Documento não existe no Firestore, considerando como sucesso");
+      return;
     }
     
-    // Excluir TODOS os documentos encontrados com o ID
-    console.log(`=== EXCLUINDO ${matchingDocs.length} DOCUMENTO(S) ===`);
-    
-    const deletePromises = matchingDocs.map(async (docToDelete, index) => {
-      console.log(`Excluindo documento ${index + 1} de ${matchingDocs.length}`);
-      await deleteDoc(docToDelete.ref);
-      console.log(`Documento ${index + 1} excluído com sucesso`);
-    });
-    
-    await Promise.all(deletePromises);
-    
-    console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
-    console.log(`Total de ${matchingDocs.length} documento(s) excluído(s)`);
+    // Delete the document
+    await deleteDoc(menuItemDocRef);
+    console.log("Item deletado com sucesso do Firestore");
     
   } catch (error) {
-    console.error("=== ERRO NA EXCLUSÃO ===");
-    console.error("Mensagem do erro:", error.message);
-    console.error("Erro completo:", error);
+    console.error("Erro ao deletar item:", error);
     throw new Error(`Falha ao deletar item: ${error.message}`);
   }
 };

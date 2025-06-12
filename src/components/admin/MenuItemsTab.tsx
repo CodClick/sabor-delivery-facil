@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,9 +28,6 @@ export const MenuItemsTab = ({
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
-  console.log("MenuItemsTab - menuItems:", menuItems);
-  console.log("MenuItemsTab - categories:", categories);
-
   // Detectar duplicatas
   const duplicateIds = useMemo(() => {
     const idCount = new Map();
@@ -59,11 +55,6 @@ export const MenuItemsTab = ({
 
   // Group items by category
   const itemsByCategory = useMemo(() => {
-    console.log("Grouping items by category...");
-    console.log("Available categories:", categories.map(cat => ({ id: cat.id, name: cat.name })));
-    console.log("Available menu items:", menuItems.map(item => ({ id: item.id, name: item.name, category: item.category })));
-
-    // Sort categories by order
     const sortedCategories = [...categories].sort((a, b) => {
       const orderA = a.order !== undefined ? a.order : 0;
       const orderB = b.order !== undefined ? b.order : 0;
@@ -72,7 +63,6 @@ export const MenuItemsTab = ({
 
     const grouped: Record<string, {category: Category, items: MenuItem[]}> = {};
     
-    // Initialize all categories (even empty ones)
     sortedCategories.forEach(category => {
       grouped[category.id] = {
         category,
@@ -80,15 +70,10 @@ export const MenuItemsTab = ({
       };
     });
     
-    // Add items to their respective categories
     menuItems.forEach(item => {
-      console.log(`Processing item "${item.name}" with category "${item.category}"`);
       if (grouped[item.category]) {
         grouped[item.category].items.push(item);
-        console.log(`Added item "${item.name}" to category "${item.category}"`);
       } else {
-        console.log(`Category "${item.category}" not found for item "${item.name}"`);
-        // Handle items with unknown categories
         const unknownCategoryId = 'unknown';
         if (!grouped[unknownCategoryId]) {
           grouped[unknownCategoryId] = {
@@ -100,15 +85,12 @@ export const MenuItemsTab = ({
       }
     });
     
-    console.log("Final grouped items:", grouped);
-    
-    // Convert to array and ensure it's sorted by category order
     return Object.values(grouped);
   }, [menuItems, categories]);
 
   const handleAddItem = () => {
     const newItem: MenuItem = {
-      id: `temp-${Date.now()}`, // Use temporary ID
+      id: `temp-${Date.now()}`,
       name: "",
       description: "",
       price: 0,
@@ -122,7 +104,6 @@ export const MenuItemsTab = ({
   };
 
   const handleEditItem = (item: MenuItem) => {
-    // Make sure variationGroups is initialized
     const itemToEdit = {
       ...item,
       hasVariations: !!item.variationGroups?.length,
@@ -132,12 +113,9 @@ export const MenuItemsTab = ({
   };
 
   const handleDeleteItem = async (item: MenuItem) => {
-    console.log("=== INÍCIO handleDeleteItem ===");
-    console.log("MenuItemsTab: Item recebido para exclusão:", item);
-    console.log("MenuItemsTab: ID do item:", item.id);
+    console.log("Iniciando exclusão do item:", item.name, "ID:", item.id);
     
     if (!item.id || typeof item.id !== "string" || item.id.trim() === "") {
-      console.error("MenuItemsTab: Item não possui ID válido:", item);
       toast({
         title: "Erro",
         description: "Item não possui ID válido para exclusão",
@@ -146,33 +124,24 @@ export const MenuItemsTab = ({
       return;
     }
 
-    // Check if it's a temporary ID (shouldn't be deleted from Firebase)
-    if (item.id.startsWith("temp-")) {
-      console.log("MenuItemsTab: Item com ID temporário, removendo apenas da interface");
-      onDataChange(); // Refresh the data
-      return;
-    }
-
-    // Verificar se é uma duplicata
-    const isDuplicate = duplicateIds.includes(item.id);
-    const confirmMessage = isDuplicate 
-      ? `ATENÇÃO: Este item tem duplicatas! Tem certeza que deseja excluir TODAS as versões do item "${item.name}"? Isso removerá todas as duplicatas com o ID ${item.id}.`
-      : `Tem certeza que deseja excluir o item "${item.name}"?`;
+    const confirmMessage = `Tem certeza que deseja excluir o item "${item.name}"?`;
 
     if (window.confirm(confirmMessage)) {
       try {
-        console.log("MenuItemsTab: Confirmação recebida, chamando deleteMenuItem com ID:", item.id);
+        console.log("Confirmação recebida, deletando item:", item.id);
         await deleteMenuItem(item.id);
+        
         toast({
           title: "Sucesso",
-          description: isDuplicate 
-            ? "Todas as duplicatas do item foram excluídas com sucesso"
-            : "Item excluído com sucesso",
+          description: "Item excluído com sucesso",
         });
-        console.log("MenuItemsTab: Item deletado com sucesso, chamando onDataChange");
-        onDataChange();
+        
+        console.log("Item deletado, recarregando dados...");
+        // Force reload of data
+        await onDataChange();
+        
       } catch (error) {
-        console.error("MenuItemsTab: Erro ao excluir item:", error);
+        console.error("Erro ao excluir item:", error);
         toast({
           title: "Erro",
           description: `Não foi possível excluir o item: ${error.message}`,
@@ -180,7 +149,6 @@ export const MenuItemsTab = ({
         });
       }
     }
-    console.log("=== FIM handleDeleteItem ===");
   };
 
   if (loading) {
@@ -284,9 +252,6 @@ export const MenuItemsTab = ({
                                 <p className="text-xs text-gray-400 mt-1 break-all">
                                   ID: {item.id}
                                 </p>
-                                <p className="text-xs text-red-500 mt-1">
-                                  Tipo ID: {typeof item.id} | Temp: {item.id?.startsWith("temp-") ? "Sim" : "Não"}
-                                </p>
                                 {item.popular && (
                                   <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
                                     Popular
@@ -324,7 +289,6 @@ export const MenuItemsTab = ({
         </div>
       )}
 
-      {/* Form for adding/editing menu items */}
       {editItem && (
         <EditMenuItemModal
           editItem={editItem}
