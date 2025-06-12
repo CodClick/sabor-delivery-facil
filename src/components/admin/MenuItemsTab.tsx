@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export const MenuItemsTab = ({
   const { toast } = useToast();
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
 
   // Detectar duplicatas
   const duplicateIds = useMemo(() => {
@@ -113,9 +115,15 @@ export const MenuItemsTab = ({
   };
 
   const handleDeleteItem = async (item: MenuItem) => {
-    console.log("Iniciando exclusão do item:", item.name, "ID:", item.id);
+    console.log("=== INICIANDO PROCESSO DE EXCLUSÃO ===");
+    console.log("Item selecionado para exclusão:", {
+      id: item.id,
+      name: item.name,
+      category: item.category
+    });
     
     if (!item.id || typeof item.id !== "string" || item.id.trim() === "") {
+      console.error("ID inválido:", item.id);
       toast({
         title: "Erro",
         description: "Item não possui ID válido para exclusão",
@@ -124,30 +132,50 @@ export const MenuItemsTab = ({
       return;
     }
 
-    const confirmMessage = `Tem certeza que deseja excluir o item "${item.name}"?`;
+    // Check if item is already being deleted
+    if (deletingItems.has(item.id)) {
+      console.log("Item já está sendo deletado, ignorando duplicata");
+      return;
+    }
+
+    const confirmMessage = `Tem certeza que deseja excluir o item "${item.name}"?\n\nID: ${item.id}`;
 
     if (window.confirm(confirmMessage)) {
       try {
-        console.log("Confirmação recebida, deletando item:", item.id);
+        console.log("Confirmação recebida, adicionando à lista de exclusão");
+        setDeletingItems(prev => new Set(prev).add(item.id));
+        
+        console.log("Chamando deleteMenuItem...");
         await deleteMenuItem(item.id);
+        
+        console.log("Item deletado com sucesso do Firestore");
         
         toast({
           title: "Sucesso",
-          description: "Item excluído com sucesso",
+          description: `Item "${item.name}" excluído com sucesso`,
         });
         
-        console.log("Item deletado, recarregando dados...");
-        // Force reload of data
+        console.log("Forçando reload dos dados...");
         await onDataChange();
+        console.log("Reload dos dados concluído");
         
       } catch (error) {
-        console.error("Erro ao excluir item:", error);
+        console.error("Erro durante o processo de exclusão:", error);
         toast({
           title: "Erro",
           description: `Não foi possível excluir o item: ${error.message}`,
           variant: "destructive",
         });
+      } finally {
+        console.log("Removendo item da lista de exclusão");
+        setDeletingItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(item.id);
+          return newSet;
+        });
       }
+    } else {
+      console.log("Exclusão cancelada pelo usuário");
     }
   };
 
@@ -221,8 +249,9 @@ export const MenuItemsTab = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map((item, index) => {
                       const isDuplicate = duplicateIds.includes(item.id);
+                      const isDeleting = deletingItems.has(item.id);
                       return (
-                        <Card key={`${item.id}-${index}`} className={`overflow-hidden ${isDuplicate ? 'border-red-300 bg-red-50' : ''}`}>
+                        <Card key={`${item.id}-${index}`} className={`overflow-hidden ${isDuplicate ? 'border-red-300 bg-red-50' : ''} ${isDeleting ? 'opacity-50' : ''}`}>
                           {isDuplicate && (
                             <div className="bg-red-100 text-red-800 text-xs px-2 py-1 flex items-center">
                               <AlertTriangle className="h-3 w-3 mr-1" />
@@ -264,7 +293,12 @@ export const MenuItemsTab = ({
                                 )}
                               </div>
                               <div className="flex flex-col gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)}>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleEditItem(item)}
+                                  disabled={isDeleting}
+                                >
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 <Button 
@@ -272,8 +306,9 @@ export const MenuItemsTab = ({
                                   variant="ghost" 
                                   onClick={() => handleDeleteItem(item)}
                                   className={isDuplicate ? 'text-red-600 hover:text-red-700' : ''}
+                                  disabled={isDeleting}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Trash2 className={`h-4 w-4 ${isDeleting ? 'text-gray-400' : 'text-red-500'}`} />
                                 </Button>
                               </div>
                             </div>

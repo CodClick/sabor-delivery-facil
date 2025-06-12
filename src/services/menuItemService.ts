@@ -1,3 +1,4 @@
+
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -111,36 +112,59 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
 
 export const deleteMenuItem = async (id: string): Promise<void> => {
   try {
-    console.log("Deletando item do menu com ID:", id);
+    console.log("=== INICIANDO EXCLUSÃO DE ITEM ===");
+    console.log("ID recebido para exclusão:", id);
+    console.log("Tipo do ID:", typeof id);
+    console.log("ID limpo:", id?.trim());
     
-    if (!id || id.trim() === "" || typeof id !== "string") {
-      throw new Error("ID do item é obrigatório para exclusão");
+    if (!id || typeof id !== "string" || id.trim() === "") {
+      console.error("ID inválido fornecido:", id);
+      throw new Error("ID do item é obrigatório e deve ser uma string válida");
     }
 
     const cleanId = id.trim();
     
     // Skip deletion if it's a temporary ID
     if (cleanId.startsWith("temp-")) {
-      console.log("Item com ID temporário, não será deletado do Firestore");
+      console.log("ID temporário detectado, cancelando exclusão:", cleanId);
       return;
     }
+    
+    console.log("Criando referência do documento...");
+    const menuItemDocRef = doc(db, "menuItems", cleanId);
+    console.log("Referência criada:", menuItemDocRef.path);
     
     // First verify the document exists
-    const menuItemDocRef = doc(db, "menuItems", cleanId);
+    console.log("Verificando se o documento existe...");
     const existingDoc = await getDoc(menuItemDocRef);
+    console.log("Documento existe?", existingDoc.exists());
     
     if (!existingDoc.exists()) {
-      console.log("Documento não existe no Firestore, considerando como sucesso");
-      return;
+      console.log("Documento não encontrado no Firestore");
+      throw new Error("Item não encontrado no banco de dados");
     }
     
+    console.log("Dados do documento encontrado:", existingDoc.data());
+    
     // Delete the document
+    console.log("Executando exclusão...");
     await deleteDoc(menuItemDocRef);
-    console.log("Item deletado com sucesso do Firestore");
+    console.log("=== EXCLUSÃO CONCLUÍDA COM SUCESSO ===");
+    
+    // Verify deletion
+    console.log("Verificando se a exclusão foi bem-sucedida...");
+    const verificationDoc = await getDoc(menuItemDocRef);
+    console.log("Documento ainda existe após exclusão?", verificationDoc.exists());
+    
+    if (verificationDoc.exists()) {
+      throw new Error("Falha na exclusão: o documento ainda existe após a operação de exclusão");
+    }
     
   } catch (error) {
-    console.error("Erro ao deletar item:", error);
-    throw new Error(`Falha ao deletar item: ${error.message}`);
+    console.error("=== ERRO NA EXCLUSÃO ===");
+    console.error("Erro detalhado:", error);
+    console.error("Stack trace:", error.stack);
+    throw error;
   }
 };
 
