@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
@@ -220,9 +219,13 @@ const AdminOrders = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  // Função atualizada para formatar data completa
+  const formatFullDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
@@ -340,7 +343,10 @@ const AdminOrders = () => {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-sm text-gray-500">
-                      Pedido #{order.id.substring(0, 6)} • {formatDate(order.createdAt as string)}
+                      Pedido #{order.id.substring(0, 6)}
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">
+                      {formatFullDate(order.createdAt as string)}
                     </p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs flex items-center ${getStatusColor(order.status)}`}>

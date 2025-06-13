@@ -10,14 +10,27 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
     // Calcular o total e montar os itens do pedido
     let total = 0;
     const orderItems = orderData.items.map(item => {
-      const itemTotal = item.price * item.quantity;
+      let itemTotal = item.price * item.quantity;
+      
+      // Calcular total das variações
+      if (item.selectedVariations) {
+        item.selectedVariations.forEach(group => {
+          group.variations.forEach(variation => {
+            if (variation.additionalPrice) {
+              itemTotal += variation.additionalPrice * variation.quantity * item.quantity;
+            }
+          });
+        });
+      }
+      
       total += itemTotal;
       
       return {
         menuItemId: item.menuItemId,
         name: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        selectedVariations: item.selectedVariations || []
       };
     });
 

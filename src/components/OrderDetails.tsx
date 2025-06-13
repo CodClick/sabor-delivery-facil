@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -99,6 +98,23 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
+  // Calcular subtotal do item incluindo variações
+  const calculateItemSubtotal = (item: any) => {
+    let subtotal = item.price * item.quantity;
+    
+    if (item.selectedVariations) {
+      item.selectedVariations.forEach((group: any) => {
+        group.variations.forEach((variation: any) => {
+          if (variation.additionalPrice) {
+            subtotal += variation.additionalPrice * variation.quantity * item.quantity;
+          }
+        });
+      });
+    }
+    
+    return subtotal;
+  };
+
   // Lista de botões para atualização de status
   const nextStatusButtons = getNextStatusOptions(order.status).map(status => {
     const icon = getStatusIcon(status);
@@ -169,7 +185,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
-              <TableHead>Preço</TableHead>
+              <TableHead>Preço Base</TableHead>
               <TableHead>Qtd</TableHead>
               <TableHead>Subtotal</TableHead>
             </TableRow>
@@ -182,18 +198,19 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                     <div>
                       <div className="font-semibold">{item.name}</div>
                       {item.selectedVariations && item.selectedVariations.length > 0 && (
-                        <div className="mt-2 space-y-1">
+                        <div className="mt-2 space-y-2">
                           {item.selectedVariations.map((group, groupIndex) => (
-                            <div key={groupIndex} className="text-sm text-gray-600">
-                              <div className="font-medium text-gray-700">{group.groupName}:</div>
-                              <div className="ml-2">
+                            <div key={groupIndex} className="text-sm border-l-2 border-gray-200 pl-3">
+                              <div className="font-medium text-gray-700 mb-1">{group.groupName}:</div>
+                              <div className="space-y-1">
                                 {group.variations.map((variation, varIndex) => (
-                                  <div key={varIndex} className="flex justify-between items-center">
+                                  <div key={varIndex} className="flex justify-between items-center text-gray-600">
                                     <span>
-                                      • {variation.name} {variation.quantity > 1 && `(${variation.quantity}x)`}
+                                      • {variation.name} 
+                                      {variation.quantity > 1 && ` (${variation.quantity}x)`}
                                     </span>
                                     {variation.additionalPrice && variation.additionalPrice > 0 && (
-                                      <span className="text-green-600">
+                                      <span className="text-green-600 font-medium">
                                         +R$ {(variation.additionalPrice * variation.quantity).toFixed(2)}
                                       </span>
                                     )}
@@ -208,7 +225,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                   </TableCell>
                   <TableCell>R$ {item.price.toFixed(2)}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
-                  <TableCell>R$ {(item.price * item.quantity).toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">R$ {calculateItemSubtotal(item).toFixed(2)}</TableCell>
                 </TableRow>
               </React.Fragment>
             ))}
