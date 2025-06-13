@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -101,21 +100,38 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
 
   // Calcular subtotal do item incluindo variações
   const calculateItemSubtotal = (item: any) => {
-    let subtotal = item.price * item.quantity;
+    console.log("Calculando subtotal para item:", item);
     
-    if (item.selectedVariations && item.selectedVariations.length > 0) {
+    let basePrice = (item.price || 0) * item.quantity;
+    let variationsTotal = 0;
+    
+    if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+      console.log("Variações encontradas:", item.selectedVariations);
+      
       item.selectedVariations.forEach((group: any) => {
-        if (group.variations && group.variations.length > 0) {
+        console.log("Processando grupo:", group);
+        
+        if (group.variations && Array.isArray(group.variations)) {
           group.variations.forEach((variation: any) => {
-            if (variation.additionalPrice && variation.additionalPrice > 0) {
-              subtotal += variation.additionalPrice * (variation.quantity || 1) * item.quantity;
+            console.log("Processando variação:", variation);
+            
+            const additionalPrice = variation.additionalPrice || 0;
+            const quantity = variation.quantity || 1;
+            
+            if (additionalPrice > 0) {
+              const variationCost = additionalPrice * quantity * item.quantity;
+              variationsTotal += variationCost;
+              console.log(`Variação ${variation.name}: R$ ${additionalPrice} x ${quantity} x ${item.quantity} = R$ ${variationCost}`);
             }
           });
         }
       });
     }
     
-    return subtotal;
+    const total = basePrice + variationsTotal;
+    console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
+    
+    return total;
   };
 
   // Lista de botões para atualização de status
@@ -181,6 +197,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         )}
       </div>
 
+      {/* Debug do pedido completo */}
+      {console.log("Pedido completo:", order)}
+      {console.log("Itens do pedido:", order.items)}
+
       {/* Itens do pedido */}
       <div>
         <h3 className="text-md font-medium mb-2">Itens do Pedido</h3>
@@ -195,8 +215,11 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           </TableHeader>
           <TableBody>
             {order.items.map((item, index) => {
-              console.log("Item do pedido:", item);
-              console.log("Variações selecionadas:", item.selectedVariations);
+              console.log(`\n=== ITEM ${index + 1} ===`);
+              console.log("Item completo:", JSON.stringify(item, null, 2));
+              console.log("Tem selectedVariations?", !!item.selectedVariations);
+              console.log("selectedVariations é array?", Array.isArray(item.selectedVariations));
+              console.log("Quantidade de grupos:", item.selectedVariations?.length || 0);
               
               return (
                 <React.Fragment key={index}>
@@ -206,54 +229,59 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                         <div className="font-semibold">{item.name}</div>
                         
                         {/* Exibir variações se existirem */}
-                        {item.selectedVariations && item.selectedVariations.length > 0 && (
+                        {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
                           <div className="mt-2 space-y-2">
                             {item.selectedVariations.map((group, groupIndex) => {
-                              console.log("Grupo de variação:", group);
+                              console.log(`Grupo ${groupIndex}:`, JSON.stringify(group, null, 2));
                               
                               return (
                                 <div key={groupIndex} className="text-sm border-l-2 border-gray-200 pl-3">
                                   <div className="font-medium text-gray-700 mb-1">
-                                    {group.groupName || "Variações"}:
+                                    {group.groupName || `Grupo ${groupIndex + 1}`}:
                                   </div>
                                   <div className="space-y-1">
-                                    {group.variations && group.variations.length > 0 ? (
+                                    {group.variations && Array.isArray(group.variations) && group.variations.length > 0 ? (
                                       group.variations.map((variation, varIndex) => {
-                                        console.log("Variação individual:", variation);
+                                        console.log(`Variação ${varIndex}:`, JSON.stringify(variation, null, 2));
+                                        
+                                        const additionalPrice = variation.additionalPrice || 0;
+                                        const quantity = variation.quantity || 1;
+                                        const variationTotal = additionalPrice * quantity;
                                         
                                         return (
                                           <div key={varIndex} className="flex justify-between items-center text-gray-600">
                                             <span>
                                               • {variation.name || `Variação ${varIndex + 1}`}
-                                              {variation.quantity && variation.quantity > 1 && ` (${variation.quantity}x)`}
+                                              {quantity > 1 && ` (${quantity}x)`}
                                             </span>
-                                            {variation.additionalPrice && variation.additionalPrice > 0 && (
+                                            {additionalPrice > 0 && (
                                               <span className="text-green-600 font-medium">
-                                                +R$ {(variation.additionalPrice * (variation.quantity || 1)).toFixed(2)}
+                                                +R$ {variationTotal.toFixed(2)}
                                               </span>
                                             )}
                                           </div>
                                         );
                                       })
                                     ) : (
-                                      <div className="text-gray-500 italic">Nenhuma variação encontrada neste grupo</div>
+                                      <div className="text-gray-500 italic">
+                                        Nenhuma variação no grupo: {JSON.stringify(group.variations)}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
-                        )}
-                        
-                        {/* Debug: mostrar se não há variações */}
-                        {(!item.selectedVariations || item.selectedVariations.length === 0) && (
+                        ) : (
                           <div className="text-xs text-gray-400 mt-1">
                             (Sem variações selecionadas)
+                            <br />
+                            <span className="text-xs">Debug: {JSON.stringify(item.selectedVariations)}</span>
                           </div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>R$ {item.price.toFixed(2)}</TableCell>
+                    <TableCell>R$ {(item.price || 0).toFixed(2)}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell className="font-medium">R$ {calculateItemSubtotal(item).toFixed(2)}</TableCell>
                   </TableRow>
