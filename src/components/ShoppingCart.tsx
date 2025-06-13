@@ -83,6 +83,39 @@ const ShoppingCart: React.FC = () => {
     return variationsLoading ? "Carregando..." : "Variação não encontrada";
   };
 
+  // Função para obter o preço adicional da variação
+  const getVariationPrice = (variationId: string): number => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.additionalPrice || 0;
+  };
+
+  // Função para calcular o valor total das variações de um item
+  const calculateVariationsTotal = (item: any): number => {
+    let variationsTotal = 0;
+    
+    if (item.selectedVariations && item.selectedVariations.length > 0) {
+      item.selectedVariations.forEach((group: any) => {
+        if (group.variations && group.variations.length > 0) {
+          group.variations.forEach((variation: any) => {
+            const additionalPrice = getVariationPrice(variation.variationId);
+            if (additionalPrice > 0) {
+              variationsTotal += additionalPrice * (variation.quantity || 1);
+            }
+          });
+        }
+      });
+    }
+    
+    return variationsTotal;
+  };
+
+  // Função para calcular o total do item (base + variações) x quantidade
+  const calculateItemTotal = (item: any): number => {
+    const basePrice = item.price || 0;
+    const variationsTotal = calculateVariationsTotal(item);
+    return (basePrice + variationsTotal) * item.quantity;
+  };
+
   return (
     <>
       {/* Cart Trigger Button */}
@@ -138,75 +171,103 @@ const ShoppingCart: React.FC = () => {
         ) : (
           <>
             <div className="space-y-4 mb-6">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex border-b pb-4">
-                  <div className="w-20 h-20 rounded overflow-hidden mr-4 flex-shrink-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <h3 className="font-medium">{item.name}</h3>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+              {cartItems.map((item) => {
+                const basePrice = item.price || 0;
+                const variationsTotal = calculateVariationsTotal(item);
+                const itemTotal = calculateItemTotal(item);
+
+                return (
+                  <div key={item.id} className="flex border-b pb-4">
+                    <div className="w-20 h-20 rounded overflow-hidden mr-4 flex-shrink-0">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg";
+                        }}
+                      />
                     </div>
-                    <p className="text-brand-600 font-medium">
-                      {formatCurrency(item.price)}
-                    </p>
-                    
-                    {item.selectedVariations && item.selectedVariations.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-500">
-                        {item.selectedVariations.map((group, index) => (
-                          <div key={group.groupId || index} className="mb-1">
-                            {group.groupName && (
-                              <p className="font-medium text-xs">{group.groupName}:</p>
-                            )}
-                            {group.variations
-                              .filter(v => v.quantity > 0)
-                              .map(v => (
-                                <div key={v.variationId} className="flex justify-between pl-2">
-                                  <span>{getVariationName(v.variationId)}</span>
-                                  <span>x{v.quantity}</span>
-                                </div>
-                              ))
-                            }
-                          </div>
-                        ))}
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h3 className="font-medium">{item.name}</h3>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
-                    )}
-                    
-                    <div className="flex items-center mt-2">
-                      <button
-                        onClick={() => decreaseQuantity(item.id)}
-                        className="counter-btn"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="mx-2 w-8 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => increaseQuantity(item.id)}
-                        className="counter-btn"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                      <div className="ml-auto">
-                        {formatCurrency(item.price * item.quantity)}
+                      
+                      {/* Preço base do item */}
+                      <div className="text-sm text-gray-600">
+                        <span>Item: {formatCurrency(basePrice)}</span>
+                      </div>
+                      
+                      {/* Variações selecionadas */}
+                      {item.selectedVariations && item.selectedVariations.length > 0 && (
+                        <div className="mt-2 text-sm">
+                          {item.selectedVariations.map((group, index) => (
+                            <div key={group.groupId || index} className="mb-1">
+                              {group.groupName && (
+                                <p className="font-medium text-xs text-gray-700">{group.groupName}:</p>
+                              )}
+                              {group.variations
+                                .filter(v => v.quantity > 0)
+                                .map(v => {
+                                  const variationPrice = getVariationPrice(v.variationId);
+                                  return (
+                                    <div key={v.variationId} className="flex justify-between pl-2 text-xs text-gray-600">
+                                      <span>{getVariationName(v.variationId)} x{v.quantity}</span>
+                                      {variationPrice > 0 && (
+                                        <span className="text-green-600 font-medium">
+                                          +{formatCurrency(variationPrice * v.quantity)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              }
+                            </div>
+                          ))}
+                          
+                          {/* Total das variações */}
+                          {variationsTotal > 0 && (
+                            <div className="text-xs text-green-600 font-medium border-t border-gray-200 pt-1">
+                              Variações: {formatCurrency(variationsTotal)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Subtotal unitário */}
+                      <div className="text-sm font-medium text-brand-600 mt-1">
+                        Subtotal: {formatCurrency(basePrice + variationsTotal)}
+                      </div>
+                      
+                      <div className="flex items-center mt-2">
+                        <button
+                          onClick={() => decreaseQuantity(item.id)}
+                          className="counter-btn"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="mx-2 w-8 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => increaseQuantity(item.id)}
+                          className="counter-btn"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                        <div className="ml-auto font-bold">
+                          {formatCurrency(itemTotal)}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="border-t pt-4">
               <div className="flex justify-between text-lg font-bold mb-6">

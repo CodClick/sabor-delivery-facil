@@ -1,26 +1,42 @@
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
+import { getAllVariations } from "@/services/variationService";
 
 const ORDERS_COLLECTION = "orders";
+
+// Função para obter o preço adicional da variação
+const getVariationPrice = async (variationId: string): Promise<number> => {
+  try {
+    const variations = await getAllVariations();
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.additionalPrice || 0;
+  } catch (error) {
+    console.error("Erro ao obter preço da variação:", error);
+    return 0;
+  }
+};
 
 // Criar um novo pedido
 export const createOrder = async (orderData: CreateOrderRequest): Promise<Order> => {
   try {
     // Calcular o total e montar os itens do pedido
     let total = 0;
-    const orderItems = orderData.items.map(item => {
-      let itemTotal = item.price * item.quantity;
+    const orderItems = await Promise.all(orderData.items.map(async item => {
+      let itemTotal = (item.price || 0) * item.quantity;
       
       // Calcular total das variações
       if (item.selectedVariations) {
-        item.selectedVariations.forEach(group => {
-          group.variations.forEach(variation => {
-            if (variation.additionalPrice) {
-              itemTotal += variation.additionalPrice * variation.quantity * item.quantity;
+        for (const group of item.selectedVariations) {
+          for (const variation of group.variations) {
+            if (variation.variationId) {
+              const additionalPrice = await getVariationPrice(variation.variationId);
+              if (additionalPrice > 0) {
+                itemTotal += additionalPrice * (variation.quantity || 1) * item.quantity;
+              }
             }
-          });
-        });
+          }
+        }
       }
       
       total += itemTotal;
@@ -28,11 +44,11 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
       return {
         menuItemId: item.menuItemId,
         name: item.name,
-        price: item.price,
+        price: item.price || 0,
         quantity: item.quantity,
         selectedVariations: item.selectedVariations || []
       };
-    });
+    }));
 
     // Criar o documento do pedido sem referência ao usuário atual
     // Isso evita erros de permissão quando não há autenticação
@@ -124,11 +140,7 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
     const ordersCollection = collection(db, ORDERS_COLLECTION);
     let q;
     
-    // Importante: Firebase não suporta consultas com múltiplos "where" em campos diferentes
-    // a menos que existam índices compostos. Vamos simplificar a consulta.
-    
     if (status && status !== "all") {
-      // Primeiro, vamos buscar todos os pedidos de hoje
       q = query(
         ordersCollection,
         where("createdAt", ">=", todayTimestamp),
@@ -148,8 +160,6 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
     
     console.log("Resultados encontrados (total):", ordersSnapshot.size);
     
-    // Se tiver um filtro de status, filtramos os resultados em JavaScript
-    // Em vez de usar dois where na consulta do Firestore
     let orders = ordersSnapshot.docs.map(doc => {
       const data = doc.data() as Record<string, any>;
       return {
@@ -160,7 +170,6 @@ export const getTodayOrders = async (status?: string): Promise<Order[]> => {
       } as Order;
     });
     
-    // Aplicar filtro de status se necessário
     if (status && status !== "all") {
       orders = orders.filter(order => order.status === status);
       console.log(`Resultados filtrados por status '${status}':`, orders.length);
@@ -180,7 +189,6 @@ export const getOrdersByDateRange = async (
   status?: string
 ): Promise<Order[]> => {
   try {
-    // Definir o horário para início (00:00:00) e fim (23:59:59) do dia
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
     
@@ -195,8 +203,6 @@ export const getOrdersByDateRange = async (
     
     const ordersCollection = collection(db, ORDERS_COLLECTION);
     
-    // Importante: Firebase não suporta consultas com múltiplos "where" em campos diferentes
-    // a menos que existam índices compostos. Vamos simplificar a consulta.
     const q = query(
       ordersCollection,
       where("createdAt", ">=", startTimestamp),
@@ -220,7 +226,6 @@ export const getOrdersByDateRange = async (
       } as Order;
     });
     
-    // Aplicar filtro de status se necessário
     if (status && status !== "all") {
       orders = orders.filter(order => order.status === status);
       console.log(`Resultados filtrados por status '${status}':`, orders.length);
@@ -243,12 +248,11 @@ export const updateOrder = async (orderId: string, updates: UpdateOrderRequest):
     
     const updateData = {
       ...updates,
-      updatedAt: new Date()  // Usar Date() em vez de serverTimestamp() para evitar problemas de permissão
+      updatedAt: new Date()
     };
     
     await updateDoc(orderRef, updateData);
     
-    // Obter o pedido atualizado
     return getOrderById(orderId);
   } catch (error) {
     console.error("Erro ao atualizar pedido:", error);
@@ -261,12 +265,10 @@ const formatTimestamp = (timestamp: any): string => {
   if (!timestamp) return new Date().toISOString();
   if (typeof timestamp === 'string') return timestamp;
   
-  // Verifica se o timestamp é um objeto Firestore Timestamp
   if (timestamp && typeof timestamp.toDate === 'function') {
     return timestamp.toDate().toISOString();
   }
   
-  // Se for um objeto Date
   if (timestamp instanceof Date) {
     return timestamp.toISOString();
   }

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
+import { getAllVariations } from "@/services/variationService";
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -24,12 +25,57 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartTotal, setCartTotal] = useState(0);
   const [itemCount, setItemCount] = useState(0);
+  const [variations, setVariations] = useState<any[]>([]);
+
+  // Carregar variações para cálculos de preço
+  useEffect(() => {
+    const loadVariations = async () => {
+      try {
+        const allVariations = await getAllVariations();
+        setVariations(allVariations);
+      } catch (error) {
+        console.error("Erro ao carregar variações:", error);
+      }
+    };
+    
+    loadVariations();
+  }, []);
+
+  // Função para obter o preço adicional da variação
+  const getVariationPrice = (variationId: string): number => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.additionalPrice || 0;
+  };
+
+  // Função para calcular o valor total das variações de um item
+  const calculateVariationsTotal = (item: CartItem): number => {
+    let variationsTotal = 0;
+    
+    if (item.selectedVariations && item.selectedVariations.length > 0) {
+      item.selectedVariations.forEach(group => {
+        if (group.variations && group.variations.length > 0) {
+          group.variations.forEach(variation => {
+            const additionalPrice = getVariationPrice(variation.variationId);
+            if (additionalPrice > 0) {
+              variationsTotal += additionalPrice * (variation.quantity || 1);
+            }
+          });
+        }
+      });
+    }
+    
+    return variationsTotal;
+  };
 
   useEffect(() => {
-    // Calculate cart total and item count
+    // Calculate cart total and item count including variations
     const { total, count } = cartItems.reduce(
       (acc, item) => {
-        acc.total += item.price * item.quantity;
+        const basePrice = item.price || 0;
+        const variationsTotal = calculateVariationsTotal(item);
+        const itemTotal = (basePrice + variationsTotal) * item.quantity;
+        
+        acc.total += itemTotal;
         acc.count += item.quantity;
         return acc;
       },
@@ -38,7 +84,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setCartTotal(total);
     setItemCount(count);
-  }, [cartItems]);
+  }, [cartItems, variations]);
 
   // Função para gerar ID único para itens com variações
   const generateCartItemId = (item: MenuItem, selectedVariations?: SelectedVariationGroup[]): string => {
