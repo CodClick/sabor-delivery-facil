@@ -3,6 +3,15 @@ import React from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   ClipboardList,
   CheckCircle2,
   ChefHat,
@@ -156,34 +165,61 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       {/* Itens do pedido */}
       <div>
         <h3 className="text-md font-medium mb-2">Itens do Pedido</h3>
-        <div className="rounded-md border overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qtd</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {order.items.map((item, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ {item.price.toFixed(2)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ {(item.price * item.quantity).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="bg-gray-50">
-              <tr>
-                <td colSpan={3} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">Total</td>
-                <td className="px-6 py-4 text-sm font-bold text-gray-900">R$ {order.total.toFixed(2)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Preço</TableHead>
+              <TableHead>Qtd</TableHead>
+              <TableHead>Subtotal</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {order.items.map((item, index) => (
+              <React.Fragment key={index}>
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div>
+                      <div className="font-semibold">{item.name}</div>
+                      {item.selectedVariations && item.selectedVariations.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {item.selectedVariations.map((group, groupIndex) => (
+                            <div key={groupIndex} className="text-sm text-gray-600">
+                              <div className="font-medium text-gray-700">{group.groupName}:</div>
+                              <div className="ml-2">
+                                {group.variations.map((variation, varIndex) => (
+                                  <div key={varIndex} className="flex justify-between items-center">
+                                    <span>
+                                      • {variation.name} {variation.quantity > 1 && `(${variation.quantity}x)`}
+                                    </span>
+                                    {variation.additionalPrice && variation.additionalPrice > 0 && (
+                                      <span className="text-green-600">
+                                        +R$ {(variation.additionalPrice * variation.quantity).toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>R$ {item.price.toFixed(2)}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>R$ {(item.price * item.quantity).toFixed(2)}</TableCell>
+                </TableRow>
+              </React.Fragment>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={3} className="text-right font-medium">Total</TableCell>
+              <TableCell className="font-bold">R$ {order.total.toFixed(2)}</TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
       </div>
 
       {/* Botões de atualização de status */}

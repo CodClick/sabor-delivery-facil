@@ -4,6 +4,20 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
+  selectedVariations?: SelectedVariationGroup[];
+}
+
+export interface SelectedVariationGroup {
+  groupId: string;
+  groupName: string;
+  variations: SelectedVariation[];
+}
+
+export interface SelectedVariation {
+  variationId: string;
+  quantity: number;
+  name?: string;
+  additionalPrice?: number;
 }
 
 export interface Order {
@@ -32,6 +46,7 @@ export interface CreateOrderRequest {
     name: string;
     price: number;
     quantity: number;
+    selectedVariations?: SelectedVariationGroup[];
   }[];
 }
 
