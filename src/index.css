@@ -41,9 +41,46 @@
   * {
     @apply border-border;
   }
+  html {
+    /* Garantir scroll suave e adequado em dispositivos móveis */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Permitir scroll vertical em dispositivos móveis */
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Adicionar padding inferior para garantir espaço para scroll */
+    padding-bottom: 120px;
+  }
+  
+  /* Garantir que containers principais permitam scroll */
+  #root {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+  body {
+    /* Padding extra no mobile para garantir acesso aos botões */
+    padding-bottom: 140px;
+  }
+  
+  /* Garantir que elementos não bloqueiem o scroll */
+  .container {
+    padding-bottom: 2rem;
+  }
+  
+  /* Melhorar a área de toque dos botões em mobile */
+  .add-to-cart-btn {
+    min-height: 44px;
+    touch-action: manipulation;
   }
 }
 
@@ -54,10 +91,15 @@
 
 .add-to-cart-btn {
   @apply bg-food-green text-white py-1 px-4 rounded-full transition-all hover:bg-opacity-90;
+  /* Melhorar usabilidade em mobile */
+  touch-action: manipulation;
+  min-height: 40px;
 }
 
 .counter-btn {
   @apply flex items-center justify-center w-7 h-7 bg-gray-100 rounded-full text-gray-700 hover:bg-gray-200;
+  /* Melhorar área de toque em mobile */
+  touch-action: manipulation;
 }
 
 /* Cart animation */
@@ -74,9 +116,20 @@
 /* Food item hover effect */
 .food-item {
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  /* Garantir que o card não interfira no scroll */
+  touch-action: pan-y;
 }
 
 .food-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile scroll fixes */
+@media (max-width: 768px) {
+  .food-item:hover {
+    /* Desabilitar hover em mobile para melhor performance de scroll */
+    transform: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
 }
