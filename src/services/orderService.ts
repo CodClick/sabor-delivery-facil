@@ -1,3 +1,4 @@
+
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
@@ -20,38 +21,86 @@ const getVariationPrice = async (variationId: string): Promise<number> => {
 // Criar um novo pedido
 export const createOrder = async (orderData: CreateOrderRequest): Promise<Order> => {
   try {
+    console.log("=== CRIANDO PEDIDO ===");
+    console.log("Dados do pedido recebidos:", JSON.stringify(orderData, null, 2));
+    
     // Calcular o total e montar os itens do pedido
     let total = 0;
     const orderItems = await Promise.all(orderData.items.map(async item => {
-      let itemTotal = (item.price || 0) * item.quantity;
+      console.log(`\n--- PROCESSANDO ITEM: ${item.name} ---`);
+      console.log("Item original:", JSON.stringify(item, null, 2));
       
-      // Calcular total das variações
-      if (item.selectedVariations) {
+      let itemTotal = (item.price || 0) * item.quantity;
+      console.log(`Preço base: R$ ${item.price} x ${item.quantity} = R$ ${itemTotal}`);
+      
+      // Processar variações selecionadas
+      let processedVariations = [];
+      if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+        console.log("Processando variações:", item.selectedVariations);
+        
         for (const group of item.selectedVariations) {
-          for (const variation of group.variations) {
-            if (variation.variationId) {
-              const additionalPrice = await getVariationPrice(variation.variationId);
-              if (additionalPrice > 0) {
-                itemTotal += additionalPrice * (variation.quantity || 1) * item.quantity;
+          console.log(`Processando grupo: ${group.groupName || group.groupId}`);
+          
+          const processedGroup = {
+            groupId: group.groupId,
+            groupName: group.groupName || group.groupId,
+            variations: []
+          };
+          
+          if (group.variations && Array.isArray(group.variations)) {
+            for (const variation of group.variations) {
+              console.log(`Processando variação:`, variation);
+              
+              let additionalPrice = variation.additionalPrice;
+              
+              // Se não tiver o preço, buscar no serviço
+              if (additionalPrice === undefined && variation.variationId) {
+                additionalPrice = await getVariationPrice(variation.variationId);
+                console.log(`Preço obtido do serviço para ${variation.variationId}: R$ ${additionalPrice}`);
               }
+              
+              const processedVariation = {
+                variationId: variation.variationId,
+                quantity: variation.quantity || 1,
+                name: variation.name || '',
+                additionalPrice: additionalPrice || 0
+              };
+              
+              // Calcular custo da variação
+              const variationCost = (additionalPrice || 0) * (variation.quantity || 1) * item.quantity;
+              if (variationCost > 0) {
+                itemTotal += variationCost;
+                console.log(`Variação ${variation.name}: R$ ${additionalPrice} x ${variation.quantity} x ${item.quantity} = R$ ${variationCost}`);
+              }
+              
+              processedGroup.variations.push(processedVariation);
             }
+          }
+          
+          if (processedGroup.variations.length > 0) {
+            processedVariations.push(processedGroup);
           }
         }
       }
       
       total += itemTotal;
+      console.log(`Total do item ${item.name}: R$ ${itemTotal}`);
+      console.log("Variações processadas:", JSON.stringify(processedVariations, null, 2));
       
       return {
         menuItemId: item.menuItemId,
         name: item.name,
         price: item.price || 0,
         quantity: item.quantity,
-        selectedVariations: item.selectedVariations || []
+        selectedVariations: processedVariations
       };
     }));
 
-    // Criar o documento do pedido sem referência ao usuário atual
-    // Isso evita erros de permissão quando não há autenticação
+    console.log("\n=== ITENS FINAIS DO PEDIDO ===");
+    console.log(JSON.stringify(orderItems, null, 2));
+    console.log(`Total final: R$ ${total}`);
+
+    // Criar o documento do pedido
     const orderToSave = {
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
@@ -61,12 +110,16 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
       items: orderItems,
       status: "pending",
       total,
-      createdAt: new Date(),  // Usando Date() diretamente ao invés de serverTimestamp()
-      updatedAt: new Date()   // Isso ajuda a evitar problemas de permissão
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
-    // Usar o método try/catch para capturar erros específicos de permissão
+    console.log("\n=== SALVANDO PEDIDO ===");
+    console.log("Pedido a ser salvo:", JSON.stringify(orderToSave, null, 2));
+
     const docRef = await addDoc(collection(db, ORDERS_COLLECTION), orderToSave);
+    
+    console.log("Pedido salvo com ID:", docRef.id);
     
     return {
       id: docRef.id,
