@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { createOrder } from "@/services/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { getCepInfo } from "@/services/cepService";
+import { fetchAddressByCep } from "@/services/cepService";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -38,12 +37,12 @@ const Checkout = () => {
     if (value.replace(/\D/g, '').length === 8) {
       setCepLoading(true);
       try {
-        const cepInfo = await getCepInfo(value);
+        const cepInfo = await fetchAddressByCep(value);
         if (cepInfo) {
-          setStreet(cepInfo.logradouro || "");
-          setNeighborhood(cepInfo.bairro || "");
-          setCity(cepInfo.localidade || "");
-          setState(cepInfo.uf || "");
+          setStreet(cepInfo.street || "");
+          setNeighborhood(cepInfo.neighborhood || "");
+          setCity(cepInfo.city || "");
+          setState(cepInfo.state || "");
         }
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
@@ -68,9 +67,14 @@ const Checkout = () => {
       console.log("=== CHECKOUT SUBMIT ===");
       console.log("Itens do carrinho:", cartItems);
       cartItems.forEach((item, index) => {
-        console.log(`Item ${index + 1} no checkout:`, JSON.stringify(item, null, 2));
-        if (item.selectedVariations) {
-          console.log(`Variações do item ${index + 1}:`, item.selectedVariations);
+        console.log(`[CHECKOUT] Item ${index + 1}:`, JSON.stringify(item, null, 2));
+        if (item.selectedVariations && item.selectedVariations.length > 0) {
+          console.log(`[CHECKOUT] Variações do item ${index + 1}:`, item.selectedVariations);
+          item.selectedVariations.forEach((group, groupIndex) => {
+            console.log(`[CHECKOUT] Grupo ${groupIndex + 1} (${group.groupName}):`, group.variations);
+          });
+        } else {
+          console.log(`[CHECKOUT] Item ${index + 1} SEM variações`);
         }
       });
 
@@ -89,7 +93,7 @@ const Checkout = () => {
         }))
       };
 
-      console.log("Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
+      console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
 
       const order = await createOrder(orderData);
       
