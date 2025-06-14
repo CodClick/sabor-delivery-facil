@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, Variati
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Minus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProductVariationDialogProps {
   item: MenuItem;
@@ -182,101 +182,103 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 flex-shrink-0">
           <DialogTitle>{item.name}</DialogTitle>
           <DialogDescription>{item.description}</DialogDescription>
         </DialogHeader>
         
-        <div className="mt-4">
-          <div className="h-48 w-full overflow-hidden rounded-md mb-4">
-            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-          </div>
-          
-          {item.variationGroups.map((group, groupIndex) => {
-            if (!group) return null;
-            const groupStatus = getGroupSelectionStatus(group.id);
+        <ScrollArea className="flex-1 px-6">
+          <div className="pb-4">
+            <div className="h-48 w-full overflow-hidden rounded-md mb-4">
+              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+            </div>
             
-            return (
-              <div key={group.id} className="mt-6">
-                {groupIndex > 0 && <Separator className="my-4" />}
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold">{group.name}</h3>
-                  <span className={`text-sm px-2 py-1 rounded ${
-                    groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {groupStatus.total} / {groupStatus.min === groupStatus.max ? 
-                      `${groupStatus.min} necessários` : 
-                      `${groupStatus.min}-${groupStatus.max} permitidos`
-                    }
-                  </span>
-                </div>
-                
-                <p className="text-sm text-gray-500 mb-4">
-                  {getVariationGroupMessage(group.id)}
-                </p>
-                
-                <div className="space-y-2">
-                  {selectedVariationGroups
-                    .find(sg => sg.groupId === group.id)?.variations
-                    .map(variation => {
-                      const variationDetails = getVariationDetails(variation.variationId);
-                      if (!variationDetails) return null;
-                      
-                      return (
-                        <div key={variation.variationId} className="flex items-center justify-between py-2 border-b">
-                          <div>
-                            <p className="font-medium">{variationDetails.name}</p>
-                            {variationDetails.additionalPrice ? (
-                              <p className="text-sm text-gray-500">
-                                +{formatCurrency(variationDetails.additionalPrice)}
-                              </p>
-                            ) : null}
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              onClick={() => decreaseVariation(group.id, variation.variationId)}
-                              disabled={variation.quantity <= 0}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
+            {item.variationGroups.map((group, groupIndex) => {
+              if (!group) return null;
+              const groupStatus = getGroupSelectionStatus(group.id);
+              
+              return (
+                <div key={group.id} className="mt-6">
+                  {groupIndex > 0 && <Separator className="my-4" />}
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold">{group.name}</h3>
+                    <span className={`text-sm px-2 py-1 rounded ${
+                      groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {groupStatus.total} / {groupStatus.min === groupStatus.max ? 
+                        `${groupStatus.min} necessários` : 
+                        `${groupStatus.min}-${groupStatus.max} permitidos`
+                      }
+                    </span>
+                  </div>
+                  
+                  <p className="text-sm text-gray-500 mb-4">
+                    {getVariationGroupMessage(group.id)}
+                  </p>
+                  
+                  <div className="space-y-2">
+                    {selectedVariationGroups
+                      .find(sg => sg.groupId === group.id)?.variations
+                      .map(variation => {
+                        const variationDetails = getVariationDetails(variation.variationId);
+                        if (!variationDetails) return null;
+                        
+                        return (
+                          <div key={variation.variationId} className="flex items-center justify-between py-2 border-b">
+                            <div>
+                              <p className="font-medium">{variationDetails.name}</p>
+                              {variationDetails.additionalPrice ? (
+                                <p className="text-sm text-gray-500">
+                                  +{formatCurrency(variationDetails.additionalPrice)}
+                                </p>
+                              ) : null}
+                            </div>
                             
-                            <span className="w-6 text-center">{variation.quantity}</span>
-                            
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              onClick={() => increaseVariation(group.id, variation.variationId)}
-                              disabled={groupStatus.total >= groupStatus.max}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center space-x-3">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 w-8 p-0" 
+                                onClick={() => decreaseVariation(group.id, variation.variationId)}
+                                disabled={variation.quantity <= 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              
+                              <span className="w-6 text-center">{variation.quantity}</span>
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 w-8 p-0" 
+                                onClick={() => increaseVariation(group.id, variation.variationId)}
+                                disabled={groupStatus.total >= groupStatus.max}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          
-          <div className="mt-6 flex justify-between">
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleAddToCart} 
-              disabled={!isValid}
-              className="bg-food-green hover:bg-opacity-90"
-            >
-              Adicionar ao carrinho
-            </Button>
+              );
+            })}
           </div>
+        </ScrollArea>
+        
+        <div className="flex justify-between p-6 border-t flex-shrink-0">
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleAddToCart} 
+            disabled={!isValid}
+            className="bg-food-green hover:bg-opacity-90"
+          >
+            Adicionar ao carrinho
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
