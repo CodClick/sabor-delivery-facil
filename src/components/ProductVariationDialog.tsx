@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,6 @@ import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, Variati
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Minus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProductVariationDialogProps {
   item: MenuItem;
@@ -182,15 +182,15 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 flex-shrink-0">
-          <DialogTitle>{item.name}</DialogTitle>
-          <DialogDescription>{item.description}</DialogDescription>
-        </DialogHeader>
-        
-        <ScrollArea className="flex-1 px-6">
-          <div className="pb-4">
-            <div className="h-48 w-full overflow-hidden rounded-md mb-4">
+      <DialogContent className="sm:max-w-md w-[95vw] max-h-[85vh] p-0 overflow-hidden">
+        <div className="flex flex-col h-full max-h-[85vh]">
+          <DialogHeader className="px-6 py-4 flex-shrink-0 border-b">
+            <DialogTitle className="text-left">{item.name}</DialogTitle>
+            <DialogDescription className="text-left">{item.description}</DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto px-6 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="h-48 w-full overflow-hidden rounded-md mb-6">
               <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
             </div>
             
@@ -199,9 +199,9 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
               const groupStatus = getGroupSelectionStatus(group.id);
               
               return (
-                <div key={group.id} className="mt-6">
-                  {groupIndex > 0 && <Separator className="my-4" />}
-                  <div className="flex items-center justify-between mb-2">
+                <div key={group.id} className="mb-6">
+                  {groupIndex > 0 && <Separator className="my-6" />}
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold">{group.name}</h3>
                     <span className={`text-sm px-2 py-1 rounded ${
                       groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
@@ -217,7 +217,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                     {getVariationGroupMessage(group.id)}
                   </p>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedVariationGroups
                       .find(sg => sg.groupId === group.id)?.variations
                       .map(variation => {
@@ -225,8 +225,8 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                         if (!variationDetails) return null;
                         
                         return (
-                          <div key={variation.variationId} className="flex items-center justify-between py-2 border-b">
-                            <div>
+                          <div key={variation.variationId} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                            <div className="flex-1">
                               <p className="font-medium">{variationDetails.name}</p>
                               {variationDetails.additionalPrice ? (
                                 <p className="text-sm text-gray-500">
@@ -235,23 +235,23 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                               ) : null}
                             </div>
                             
-                            <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-3 flex-shrink-0">
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="h-8 w-8 p-0" 
+                                className="h-9 w-9 p-0 touch-action-manipulation" 
                                 onClick={() => decreaseVariation(group.id, variation.variationId)}
                                 disabled={variation.quantity <= 0}
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
                               
-                              <span className="w-6 text-center">{variation.quantity}</span>
+                              <span className="w-8 text-center font-medium">{variation.quantity}</span>
                               
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="h-8 w-8 p-0" 
+                                className="h-9 w-9 p-0 touch-action-manipulation" 
                                 onClick={() => increaseVariation(group.id, variation.variationId)}
                                 disabled={groupStatus.total >= groupStatus.max}
                               >
@@ -265,20 +265,23 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                 </div>
               );
             })}
+            
+            {/* Espaço extra no final para garantir acesso aos botões */}
+            <div className="h-20"></div>
           </div>
-        </ScrollArea>
-        
-        <div className="flex justify-between p-6 border-t flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleAddToCart} 
-            disabled={!isValid}
-            className="bg-food-green hover:bg-opacity-90"
-          >
-            Adicionar ao carrinho
-          </Button>
+          
+          <div className="flex justify-between gap-3 p-6 border-t flex-shrink-0 bg-white">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAddToCart} 
+              disabled={!isValid}
+              className="bg-food-green hover:bg-opacity-90 flex-1"
+            >
+              Adicionar ao carrinho
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

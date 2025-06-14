@@ -83,21 +83,24 @@
     touch-action: manipulation;
   }
   
-  /* Corrigir scroll em dialogs para mobile */
-  [data-radix-scroll-area-viewport] {
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-  }
-  
-  /* Garantir que dialogs tenham altura adequada no mobile */
+  /* Melhorar scroll em dialogs para mobile - usando scroll nativo */
   [role="dialog"] {
-    max-height: 90vh !important;
+    max-height: 85vh !important;
   }
   
-  /* Melhorar scroll area em mobile */
-  .scroll-area-viewport {
+  /* Scroll nativo otimizado para mobile */
+  .dialog-scroll-content {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    overflow-y: auto;
+  }
+  
+  /* Garantir que botões sejam acessíveis em dialogs */
+  [role="dialog"] .dialog-footer {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    z-index: 10;
   }
 }
 
@@ -116,6 +119,11 @@
 .counter-btn {
   @apply flex items-center justify-center w-7 h-7 bg-gray-100 rounded-full text-gray-700 hover:bg-gray-200;
   /* Melhorar área de toque em mobile */
+  touch-action: manipulation;
+}
+
+/* Melhorar botões de counter no dialog */
+.touch-action-manipulation {
   touch-action: manipulation;
 }
 
