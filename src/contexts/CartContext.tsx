@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
@@ -89,6 +90,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setCartTotal(total);
     setItemCount(count);
+
+    // Log detalhado dos itens do carrinho para debug
+    console.log("=== CART CONTEXT DEBUG ===");
+    console.log("Itens no carrinho:", cartItems.length);
+    cartItems.forEach((item, index) => {
+      console.log(`Item ${index + 1}:`, JSON.stringify(item, null, 2));
+      if (item.selectedVariations && item.selectedVariations.length > 0) {
+        console.log(`Variações do item ${index + 1}:`, item.selectedVariations);
+      } else {
+        console.log(`Item ${index + 1} SEM variações ou variações vazias`);
+      }
+    });
   }, [cartItems, variations]);
 
   // Função para gerar ID único para itens com variações
@@ -116,29 +129,55 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Função para enriquecer variações com dados completos
   const enrichSelectedVariations = (selectedVariations?: SelectedVariationGroup[]): SelectedVariationGroup[] => {
+    console.log("=== ENRICHING VARIATIONS ===");
+    console.log("Input selectedVariations:", selectedVariations);
+    
     if (!selectedVariations || selectedVariations.length === 0) {
+      console.log("Nenhuma variação para enriquecer");
       return [];
     }
 
-    return selectedVariations.map(group => ({
-      ...group,
-      variations: group.variations.map(variation => ({
-        ...variation,
-        name: variation.name || getVariationName(variation.variationId),
-        additionalPrice: variation.additionalPrice !== undefined ? variation.additionalPrice : getVariationPrice(variation.variationId)
-      }))
-    }));
+    const enriched = selectedVariations.map(group => {
+      console.log("Processando grupo:", group);
+      
+      const enrichedGroup = {
+        ...group,
+        variations: group.variations.map(variation => {
+          const name = variation.name || getVariationName(variation.variationId);
+          const additionalPrice = variation.additionalPrice !== undefined ? variation.additionalPrice : getVariationPrice(variation.variationId);
+          
+          console.log(`Variação ${variation.variationId}: nome="${name}", preço=${additionalPrice}`);
+          
+          return {
+            ...variation,
+            name,
+            additionalPrice
+          };
+        })
+      };
+      
+      console.log("Grupo enriquecido:", enrichedGroup);
+      return enrichedGroup;
+    });
+
+    console.log("Variações enriquecidas:", enriched);
+    return enriched;
   };
 
   const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => {
+    console.log("=== ADD ITEM TO CART ===");
+    console.log("Item recebido:", menuItem);
+    console.log("Variações recebidas:", menuItem.selectedVariations);
+    
     const { selectedVariations, ...item } = menuItem;
     
     // Enriquecer as variações com dados completos
     const enrichedVariations = enrichSelectedVariations(selectedVariations);
     
-    console.log("Adicionando item ao carrinho com variações:", enrichedVariations);
+    console.log("Variações após enriquecimento:", enrichedVariations);
     
     const cartItemId = generateCartItemId(item, enrichedVariations);
+    console.log("ID gerado para o item do carrinho:", cartItemId);
     
     setCartItems(prevItems => {
       // Procura pelo item usando o ID composto (para variações específicas)
@@ -147,6 +186,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       
       if (existingItemIndex >= 0) {
+        console.log("Item já existe no carrinho, incrementando quantidade");
         // Se já existe no carrinho, incrementa a quantidade
         return prevItems.map((item, index) => 
           index === existingItemIndex 
@@ -154,6 +194,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : item
         );
       } else {
+        console.log("Adicionando novo item ao carrinho");
         // Se não existe, adiciona novo item
         const newCartItem = { 
           ...item, 
@@ -161,7 +202,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           selectedVariations: enrichedVariations 
         };
         
-        console.log("Novo item no carrinho:", newCartItem);
+        console.log("Novo item criado:", JSON.stringify(newCartItem, null, 2));
         
         return [...prevItems, newCartItem];
       }

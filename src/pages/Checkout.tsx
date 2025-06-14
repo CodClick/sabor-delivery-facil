@@ -1,396 +1,313 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
+import React, { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
-import { useForm } from "react-hook-form";
-import { MapPin, CreditCard, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { createOrder } from "@/services/orderService";
-import { fetchAddressByCep, isDeliveryAreaValid } from "@/services/cepService";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-interface CheckoutFormData {
-  customerName: string;
-  phone: string;
-  cep: string;
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  paymentMethod: "card" | "cash";
-  observations?: string;
-}
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { getCepInfo } from "@/services/cepService";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, handleSubmit, setValue, formState: { errors }, setError } = useForm<CheckoutFormData>({
-    defaultValues: {
-      paymentMethod: "card"
-    }
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingCep, setIsLoadingCep] = useState(false);
-  const [deliveryAreaError, setDeliveryAreaError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [cep, setCep] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
+  const [observations, setObservations] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
 
-  // Ensure the page scrolls to top on component mount
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  const handleCepChange = async (e: React.FocusEvent<HTMLInputElement>) => {
-    const cep = e.target.value;
-    if (cep && cep.length >= 8) {
-      setIsLoadingCep(true);
-      setDeliveryAreaError(null);
-      
+  const handleCepChange = async (value: string) => {
+    setCep(value);
+    
+    if (value.replace(/\D/g, '').length === 8) {
+      setCepLoading(true);
       try {
-        // First check if the CEP is within a valid delivery area
-        const isValid = await isDeliveryAreaValid(cep);
-        
-        if (!isValid) {
-          setDeliveryAreaError("Infelizmente ainda não entregamos nesse endereço.");
-          // Clear the address fields
-          setValue('street', '');
-          setValue('neighborhood', '');
-          setValue('city', '');
-          setValue('state', '');
-          setIsLoadingCep(false);
-          return;
+        const cepInfo = await getCepInfo(value);
+        if (cepInfo) {
+          setStreet(cepInfo.logradouro || "");
+          setNeighborhood(cepInfo.bairro || "");
+          setCity(cepInfo.localidade || "");
+          setState(cepInfo.uf || "");
         }
-        
-        // If the CEP is valid for delivery, fetch the address details
-        const data = await fetchAddressByCep(cep);
-        
-        setValue('street', data.street);
-        setValue('neighborhood', data.neighborhood);
-        setValue('city', data.city);
-        setValue('state', data.state);
-        
-        toast({
-          title: "Endereço encontrado",
-          description: "Os campos de endereço foram preenchidos automaticamente.",
-        });
       } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
         toast({
-          title: "Erro ao buscar endereço",
-          description: "Não foi possível encontrar o endereço pelo CEP informado.",
+          title: "Erro",
+          description: "Não foi possível buscar as informações do CEP",
           variant: "destructive",
         });
-        
-        // Limpa os campos de endereço em caso de erro
-        setValue('street', '');
-        setValue('neighborhood', '');
-        setValue('city', '');
-        setValue('state', '');
       } finally {
-        setIsLoadingCep(false);
+        setCepLoading(false);
       }
     }
   };
 
-  const onSubmit = async (data: CheckoutFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      setIsSubmitting(true);
-      const address = `${data.street}, ${data.number}${data.complement ? `, ${data.complement}` : ''} - ${data.neighborhood}, ${data.city} - ${data.state}`;
+      const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;
       
+      console.log("=== CHECKOUT SUBMIT ===");
+      console.log("Itens do carrinho:", cartItems);
+      cartItems.forEach((item, index) => {
+        console.log(`Item ${index + 1} no checkout:`, JSON.stringify(item, null, 2));
+        if (item.selectedVariations) {
+          console.log(`Variações do item ${index + 1}:`, item.selectedVariations);
+        }
+      });
+
       const orderData = {
-        customerName: data.customerName,
-        customerPhone: data.phone,
-        address: address,
-        paymentMethod: data.paymentMethod,
-        observations: data.observations || "",
+        customerName,
+        customerPhone,
+        address: fullAddress,
+        paymentMethod,
+        observations,
         items: cartItems.map(item => ({
           menuItemId: item.id,
-          quantity: item.quantity,
           name: item.name,
-          price: item.price
+          price: item.price,
+          quantity: item.quantity,
+          selectedVariations: item.selectedVariations || []
         }))
       };
 
-      console.log("Submitting order data:", orderData);
-      const order = await createOrder(orderData);
-      console.log("Order created:", order);
+      console.log("Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
 
+      const order = await createOrder(orderData);
+      
+      clearCart();
+      
       toast({
         title: "Pedido realizado com sucesso!",
-        description: `Seu pedido #${order.id} foi confirmado.`,
+        description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
       });
-
-      clearCart();
+      
       navigate("/orders");
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
-      
-      let errorMessage = "Ocorreu um erro ao processar seu pedido. Tente novamente.";
-      
-      if (error.code === "permission-denied") {
-        errorMessage = "Erro de permissão ao criar o pedido. Verifique se todos os campos estão preenchidos corretamente.";
-      }
-      
       toast({
-        title: "Erro ao criar pedido",
-        description: errorMessage,
+        title: "Erro",
+        description: "Não foi possível processar seu pedido. Tente novamente.",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   if (cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-xl font-bold mb-4">Seu carrinho está vazio</h2>
-          <Button onClick={() => navigate("/")}>Voltar para o cardápio</Button>
-        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <h2 className="text-xl font-semibold mb-4">Seu carrinho está vazio</h2>
+            <Button onClick={() => navigate("/")} variant="outline">
+              Voltar ao cardápio
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6 text-center">Finalizar Pedido</h1>
+      <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
       
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Resumo do Pedido</h2>
-        <div className="space-y-4">
-          {cartItems.map((item) => (
-            <div key={item.id} className="flex justify-between items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados do Cliente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <span className="font-medium">{item.quantity}x </span>
-                {item.name}
-              </div>
-              <span>{formatCurrency(item.price * item.quantity)}</span>
-            </div>
-          ))}
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center font-bold">
-              <span>Total</span>
-              <span>{formatCurrency(cartTotal)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Customer Information */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Dados Pessoais
-          </h2>
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="customerName">Nome Completo</Label>
-              <Input
-                id="customerName"
-                {...register("customerName", { required: "Nome é obrigatório" })}
-                placeholder="Digite seu nome completo"
-              />
-              {errors.customerName && (
-                <p className="text-sm text-red-500">{errors.customerName.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <Label htmlFor="phone">WhatsApp</Label>
-              <Input
-                id="phone"
-                {...register("phone", { 
-                  required: "Telefone é obrigatório",
-                  pattern: {
-                    value: /^[0-9]{10,11}$/,
-                    message: "WhatsApp deve ter 10 ou 11 dígitos"
-                  }
-                })}
-                placeholder="Digite seu WhatsApp (apenas números)"
-              />
-              {errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone.message}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Address Information */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Endereço de Entrega
-          </h2>
-          
-          {deliveryAreaError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Área não atendida</AlertTitle>
-              <AlertDescription>{deliveryAreaError}</AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="cep">CEP</Label>
-              <Input
-                id="cep"
-                {...register("cep", { 
-                  required: "CEP é obrigatório",
-                  pattern: {
-                    value: /^[0-9]{8}$/,
-                    message: "CEP deve ter 8 dígitos"
-                  }
-                })}
-                placeholder="Digite o CEP (apenas números)"
-                onBlur={handleCepChange}
-                disabled={isLoadingCep}
-              />
-              {errors.cep && (
-                <p className="text-sm text-red-500">{errors.cep.message}</p>
-              )}
-              {isLoadingCep && (
-                <p className="text-sm text-blue-500">Buscando endereço...</p>
-              )}
-            </div>
-            
-            <div>
-              <Label htmlFor="street">Rua</Label>
-              <Input
-                id="street"
-                {...register("street", { required: "Rua é obrigatória" })}
-                placeholder="Digite o nome da rua"
-              />
-              {errors.street && (
-                <p className="text-sm text-red-500">{errors.street.message}</p>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-4">
-                <Label htmlFor="number">Número</Label>
+                <Label htmlFor="customerName">Nome completo</Label>
                 <Input
-                  id="number"
-                  {...register("number", { required: "Número é obrigatório" })}
-                  placeholder="Número"
+                  id="customerName"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  required
                 />
-                {errors.number && (
-                  <p className="text-sm text-red-500">{errors.number.message}</p>
-                )}
               </div>
-              <div className="col-span-8">
+              
+              <div>
+                <Label htmlFor="customerPhone">Telefone/WhatsApp</Label>
+                <Input
+                  id="customerPhone"
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  required
+                />
+              </div>
+
+              <Separator />
+
+              <h3 className="text-lg font-semibold">Endereço de Entrega</h3>
+              
+              <div>
+                <Label htmlFor="cep">CEP</Label>
+                <Input
+                  id="cep"
+                  value={cep}
+                  onChange={(e) => handleCepChange(e.target.value)}
+                  placeholder="00000-000"
+                  disabled={cepLoading}
+                  required
+                />
+                {cepLoading && <p className="text-sm text-gray-500 mt-1">Buscando CEP...</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-1">
+                  <Label htmlFor="street">Rua</Label>
+                  <Input
+                    id="street"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Label htmlFor="number">Número</Label>
+                  <Input
+                    id="number"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
                 <Label htmlFor="complement">Complemento</Label>
                 <Input
                   id="complement"
-                  {...register("complement")}
-                  placeholder="Apt, bloco"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  placeholder="Apto, bloco, etc."
                 />
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="neighborhood">Bairro</Label>
-              <Input
-                id="neighborhood"
-                {...register("neighborhood", { required: "Bairro é obrigatório" })}
-                placeholder="Digite o bairro"
-              />
-              {errors.neighborhood && (
-                <p className="text-sm text-red-500">{errors.neighborhood.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-1">
-                <Label htmlFor="city">Cidade</Label>
-                <Input
-                  id="city"
-                  {...register("city", { required: "Cidade é obrigatória" })}
-                  placeholder="Digite a cidade"
-                />
-                {errors.city && (
-                  <p className="text-sm text-red-500">{errors.city.message}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    value={neighborhood}
+                    onChange={(e) => setNeighborhood(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div className="col-span-1">
-                <Label htmlFor="state">Estado</Label>
-                <Input
-                  id="state"
-                  {...register("state", { required: "Estado é obrigatório" })}
-                  placeholder="Digite o estado"
+
+              <Separator />
+
+              <div>
+                <Label>Forma de Pagamento</Label>
+                <RadioGroup value={paymentMethod} onValueChange={(value: "card" | "cash") => setPaymentMethod(value)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="card" id="card" />
+                    <Label htmlFor="card">Cartão</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cash" id="cash" />
+                    <Label htmlFor="cash">Dinheiro</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <Label htmlFor="observations">Observações</Label>
+                <Textarea
+                  id="observations"
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  placeholder="Observações sobre o pedido..."
                 />
-                {errors.state && (
-                  <p className="text-sm text-red-500">{errors.state.message}</p>
-                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Processando..." : `Finalizar Pedido - R$ ${cartTotal.toFixed(2)}`}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo do Pedido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {cartItems.map((item, index) => (
+                <div key={index} className="flex justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {item.quantity}x R$ {item.price.toFixed(2)}
+                    </p>
+                    {item.selectedVariations && item.selectedVariations.length > 0 && (
+                      <div className="text-xs text-gray-600 mt-1">
+                        {item.selectedVariations.map((group, groupIndex) => (
+                          <div key={groupIndex}>
+                            <strong>{group.groupName}:</strong>
+                            {group.variations.map((variation, varIndex) => (
+                              <div key={varIndex} className="ml-2">
+                                • {variation.name} {variation.additionalPrice && variation.additionalPrice > 0 && `(+R$ ${variation.additionalPrice.toFixed(2)})`}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">
+                      R$ {(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              <Separator />
+              
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total</span>
+                <span>R$ {cartTotal.toFixed(2)}</span>
               </div>
             </div>
-
-            <div>
-              <Label htmlFor="observations">Observações</Label>
-              <Input
-                id="observations"
-                {...register("observations")}
-                placeholder="sem pimenta, sem cebola, mal-passado, etc"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Method */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Forma de Pagamento
-          </h2>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="card"
-                value="card"
-                {...register("paymentMethod")}
-                defaultChecked
-                className="h-4 w-4"
-              />
-              <label htmlFor="card" className="text-sm font-medium">
-                Cartão de Crédito/Débito na entrega
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="cash"
-                value="cash"
-                {...register("paymentMethod")}
-                className="h-4 w-4"
-              />
-              <label htmlFor="cash" className="text-sm font-medium">
-                Dinheiro na entrega
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-4">
-          <Button 
-            type="button" 
-            variant="outline"
-            onClick={() => navigate("/")}
-          >
-            Voltar ao Cardápio
-          </Button>
-          <Button 
-            type="submit"
-            disabled={isSubmitting || !!deliveryAreaError}
-          >
-            {isSubmitting ? "Processando..." : "Confirmar Pedido"}
-          </Button>
-        </div>
-      </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
