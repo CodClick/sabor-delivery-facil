@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,9 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
         const groupVars = groupVariations[group.id] || [];
         const variations = groupVars.map(variation => ({
           variationId: variation.id,
-          quantity: 0
+          quantity: 0,
+          name: variation.name,
+          additionalPrice: variation.additionalPrice || 0
         }));
 
         return {
@@ -87,14 +88,22 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
         // Don't allow increasing if we're already at max
         if (currentTotal >= groupDef.maxAllowed) return group;
         
-        // Update the specific variation
+        // Update the specific variation with name and additionalPrice
         return {
           ...group,
-          variations: group.variations.map(variation => 
-            variation.variationId === variationId 
-              ? { ...variation, quantity: variation.quantity + 1 } 
-              : variation
-          )
+          variations: group.variations.map(variation => {
+            if (variation.variationId === variationId) {
+              // Get variation details to ensure we have name and price
+              const variationDetails = getVariationDetails(variationId);
+              return { 
+                ...variation, 
+                quantity: variation.quantity + 1,
+                name: variationDetails?.name || variation.name,
+                additionalPrice: variationDetails?.additionalPrice || variation.additionalPrice || 0
+              };
+            }
+            return variation;
+          })
         };
       })
     );
@@ -120,11 +129,21 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   const handleAddToCart = () => {
     if (!isValid) return;
     
-    // Filter out variations with quantity 0
+    // Filter out variations with quantity 0 and ensure all data is included
     const nonZeroGroups = selectedVariationGroups.map(group => ({
       ...group,
-      variations: group.variations.filter(v => v.quantity > 0)
+      variations: group.variations.filter(v => v.quantity > 0).map(v => {
+        // Ensure variation has complete data
+        const variationDetails = getVariationDetails(v.variationId);
+        return {
+          ...v,
+          name: variationDetails?.name || v.name,
+          additionalPrice: variationDetails?.additionalPrice || v.additionalPrice || 0
+        };
+      })
     })).filter(group => group.variations.length > 0);
+    
+    console.log("Enviando variações para o carrinho:", nonZeroGroups);
     
     onAddToCart(item, nonZeroGroups);
     onClose();

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
@@ -47,6 +46,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return variation?.additionalPrice || 0;
   };
 
+  // Função para obter o nome da variação
+  const getVariationName = (variationId: string): string => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.name || '';
+  };
+
   // Função para calcular o valor total das variações de um item
   const calculateVariationsTotal = (item: CartItem): number => {
     let variationsTotal = 0;
@@ -55,7 +60,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       item.selectedVariations.forEach(group => {
         if (group.variations && group.variations.length > 0) {
           group.variations.forEach(variation => {
-            const additionalPrice = getVariationPrice(variation.variationId);
+            const additionalPrice = variation.additionalPrice || getVariationPrice(variation.variationId);
             if (additionalPrice > 0) {
               variationsTotal += additionalPrice * (variation.quantity || 1);
             }
@@ -109,9 +114,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return `${item.id}_${variationsKey}`;
   };
 
+  // Função para enriquecer variações com dados completos
+  const enrichSelectedVariations = (selectedVariations?: SelectedVariationGroup[]): SelectedVariationGroup[] => {
+    if (!selectedVariations || selectedVariations.length === 0) {
+      return [];
+    }
+
+    return selectedVariations.map(group => ({
+      ...group,
+      variations: group.variations.map(variation => ({
+        ...variation,
+        name: variation.name || getVariationName(variation.variationId),
+        additionalPrice: variation.additionalPrice !== undefined ? variation.additionalPrice : getVariationPrice(variation.variationId)
+      }))
+    }));
+  };
+
   const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => {
     const { selectedVariations, ...item } = menuItem;
-    const cartItemId = generateCartItemId(item, selectedVariations);
+    
+    // Enriquecer as variações com dados completos
+    const enrichedVariations = enrichSelectedVariations(selectedVariations);
+    
+    console.log("Adicionando item ao carrinho com variações:", enrichedVariations);
+    
+    const cartItemId = generateCartItemId(item, enrichedVariations);
     
     setCartItems(prevItems => {
       // Procura pelo item usando o ID composto (para variações específicas)
@@ -128,11 +155,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       } else {
         // Se não existe, adiciona novo item
-        return [...prevItems, { 
+        const newCartItem = { 
           ...item, 
           quantity: 1,
-          selectedVariations 
-        }];
+          selectedVariations: enrichedVariations 
+        };
+        
+        console.log("Novo item no carrinho:", newCartItem);
+        
+        return [...prevItems, newCartItem];
       }
     });
     
