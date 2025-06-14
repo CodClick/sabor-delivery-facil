@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
+import AdminDashboard from "./pages/AdminDashboard";
 import Orders from "./pages/Orders";
 import AdminOrders from "./pages/AdminOrders";
 import Api from "./pages/Api";
@@ -45,6 +46,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/admin-dashboard" element={
+                <PrivateRoute>
+                  <AdminDashboard />
+                </PrivateRoute>
+              } />
               <Route path="/admin" element={
                 <PrivateRoute>
                   <Admin />

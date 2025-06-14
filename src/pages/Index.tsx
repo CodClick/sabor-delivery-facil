@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { getAllCategories } from "@/services/categoryService";
 import { getMenuItemsByCategory } from "@/services/menuItemService";
 import { Category } from "@/types/menu";
 import { useAuth } from "@/hooks/useAuth";
-import { LogIn, LogOut } from "lucide-react";
+import { LogIn, LogOut, Settings } from "lucide-react";
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState<string>("entradas");
@@ -119,11 +118,11 @@ const Index = () => {
         <div className="flex space-x-2">
           {currentUser ? (
             <>
-              <Button asChild variant="outline">
-                <Link to="/orders">Ver Pedidos</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/admin">Administração</Link>
+              <Button asChild variant="outline" className="flex items-center gap-2">
+                <Link to="/admin-dashboard">
+                  <Settings size={16} />
+                  Administração
+                </Link>
               </Button>
               <Button onClick={logOut} variant="outline" className="flex items-center gap-2">
                 <LogOut size={16} />
