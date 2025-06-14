@@ -532,30 +532,39 @@ export type Database = {
         }
         Relationships: []
       }
-      "kasuo_wi-fi_users": {
+      kasuo_wi_fi_users: {
         Row: {
+          ano: string | null
           created_at: string
           data_de_nascimento: string | null
+          dia: string | null
           email: string | null
           id: number
+          mes: string | null
           nome: string | null
-          whatsapp: string | null
+          whatsapp: string
         }
         Insert: {
+          ano?: string | null
           created_at?: string
           data_de_nascimento?: string | null
+          dia?: string | null
           email?: string | null
           id?: number
+          mes?: string | null
           nome?: string | null
-          whatsapp?: string | null
+          whatsapp: string
         }
         Update: {
+          ano?: string | null
           created_at?: string
           data_de_nascimento?: string | null
+          dia?: string | null
           email?: string | null
           id?: number
+          mes?: string | null
           nome?: string | null
-          whatsapp?: string | null
+          whatsapp?: string
         }
         Relationships: []
       }
@@ -716,6 +725,33 @@ export type Database = {
         }
         Relationships: []
       }
+      usertest: {
+        Row: {
+          created_at: string
+          endereco: string | null
+          id: number
+          nome: string | null
+          senha: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          endereco?: string | null
+          id?: number
+          nome?: string | null
+          senha?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          endereco?: string | null
+          id?: number
+          nome?: string | null
+          senha?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           created_at: string | null
@@ -777,7 +813,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      buscar_aniversariantes: {
+        Args: { inicio_md: string; fim_md: string }
+        Returns: {
+          created_at: string
+          nome: string
+          whatsapp: string
+          email: string
+          data_de_nascimento: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

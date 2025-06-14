@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,11 @@ interface OrderDetailsProps {
 }
 
 const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) => {
+  // Debug do pedido completo
+  console.log("=== ORDER DETAILS DEBUG ===");
+  console.log("Pedido completo:", order);
+  console.log("Itens do pedido:", order.items);
+  
   // Traduzir status para português
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
@@ -197,10 +203,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         )}
       </div>
 
-      {/* Debug do pedido completo */}
-      {console.log("Pedido completo:", order)}
-      {console.log("Itens do pedido:", order.items)}
-
       {/* Itens do pedido */}
       <div>
         <h3 className="text-md font-medium mb-2">Itens do Pedido</h3>
@@ -215,6 +217,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           </TableHeader>
           <TableBody>
             {order.items.map((item, index) => {
+              // Debug logs para cada item
               console.log(`\n=== ITEM ${index + 1} ===`);
               console.log("Item completo:", JSON.stringify(item, null, 2));
               console.log("Tem selectedVariations?", !!item.selectedVariations);
@@ -264,7 +267,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                                       })
                                     ) : (
                                       <div className="text-gray-500 italic">
-                                        Nenhuma variação no grupo: {JSON.stringify(group.variations)}
+                                        Nenhuma variação no grupo
                                       </div>
                                     )}
                                   </div>
@@ -275,8 +278,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                         ) : (
                           <div className="text-xs text-gray-400 mt-1">
                             (Sem variações selecionadas)
-                            <br />
-                            <span className="text-xs">Debug: {JSON.stringify(item.selectedVariations)}</span>
                           </div>
                         )}
                       </div>
