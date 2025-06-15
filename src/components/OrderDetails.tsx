@@ -38,6 +38,7 @@ import {
   XCircle,
   Check
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface OrderDetailsProps {
   order: Order;
