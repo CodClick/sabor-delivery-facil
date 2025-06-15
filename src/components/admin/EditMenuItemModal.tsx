@@ -102,8 +102,16 @@ export const EditMenuItemModal = ({
     }
   };
 
-  // Filter out categories with invalid IDs to prevent Select errors
-  const validCategories = categories.filter(category => category.id && category.id.trim() !== '');
+  // Filter out categories with invalid IDs and add debugging
+  const validCategories = categories.filter(category => {
+    const isValid = category.id && typeof category.id === 'string' && category.id.trim() !== '';
+    if (!isValid) {
+      console.warn("Invalid category found:", category);
+    }
+    return isValid;
+  });
+
+  console.log("Valid categories for select:", validCategories);
 
   return (
     <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
@@ -160,22 +168,34 @@ export const EditMenuItemModal = ({
             
             <div>
               <Label htmlFor="category">Categoria *</Label>
-              <Select 
-                value={editItem.category || ""}
-                onValueChange={(value) => setEditItem({...editItem, category: value})}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {validCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {validCategories.length === 0 ? (
+                <div className="text-sm text-red-500 p-2 border border-red-300 rounded">
+                  Nenhuma categoria válida encontrada. Crie categorias primeiro.
+                </div>
+              ) : (
+                <Select 
+                  value={editItem.category || ""}
+                  onValueChange={(value) => {
+                    console.log("Category selected:", value);
+                    setEditItem({...editItem, category: value});
+                  }}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validCategories.map((category) => {
+                      console.log("Rendering category option:", category.id, category.name);
+                      return (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           
