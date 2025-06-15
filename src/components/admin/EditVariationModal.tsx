@@ -84,8 +84,8 @@ export const EditVariationModal = ({
 
   return (
     <Dialog open={!!editVariation} onOpenChange={(open) => !open && setEditVariation(null)}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <DialogContent className="max-w-md h-[85vh] flex flex-col p-0">
+        <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b">
           <h2 className="text-xl font-bold">
             {editVariation.id ? "Editar Variação" : "Nova Variação"}
           </h2>
@@ -98,8 +98,8 @@ export const EditVariationModal = ({
           </Button>
         </div>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-4 pb-4">
             <div>
               <Label htmlFor="variation-name">Nome *</Label>
               <Input
@@ -150,7 +150,7 @@ export const EditVariationModal = ({
             
             <div>
               <Label className="block mb-2">Categorias aplicáveis</Label>
-              <div className="max-h-40 overflow-y-auto border rounded-md p-2">
+              <div className="max-h-32 overflow-y-auto border rounded-md p-2">
                 {categories.map((category) => (
                   <div key={category.id} className="flex items-center space-x-2 py-1">
                     <Checkbox 
@@ -174,7 +174,7 @@ export const EditVariationModal = ({
           </div>
         </ScrollArea>
         
-        <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
+        <div className="flex justify-end gap-2 p-6 pt-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={() => setEditVariation(null)}>
             Cancelar
           </Button>

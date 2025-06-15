@@ -81,8 +81,8 @@ export const AddVariationGroupModal = ({
 
   return (
     <Dialog open={!!tempVariationGroup} onOpenChange={(open) => !open && setTempVariationGroup(null)}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <DialogContent className="max-w-md h-[85vh] flex flex-col p-0">
+        <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b">
           <h2 className="text-xl font-bold">Adicionar Grupo de Variações</h2>
           <Button 
             variant="ghost" 
@@ -93,8 +93,8 @@ export const AddVariationGroupModal = ({
           </Button>
         </div>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-4 pb-4">
             <div>
               <Label htmlFor="group-name">Nome do Grupo</Label>
               <Input
@@ -152,7 +152,7 @@ export const AddVariationGroupModal = ({
             
             <div className="space-y-2">
               <Label>Variações Disponíveis</Label>
-              <div className="max-h-60 overflow-y-auto border rounded-md p-2">
+              <div className="max-h-48 overflow-y-auto border rounded-md p-2">
                 {variations
                   .filter(v => v.available && (v.categoryIds.length === 0 || v.categoryIds.includes(editItem?.category || "")))
                   .map(variation => (
@@ -178,7 +178,7 @@ export const AddVariationGroupModal = ({
           </div>
         </ScrollArea>
         
-        <div className="flex justify-end gap-2 mt-4 border-t pt-4 flex-shrink-0">
+        <div className="flex justify-end gap-2 p-6 pt-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={() => setTempVariationGroup(null)}>
             Cancelar
           </Button>

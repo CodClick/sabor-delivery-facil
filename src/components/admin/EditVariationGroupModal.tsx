@@ -97,8 +97,8 @@ export const EditVariationGroupModal = ({
 
   return (
     <Dialog open={!!editVariationGroup} onOpenChange={(open) => !open && setEditVariationGroup(null)}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <DialogContent className="max-w-md h-[85vh] flex flex-col p-0">
+        <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b">
           <h2 className="text-xl font-bold">
             {variationGroups.some(g => g.id === editVariationGroup.id) 
               ? "Editar Grupo de Variações" 
@@ -113,8 +113,8 @@ export const EditVariationGroupModal = ({
           </Button>
         </div>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-4 pb-4">
             <div>
               <Label htmlFor="group-name">Nome do Grupo</Label>
               <Input
@@ -172,7 +172,7 @@ export const EditVariationGroupModal = ({
             
             <div className="space-y-2">
               <Label>Variações Disponíveis</Label>
-              <div className="max-h-60 overflow-y-auto border rounded-md p-2">
+              <div className="max-h-48 overflow-y-auto border rounded-md p-2">
                 {variations.map((variation) => (
                   <div key={variation.id} className="flex items-center space-x-2 py-1">
                     <Checkbox 
@@ -196,7 +196,7 @@ export const EditVariationGroupModal = ({
           </div>
         </ScrollArea>
         
-        <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
+        <div className="flex justify-end gap-2 p-6 pt-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={() => setEditVariationGroup(null)}>
             Cancelar
           </Button>
