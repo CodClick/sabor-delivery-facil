@@ -152,6 +152,35 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     return total;
   };
 
+  // FUNÇÃO PARA ENVIAR WEBHOOK AO ACEITAR O PEDIDO
+  const sendOrderWebhook = async (orderData: Order) => {
+    try {
+      // POST para o webhook
+      const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/pedidos_delivery_facil", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
+      console.log("Webhook do pedido enviado. Status:", response.status);
+      if (!response.ok) {
+        console.error("Falha ao enviar webhook:", await response.text());
+      }
+    } catch (err) {
+      console.error("Erro ao enviar webhook do pedido:", err);
+    }
+  };
+
+  // Função wrapper para atualizar o status, interceptando se for "confirmed"
+  const handleUpdateStatus = (orderId: string, status: Order["status"]) => {
+    if (status === "confirmed") {
+      // Envia o webhook ANTES de atualizar status para garantir o envio dos dados completos
+      sendOrderWebhook(order);
+    }
+    onUpdateStatus(orderId, status);
+  };
+
   // Função para confirmar cancelamento
   const handleCancelOrder = () => {
     onUpdateStatus(order.id, "cancelled");
@@ -196,7 +225,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     return (
       <Button
         key={status}
-        onClick={() => onUpdateStatus(order.id, status)}
+        onClick={() => handleUpdateStatus(order.id, status)}
         variant="default"
         className="flex items-center gap-1"
       >
