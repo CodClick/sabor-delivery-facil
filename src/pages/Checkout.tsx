@@ -271,34 +271,89 @@ const Checkout = () => {
             <CardTitle>Resumo do Pedido</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {cartItems.map((item, index) => (
-                <div key={index} className="flex justify-between">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {item.quantity}x R$ {item.price.toFixed(2)}
-                    </p>
-                    {item.selectedVariations && item.selectedVariations.length > 0 && (
-                      <div className="text-xs text-gray-600 mt-1">
-                        {item.selectedVariations.map((group, groupIndex) => (
-                          <div key={groupIndex}>
-                            <strong>{group.groupName}:</strong>
-                            {group.variations.map((variation, varIndex) => (
-                              <div key={varIndex} className="ml-2">
-                                • {variation.name} {variation.additionalPrice && variation.additionalPrice > 0 && `(+R$ ${variation.additionalPrice.toFixed(2)})`}
-                              </div>
-                            ))}
+                <div
+                  key={index}
+                  className="flex flex-col gap-0 border-b pb-4 mb-2 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-lg">{item.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {item.quantity}x R$ {item.price.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="text-right font-semibold text-lg">
+                      R$ {(
+                        (item.price +
+                          (item.selectedVariations
+                            ? item.selectedVariations.reduce((acc, group) => {
+                                return (
+                                  acc +
+                                  group.variations.reduce(
+                                    (gacc, v) =>
+                                      gacc +
+                                      ((v.additionalPrice || 0) *
+                                        (v.quantity || 1)),
+                                    0
+                                  )
+                                );
+                              }, 0)
+                            : 0)) * item.quantity
+                      ).toFixed(2)}
+                    </div>
+                  </div>
+
+                  {/* Exibir grupos de variações e suas quantidades/subtotais */}
+                  {item.selectedVariations && item.selectedVariations.length > 0 && (
+                    <div className="mt-2 ml-1 text-sm">
+                      {item.selectedVariations.map((group, groupIndex) => (
+                        <div key={groupIndex} className="mb-2">
+                          <div className="font-semibold text-gray-700">{group.groupName}:</div>
+                          <div className="ml-2 text-gray-700 flex flex-col gap-0.5">
+                            {group.variations.map((variation, varIndex) => {
+                              // Subtotal de cada variação multiplicado pela quantidade selecionada
+                              const variationTotal =
+                                (variation.additionalPrice || 0) *
+                                (variation.quantity || 1) *
+                                item.quantity;
+
+                              if (variation.quantity > 0) {
+                                return (
+                                  <div key={varIndex} className="flex items-center justify-between">
+                                    <span>
+                                      {variation.quantity > 1 ? (
+                                        <>
+                                          {variation.quantity}x{" "}
+                                        </>
+                                      ) : null}
+                                      {variation.name || "Variação"}
+                                      {variation.additionalPrice && variation.additionalPrice > 0 ? (
+                                        <>
+                                          {" "}
+                                          <span className="text-gray-500">
+                                            (+R$ {variation.additionalPrice.toFixed(2)})
+                                          </span>
+                                        </>
+                                      ) : null}
+                                    </span>
+                                    {/* Mostrar subtotal apenas se houver preço */}
+                                    {variation.additionalPrice && variation.additionalPrice > 0 && (
+                                      <span className="text-green-600 font-semibold tabular-nums">
+                                        +R$ {(variationTotal).toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      R$ {(item.price * item.quantity).toFixed(2)}
-                    </p>
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               
