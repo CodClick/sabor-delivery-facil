@@ -12,6 +12,7 @@ interface VariationGroupsSectionProps {
   setEditItem: (item: MenuItem) => void;
   variations: Variation[];
   variationGroups: VariationGroup[];
+  onDataChange?: () => void; // Added optional callback
 }
 
 export const VariationGroupsSection = ({
@@ -19,6 +20,7 @@ export const VariationGroupsSection = ({
   setEditItem,
   variations,
   variationGroups,
+  onDataChange, // Added to props
 }: VariationGroupsSectionProps) => {
   const [tempVariationGroup, setTempVariationGroup] = useState<VariationGroup | null>(null);
 
@@ -181,6 +183,7 @@ export const VariationGroupsSection = ({
           setEditItem={setEditItem}
           variations={variations}
           variationGroups={variationGroups}
+          onDataChange={onDataChange} // Pass the callback
         />
       )}
     </div>

@@ -240,6 +240,7 @@ export const EditMenuItemModal = ({
             setEditItem={setEditItem}
             variations={variations}
             variationGroups={variationGroups}
+            onDataChange={onSuccess} // Pass the onSuccess callback to refresh data
           />
           
           <div className="flex justify-end gap-2 pt-4">

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { MenuItem, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ interface AddVariationGroupModalProps {
   setEditItem: (item: MenuItem) => void;
   variations: Variation[];
   variationGroups: VariationGroup[];
+  onDataChange?: () => void; // Added optional callback
 }
 
 export const AddVariationGroupModal = ({
@@ -27,6 +27,7 @@ export const AddVariationGroupModal = ({
   setEditItem,
   variations,
   variationGroups,
+  onDataChange, // Added to props
 }: AddVariationGroupModalProps) => {
   const { toast } = useToast();
 
@@ -64,6 +65,12 @@ export const AddVariationGroupModal = ({
       
       // Close the dialog
       setTempVariationGroup(null);
+      
+      // Call the data change callback to refresh the groups list
+      if (onDataChange) {
+        console.log("Calling onDataChange to refresh variation groups list");
+        onDataChange();
+      }
       
       toast({
         title: "Sucesso",
