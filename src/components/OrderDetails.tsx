@@ -13,6 +13,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -33,11 +41,13 @@ import {
 
 interface OrderDetailsProps {
   order: Order;
-  onUpdateStatus: (orderId: string, status: Order["status"]) => void;
+  onUpdateStatus: (orderId: string, status: Order["status"], cancellationReason?: string) => void;
 }
 
 const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) => {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
 
   // Debug do pedido completo
   console.log("=== ORDER DETAILS DEBUG ===");
@@ -153,7 +163,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   };
 
   // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
-  const sendOrderStatusWebhook = async (orderData: Order) => {
+  const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
     try {
       const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido", {
         method: "POST",
@@ -171,55 +181,111 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Função wrapper para atualizar o status, enviando o webhook SEMPRE
-  const handleUpdateStatus = (orderId: string, status: Order["status"]) => {
+  // Função wrapper para atualizar o status, enviando o motivo se for cancelamento
+  const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
     // Atualizar o status e enviar o webhook
-    const updatedOrder: Order = { ...order, status };
+    const updatedOrder: Order & { cancellationReason?: string } = { ...order, status };
+    // Incluir o motivo do cancelamento se for cancelamento
+    if (status === "cancelled" && cancellationReasonValue) {
+      updatedOrder.cancellationReason = cancellationReasonValue;
+    }
     sendOrderStatusWebhook(updatedOrder);
-    onUpdateStatus(orderId, status);
+    // Enviar o motivo junto na alteração de status (poderia ser guardado em um campo, se persistente)
+    onUpdateStatus(orderId, status, cancellationReasonValue);
   };
 
-  // Função para confirmar cancelamento
-  const handleCancelOrder = () => {
-    onUpdateStatus(order.id, "cancelled");
+  // Quando confirmar o cancelamento no primeiro modal, abrir o do motivo
+  const handleConfirmCancelDialogYes = () => {
     setIsConfirmDialogOpen(false);
+    setIsReasonDialogOpen(true);
+  };
+
+  // Ao fechar o modal do motivo ou cancelar, resetar states
+  const handleCloseReasonDialog = () => {
+    setIsReasonDialogOpen(false);
+    setCancellationReason("");
+  };
+
+  // Finalizar cancelamento após inserir o motivo
+  const handleSubmitReason = () => {
+    // Pode adicionar validação se quiser motivo obrigatório
+    handleUpdateStatus(order.id, "cancelled", cancellationReason);
+    setIsReasonDialogOpen(false);
+    setCancellationReason("");
   };
 
   // Lista de botões para atualização de status
   const nextStatusButtons = getNextStatusOptions(order.status).map(status => {
     const icon = getStatusIcon(status);
     const label = translateStatus(status);
-    
+
     if (status === "cancelled") {
       return (
-        <AlertDialog key={status} open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="destructive"
-              className="flex items-center gap-1"
-            >
-              {icon}
-              {label}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancelar o Pedido?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. O pedido será marcado como cancelado.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Não</AlertDialogCancel>
-              <AlertDialogAction onClick={handleCancelOrder} className="bg-red-600 hover:bg-red-700">
-                Sim
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <>
+          <AlertDialog key={status} open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="flex items-center gap-1"
+              >
+                {icon}
+                {label}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancelar o Pedido?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. O pedido será marcado como cancelado.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsConfirmDialogOpen(false)}>Não</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={handleConfirmCancelDialogYes}
+                >
+                  Sim
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Dialog open={isReasonDialogOpen} onOpenChange={setIsReasonDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Motivo do cancelamento</DialogTitle>
+                <DialogDescription>
+                  Por favor, informe o motivo desse cancelamento. Isso será salvo nos detalhes do pedido.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-2">
+                <Textarea
+                  value={cancellationReason}
+                  onChange={e => setCancellationReason(e.target.value)}
+                  placeholder="Digite o motivo do cancelamento..."
+                  className="w-full"
+                  rows={3}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={handleCloseReasonDialog}
+                  type="button"
+                >Cancelar</Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleSubmitReason}
+                  type="button"
+                  disabled={!cancellationReason.trim()}
+                >Confirmar Cancelamento</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
       );
     }
-    
+
     return (
       <Button
         key={status}
@@ -277,6 +343,16 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           </div>
         )}
       </div>
+
+      {/* Motivo do cancelamento, se existir */}
+      {order.status === "cancelled" && (order.cancellationReason || cancellationReason) && (
+        <div className="bg-red-50 border border-red-200 p-3 rounded-md">
+          <div className="text-sm font-semibold text-red-700">Motivo do cancelamento:</div>
+          <div className="text-sm text-gray-800 mt-1">
+            {order.cancellationReason || cancellationReason}
+          </div>
+        </div>
+      )}
 
       {/* Itens do pedido */}
       <div>
