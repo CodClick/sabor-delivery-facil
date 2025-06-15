@@ -41,6 +41,7 @@ const Admin = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log("=== ADMIN: CARREGANDO DADOS ===");
       console.log("Admin: Loading menu data...");
       
       // Load data with local fallbacks
@@ -93,12 +94,14 @@ const Admin = () => {
       console.log("Admin: Loaded items:", items.length, items);
       console.log("Admin: Loaded valid categories:", validCategories.length, validCategories);
       console.log("Admin: Loaded valid variations:", validVariations.length, validVariations);
-      console.log("Admin: Loaded valid variation groups:", validVariationGroups.length, validVariationGroups);
+      console.log("Admin: Loaded valid variation groups (APÓS FILTRO):", validVariationGroups.length, validVariationGroups);
       
       setMenuItems(items);
       setCategories(validCategories);
       setVariations(validVariations);
       setVariationGroups(validVariationGroups);
+      
+      console.log("=== DADOS CARREGADOS E ESTADO ATUALIZADO ===");
     } catch (error) {
       console.error("Admin: Error loading data, using local fallback:", error);
       // Complete fallback to local data with validation

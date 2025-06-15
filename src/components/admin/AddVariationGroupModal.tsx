@@ -1,3 +1,4 @@
+
 import React from "react";
 import { MenuItem, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
@@ -53,8 +54,12 @@ export const AddVariationGroupModal = ({
     }
 
     try {
+      console.log("=== SALVANDO GRUPO DE VARIAÇÃO ===");
+      console.log("Grupo a ser salvo:", tempVariationGroup);
+      
       // First save this as a new variation group
       await saveVariationGroup(tempVariationGroup);
+      console.log("Grupo salvo no Firestore com sucesso");
       
       // Then add it to the item
       setEditItem({
@@ -62,14 +67,20 @@ export const AddVariationGroupModal = ({
         hasVariations: true,
         variationGroups: [...(editItem.variationGroups || []), tempVariationGroup]
       });
+      console.log("Grupo adicionado ao item");
       
       // Close the dialog
       setTempVariationGroup(null);
       
       // Call the data change callback to refresh the groups list
+      console.log("=== CHAMANDO CALLBACK DE ATUALIZAÇÃO ===");
+      console.log("onDataChange disponível?", !!onDataChange);
       if (onDataChange) {
-        console.log("Calling onDataChange to refresh variation groups list");
+        console.log("Executando onDataChange para recarregar dados...");
         onDataChange();
+        console.log("onDataChange executado");
+      } else {
+        console.error("onDataChange não está disponível!");
       }
       
       toast({
