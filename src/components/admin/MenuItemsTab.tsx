@@ -56,9 +56,10 @@ export const MenuItemsTab = ({
     }));
   };
 
-  // Group items by category
+  // Group items by category - filter out categories with invalid IDs
   const itemsByCategory = useMemo(() => {
-    const sortedCategories = [...categories].sort((a, b) => {
+    const validCategories = categories.filter(category => category.id && category.id.trim() !== '');
+    const sortedCategories = [...validCategories].sort((a, b) => {
       const orderA = a.order !== undefined ? a.order : 0;
       const orderB = b.order !== undefined ? b.order : 0;
       return orderA - orderB;
@@ -92,13 +93,15 @@ export const MenuItemsTab = ({
   }, [menuItems, categories]);
 
   const handleAddItem = () => {
+    // Filter valid categories for new item
+    const validCategories = categories.filter(category => category.id && category.id.trim() !== '');
     const newItem: MenuItem = {
       id: `temp-${Date.now()}`,
       name: "",
       description: "",
       price: 0,
       image: "/placeholder.svg",
-      category: categories.length > 0 ? categories[0].id : "",
+      category: validCategories.length > 0 ? validCategories[0].id : "",
       popular: false,
       hasVariations: false,
       variationGroups: [],
