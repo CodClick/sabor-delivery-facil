@@ -319,15 +319,12 @@ const Checkout = () => {
                                 (variation.quantity || 1) *
                                 item.quantity;
 
+                              // Mostrar quantidade sempre, mesmo se for 1
                               if (variation.quantity > 0) {
                                 return (
                                   <div key={varIndex} className="flex items-center justify-between">
                                     <span>
-                                      {variation.quantity > 1 ? (
-                                        <>
-                                          {variation.quantity}x{" "}
-                                        </>
-                                      ) : null}
+                                      <span className="inline-block w-7">{variation.quantity}x</span>
                                       {variation.name || "Variação"}
                                       {variation.additionalPrice && variation.additionalPrice > 0 ? (
                                         <>
