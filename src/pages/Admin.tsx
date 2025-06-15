@@ -63,20 +63,51 @@ const Admin = () => {
         })
       ]);
       
+      // Ensure all categories have valid IDs
+      const validCategories = cats.filter(cat => {
+        const isValid = cat && cat.id && typeof cat.id === 'string' && cat.id.trim() !== '';
+        if (!isValid) {
+          console.warn("Filtering out invalid category:", cat);
+        }
+        return isValid;
+      });
+
+      // Ensure all variations have valid IDs
+      const validVariations = vars.filter(variation => {
+        const isValid = variation && variation.id && typeof variation.id === 'string' && variation.id.trim() !== '';
+        if (!isValid) {
+          console.warn("Filtering out invalid variation:", variation);
+        }
+        return isValid;
+      });
+
+      // Ensure all variation groups have valid IDs
+      const validVariationGroups = groups.filter(group => {
+        const isValid = group && group.id && typeof group.id === 'string' && group.id.trim() !== '';
+        if (!isValid) {
+          console.warn("Filtering out invalid variation group:", group);
+        }
+        return isValid;
+      });
+      
       console.log("Admin: Loaded items:", items.length, items);
-      console.log("Admin: Loaded categories:", cats.length, cats);
-      console.log("Admin: Loaded variations:", vars.length, vars);
-      console.log("Admin: Loaded variation groups:", groups.length, groups);
+      console.log("Admin: Loaded valid categories:", validCategories.length, validCategories);
+      console.log("Admin: Loaded valid variations:", validVariations.length, validVariations);
+      console.log("Admin: Loaded valid variation groups:", validVariationGroups.length, validVariationGroups);
       
       setMenuItems(items);
-      setCategories(cats);
-      setVariations(vars);
-      setVariationGroups(groups);
+      setCategories(validCategories);
+      setVariations(validVariations);
+      setVariationGroups(validVariationGroups);
     } catch (error) {
       console.error("Admin: Error loading data, using local fallback:", error);
-      // Complete fallback to local data
+      // Complete fallback to local data with validation
+      const validLocalCategories = localCategories.filter(cat => 
+        cat && cat.id && typeof cat.id === 'string' && cat.id.trim() !== ''
+      );
+      
       setMenuItems(localMenuItems);
-      setCategories(localCategories);
+      setCategories(validLocalCategories);
       setVariations([]);
       setVariationGroups([]);
       

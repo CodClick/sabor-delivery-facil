@@ -102,16 +102,23 @@ export const EditMenuItemModal = ({
     }
   };
 
-  // Filter out categories with invalid IDs and add debugging
+  // Enhanced filtering with more strict validation
   const validCategories = categories.filter(category => {
-    const isValid = category.id && typeof category.id === 'string' && category.id.trim() !== '';
+    const isValid = category && 
+                   category.id && 
+                   typeof category.id === 'string' && 
+                   category.id.trim() !== '' && 
+                   category.name && 
+                   typeof category.name === 'string' && 
+                   category.name.trim() !== '';
     if (!isValid) {
-      console.warn("Invalid category found:", category);
+      console.warn("Invalid category found and filtered out:", category);
     }
     return isValid;
   });
 
   console.log("Valid categories for select:", validCategories);
+  console.log("Current editItem category:", editItem.category);
 
   return (
     <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
@@ -174,10 +181,12 @@ export const EditMenuItemModal = ({
                 </div>
               ) : (
                 <Select 
-                  value={editItem.category || ""}
+                  value={editItem.category && validCategories.some(cat => cat.id === editItem.category) ? editItem.category : ""}
                   onValueChange={(value) => {
                     console.log("Category selected:", value);
-                    setEditItem({...editItem, category: value});
+                    if (value && value.trim() !== '') {
+                      setEditItem({...editItem, category: value});
+                    }
                   }}
                   required
                 >
@@ -187,6 +196,11 @@ export const EditMenuItemModal = ({
                   <SelectContent>
                     {validCategories.map((category) => {
                       console.log("Rendering category option:", category.id, category.name);
+                      // Double check the category ID is valid before rendering
+                      if (!category.id || category.id.trim() === '') {
+                        console.error("Attempted to render category with invalid ID:", category);
+                        return null;
+                      }
                       return (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
