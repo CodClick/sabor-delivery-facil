@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -82,10 +83,10 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
         const groupDef = item.variationGroups?.find(g => g?.id === groupId);
         if (!groupDef) return group;
 
-        // Count current selections for this group
+        // Count current total quantity (sum of all variation quantities) for this group
         const currentTotal = group.variations.reduce((sum, v) => sum + v.quantity, 0);
         
-        // Don't allow increasing if we're already at max
+        // Don't allow increasing if we're already at max total quantity
         if (currentTotal >= groupDef.maxAllowed) return group;
         
         // Update the specific variation with name and additionalPrice
@@ -187,11 +188,11 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     }
 
     if (min === max) {
-      return `Selecione exatamente ${min} ${groupDef.name.toLowerCase()} (${total}/${min} selecionados)`;
+      return `Selecione exatamente ${min} unidades de ${groupDef.name.toLowerCase()} (${total}/${min} selecionadas)`;
     } else if (min > 0) {
-      return `Selecione de ${min} a ${max} ${groupDef.name.toLowerCase()} (${total} selecionados)`;
+      return `Selecione de ${min} a ${max} unidades de ${groupDef.name.toLowerCase()} (${total}/${max} selecionadas)`;
     } else {
-      return `Selecione até ${max} ${groupDef.name.toLowerCase()} (opcional) (${total} selecionados)`;
+      return `Selecione até ${max} unidades de ${groupDef.name.toLowerCase()} (opcional) (${total}/${max} selecionadas)`;
     }
   };
 
@@ -225,10 +226,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                     <span className={`text-sm px-2 py-1 rounded ${
                       groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {groupStatus.total} / {groupStatus.min === groupStatus.max ? 
-                        `${groupStatus.min} necessários` : 
-                        `${groupStatus.min}-${groupStatus.max} permitidos`
-                      }
+                      {groupStatus.total} / {groupStatus.max} unidades
                     </span>
                   </div>
                   
