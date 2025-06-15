@@ -231,7 +231,7 @@ const AdminOrders = () => {
     }).format(date);
   };
   
-  // Status options for the dropdown
+  // Status options for the dropdown - filter out any with empty values
   const statusOptions = [
     { value: "all", label: "Todos" },
     { value: "pending", label: "Pendentes" },
@@ -242,7 +242,7 @@ const AdminOrders = () => {
     { value: "received", label: "Recebidos" },
     { value: "delivered", label: "Finalizados" },
     { value: "cancelled", label: "Cancelados" }
-  ];
+  ].filter(option => option.value && option.value.trim() !== '');
 
   const handleRetryLoad = () => {
     loadOrders(activeStatus, dateRange);

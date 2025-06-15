@@ -102,6 +102,9 @@ export const EditMenuItemModal = ({
     }
   };
 
+  // Filter out categories with invalid IDs to prevent Select errors
+  const validCategories = categories.filter(category => category.id && category.id.trim() !== '');
+
   return (
     <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -158,7 +161,7 @@ export const EditMenuItemModal = ({
             <div>
               <Label htmlFor="category">Categoria *</Label>
               <Select 
-                value={editItem.category}
+                value={editItem.category || ""}
                 onValueChange={(value) => setEditItem({...editItem, category: value})}
                 required
               >
@@ -166,7 +169,7 @@ export const EditMenuItemModal = ({
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {validCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
