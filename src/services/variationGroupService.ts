@@ -147,57 +147,28 @@ export const updateVariationGroup = saveVariationGroup;
 
 export const deleteVariationGroup = async (id: string): Promise<void> => {
   try {
-    console.log("=== INÍCIO PROCESSO DE EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
-    console.log("deleteVariationGroup chamado com ID:", id);
-    console.log("Tipo do ID:", typeof id);
+    console.log("Deletando grupo de variação:", id);
     
-    if (!id || id.trim() === "" || typeof id !== "string") {
-      console.error("ID inválido fornecido:", { id, tipo: typeof id });
-      throw new Error("ID do grupo de variação é obrigatório para exclusão e deve ser uma string válida");
+    if (!id || id.trim() === "") {
+      throw new Error("ID do grupo de variação é obrigatório para exclusão");
     }
 
-    const cleanId = id.trim();
-    console.log("ID limpo para busca:", cleanId);
+    const variationGroupDocRef = doc(db, "variationGroups", id);
     
-    // Primeiro, verificar se o documento existe antes de tentar excluir
-    console.log("=== VERIFICANDO SE O DOCUMENTO EXISTE ===");
-    const variationGroupDocRef = doc(db, "variationGroups", cleanId);
+    // Verificar se o documento existe antes de tentar deletar
     const docSnapshot = await getDoc(variationGroupDocRef);
     
     if (!docSnapshot.exists()) {
-      console.log("=== DOCUMENTO NÃO ENCONTRADO NO FIRESTORE ===");
-      console.log("Grupo não existe no Firestore - pode ser um grupo local/cache");
-      console.log("Considerando exclusão bem-sucedida para limpeza da interface");
-      return; // Return successfully to allow UI cleanup
+      console.log("Documento não encontrado para exclusão:", id);
+      // Retorna sucesso para permitir limpeza da interface
+      return;
     }
     
-    console.log("=== DOCUMENTO ENCONTRADO, PROCEDENDO COM EXCLUSÃO ===");
-    console.log("Dados do documento:", docSnapshot.data());
-    
-    // Excluir o documento
-    console.log("Executando deleteDoc...");
+    console.log("Documento encontrado, deletando...");
     await deleteDoc(variationGroupDocRef);
-    console.log("deleteDoc executado com sucesso");
-    
-    // Verificar se a exclusão foi bem-sucedida
-    console.log("=== VERIFICANDO SE A EXCLUSÃO FOI BEM-SUCEDIDA ===");
-    const checkSnapshot = await getDoc(variationGroupDocRef);
-    
-    if (checkSnapshot.exists()) {
-      console.error("ERRO: Documento ainda existe após exclusão!");
-      console.error("Dados do documento que ainda existe:", checkSnapshot.data());
-      throw new Error("Falha na exclusão: documento ainda existe após deleteDoc");
-    } else {
-      console.log("✅ CONFIRMADO: Documento foi excluído com sucesso do Firestore");
-    }
-    
-    console.log("=== EXCLUSÃO DE GRUPO DE VARIAÇÃO CONCLUÍDA COM SUCESSO ===");
-    
+    console.log("Grupo deletado com sucesso:", id);
   } catch (error) {
-    console.error("=== ERRO NA EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
-    console.error("Mensagem do erro:", error.message);
-    console.error("Erro completo:", error);
-    console.error("Stack trace:", error.stack);
+    console.error("Erro ao deletar grupo de variação:", error);
     throw new Error(`Falha ao deletar grupo de variação: ${error.message}`);
   }
 };

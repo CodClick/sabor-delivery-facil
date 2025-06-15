@@ -53,7 +53,7 @@ export const VariationGroupsTab = ({
 
   const handleAddNewVariationGroup = () => {
     setEditVariationGroup({
-      id: crypto.randomUUID(),
+      id: "",
       name: "",
       minRequired: 1,
       maxAllowed: 1,
@@ -67,13 +67,10 @@ export const VariationGroupsTab = ({
   };
 
   const handleDeleteExistingVariationGroup = async (group: VariationGroup) => {
-    console.log("=== INÍCIO EXCLUSÃO NA INTERFACE ===");
-    console.log("VariationGroupsTab: Tentando deletar grupo:", group);
-    console.log("VariationGroupsTab: ID do grupo:", group.id);
-    console.log("VariationGroupsTab: Tipo do ID:", typeof group.id);
+    console.log("Tentando deletar grupo:", group.name, "ID:", group.id);
     
     if (!group.id) {
-      console.error("VariationGroupsTab: Grupo não possui ID válido:", group);
+      console.error("Grupo não possui ID válido:", group);
       toast({
         title: "Erro",
         description: "Grupo não possui ID válido para exclusão",
@@ -89,18 +86,11 @@ export const VariationGroupsTab = ({
 
     if (window.confirm(confirmMessage)) {
       try {
-        console.log("VariationGroupsTab: Confirmação recebida, chamando deleteVariationGroup com ID:", group.id);
-        
-        // Adicionar logs detalhados antes da chamada
-        console.log("=== DETALHES ANTES DA EXCLUSÃO ===");
-        console.log("ID a ser excluído:", group.id);
-        console.log("Nome do grupo:", group.name);
-        console.log("Grupos antes da exclusão:", cleanVariationGroups.groups.length);
+        console.log("Confirmação recebida, deletando grupo:", group.id);
         
         await deleteVariationGroup(group.id);
         
-        console.log("=== EXCLUSÃO BEM-SUCEDIDA ===");
-        console.log("deleteVariationGroup retornou sem erro");
+        console.log("Grupo deletado com sucesso");
         
         toast({
           title: "Sucesso",
@@ -109,23 +99,11 @@ export const VariationGroupsTab = ({
             : "Grupo de variação excluído com sucesso",
         });
         
-        console.log("VariationGroupsTab: Grupo deletado com sucesso, forçando recarregamento dos dados");
-        
-        // Forçar recarregamento imediato
-        console.log("=== FORÇANDO RECARREGAMENTO DOS DADOS ===");
+        console.log("Recarregando dados...");
         onDataChange();
         
-        // Aguardar um pouco e recarregar novamente para garantir
-        setTimeout(() => {
-          console.log("=== SEGUNDO RECARREGAMENTO (TIMEOUT) ===");
-          onDataChange();
-        }, 500);
-        
       } catch (error) {
-        console.error("=== ERRO NA INTERFACE AO EXCLUIR GRUPO ===");
-        console.error("VariationGroupsTab: Erro ao excluir grupo de variação:", error);
-        console.error("Mensagem do erro:", error.message);
-        console.error("Stack do erro:", error.stack);
+        console.error("Erro ao excluir grupo de variação:", error);
         
         toast({
           title: "Erro",
@@ -134,7 +112,6 @@ export const VariationGroupsTab = ({
         });
       }
     }
-    console.log("=== FIM EXCLUSÃO NA INTERFACE ===");
   };
 
   const getVariationName = (variationId: string): string => {

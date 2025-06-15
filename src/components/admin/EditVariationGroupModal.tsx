@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle } from "lucide-react";
-import { saveVariationGroup, updateVariationGroup } from "@/services/variationGroupService";
+import { saveVariationGroup } from "@/services/variationGroupService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -69,13 +69,9 @@ export const EditVariationGroupModal = ({
 
     try {
       // Check if we're creating a new group or updating an existing one
-      const isNew = !variationGroups.some(g => g.id === editVariationGroup.id);
+      const isNew = !editVariationGroup.id || !variationGroups.some(g => g.id === editVariationGroup.id);
       
-      if (isNew) {
-        await saveVariationGroup(editVariationGroup);
-      } else {
-        await updateVariationGroup(editVariationGroup);
-      }
+      await saveVariationGroup(editVariationGroup);
 
       setEditVariationGroup(null);
       toast({
@@ -95,14 +91,14 @@ export const EditVariationGroupModal = ({
     }
   };
 
+  const isNew = !editVariationGroup.id || !variationGroups.some(g => g.id === editVariationGroup.id);
+
   return (
     <Dialog open={!!editVariationGroup} onOpenChange={(open) => !open && setEditVariationGroup(null)}>
       <DialogContent className="max-w-md h-[85vh] flex flex-col p-0">
         <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b">
           <h2 className="text-xl font-bold">
-            {variationGroups.some(g => g.id === editVariationGroup.id) 
-              ? "Editar Grupo de Variações" 
-              : "Novo Grupo de Variações"}
+            {isNew ? "Novo Grupo de Variações" : "Editar Grupo de Variações"}
           </h2>
           <Button 
             variant="ghost" 
