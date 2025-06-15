@@ -90,7 +90,17 @@ export const VariationGroupsTab = ({
     if (window.confirm(confirmMessage)) {
       try {
         console.log("VariationGroupsTab: Confirmação recebida, chamando deleteVariationGroup com ID:", group.id);
+        
+        // Adicionar logs detalhados antes da chamada
+        console.log("=== DETALHES ANTES DA EXCLUSÃO ===");
+        console.log("ID a ser excluído:", group.id);
+        console.log("Nome do grupo:", group.name);
+        console.log("Grupos antes da exclusão:", cleanVariationGroups.groups.length);
+        
         await deleteVariationGroup(group.id);
+        
+        console.log("=== EXCLUSÃO BEM-SUCEDIDA ===");
+        console.log("deleteVariationGroup retornou sem erro");
         
         toast({
           title: "Sucesso",
@@ -101,13 +111,22 @@ export const VariationGroupsTab = ({
         
         console.log("VariationGroupsTab: Grupo deletado com sucesso, forçando recarregamento dos dados");
         
-        // Forçar recarregamento para garantir que a interface seja atualizada
+        // Forçar recarregamento imediato
+        console.log("=== FORÇANDO RECARREGAMENTO DOS DADOS ===");
+        onDataChange();
+        
+        // Aguardar um pouco e recarregar novamente para garantir
         setTimeout(() => {
+          console.log("=== SEGUNDO RECARREGAMENTO (TIMEOUT) ===");
           onDataChange();
-        }, 100);
+        }, 500);
         
       } catch (error) {
+        console.error("=== ERRO NA INTERFACE AO EXCLUIR GRUPO ===");
         console.error("VariationGroupsTab: Erro ao excluir grupo de variação:", error);
+        console.error("Mensagem do erro:", error.message);
+        console.error("Stack do erro:", error.stack);
+        
         toast({
           title: "Erro",
           description: `Não foi possível excluir o grupo: ${error.message}`,

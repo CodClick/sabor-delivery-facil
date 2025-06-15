@@ -149,6 +149,7 @@ export const deleteVariationGroup = async (id: string): Promise<void> => {
   try {
     console.log("=== INÍCIO PROCESSO DE EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
     console.log("deleteVariationGroup chamado com ID:", id);
+    console.log("Tipo do ID:", typeof id);
     
     if (!id || id.trim() === "" || typeof id !== "string") {
       console.error("ID inválido fornecido:", { id, tipo: typeof id });
@@ -158,51 +159,45 @@ export const deleteVariationGroup = async (id: string): Promise<void> => {
     const cleanId = id.trim();
     console.log("ID limpo para busca:", cleanId);
     
-    // Buscar TODOS os documentos para identificar possíveis duplicatas
-    console.log("=== BUSCANDO TODOS OS DOCUMENTOS PARA VERIFICAR DUPLICATAS ===");
-    const variationGroupsCollection = collection(db, "variationGroups");
-    const allGroupsSnapshot = await getDocs(variationGroupsCollection);
+    // Primeiro, verificar se o documento existe antes de tentar excluir
+    console.log("=== VERIFICANDO SE O DOCUMENTO EXISTE ===");
+    const variationGroupDocRef = doc(db, "variationGroups", cleanId);
+    const docSnapshot = await getDoc(variationGroupDocRef);
     
-    // Encontrar todos os documentos que correspondem ao ID (podem haver duplicatas)
-    const matchingDocs = allGroupsSnapshot.docs.filter(doc => doc.id === cleanId);
-    
-    console.log(`Documentos encontrados com ID ${cleanId}:`, matchingDocs.length);
-    
-    if (matchingDocs.length === 0) {
-      console.log("=== NENHUM DOCUMENTO ENCONTRADO NO FIRESTORE ===");
+    if (!docSnapshot.exists()) {
+      console.log("=== DOCUMENTO NÃO ENCONTRADO NO FIRESTORE ===");
       console.log("Grupo não existe no Firestore - pode ser um grupo local/cache");
       console.log("Considerando exclusão bem-sucedida para limpeza da interface");
       return; // Return successfully to allow UI cleanup
     }
     
-    if (matchingDocs.length > 1) {
-      console.warn(`=== DUPLICATAS NO FIRESTORE DETECTADAS! ${matchingDocs.length} documentos com o mesmo ID ===`);
-      matchingDocs.forEach((doc, index) => {
-        console.log(`Documento ${index + 1}:`, {
-          id: doc.id,
-          data: doc.data()
-        });
-      });
+    console.log("=== DOCUMENTO ENCONTRADO, PROCEDENDO COM EXCLUSÃO ===");
+    console.log("Dados do documento:", docSnapshot.data());
+    
+    // Excluir o documento
+    console.log("Executando deleteDoc...");
+    await deleteDoc(variationGroupDocRef);
+    console.log("deleteDoc executado com sucesso");
+    
+    // Verificar se a exclusão foi bem-sucedida
+    console.log("=== VERIFICANDO SE A EXCLUSÃO FOI BEM-SUCEDIDA ===");
+    const checkSnapshot = await getDoc(variationGroupDocRef);
+    
+    if (checkSnapshot.exists()) {
+      console.error("ERRO: Documento ainda existe após exclusão!");
+      console.error("Dados do documento que ainda existe:", checkSnapshot.data());
+      throw new Error("Falha na exclusão: documento ainda existe após deleteDoc");
+    } else {
+      console.log("✅ CONFIRMADO: Documento foi excluído com sucesso do Firestore");
     }
     
-    // Excluir TODOS os documentos encontrados com o ID
-    console.log(`=== EXCLUINDO ${matchingDocs.length} DOCUMENTO(S) DO FIRESTORE ===`);
-    
-    const deletePromises = matchingDocs.map(async (docToDelete, index) => {
-      console.log(`Excluindo documento ${index + 1} de ${matchingDocs.length}`);
-      await deleteDoc(docToDelete.ref);
-      console.log(`Documento ${index + 1} excluído com sucesso`);
-    });
-    
-    await Promise.all(deletePromises);
-    
     console.log("=== EXCLUSÃO DE GRUPO DE VARIAÇÃO CONCLUÍDA COM SUCESSO ===");
-    console.log(`Total de ${matchingDocs.length} documento(s) excluído(s) do Firestore`);
     
   } catch (error) {
     console.error("=== ERRO NA EXCLUSÃO DE GRUPO DE VARIAÇÃO ===");
     console.error("Mensagem do erro:", error.message);
     console.error("Erro completo:", error);
+    console.error("Stack trace:", error.stack);
     throw new Error(`Falha ao deletar grupo de variação: ${error.message}`);
   }
 };
