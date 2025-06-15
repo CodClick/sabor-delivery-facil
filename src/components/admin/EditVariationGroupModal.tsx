@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle } from "lucide-react";
 import { saveVariationGroup, updateVariationGroup } from "@/services/variationGroupService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EditVariationGroupModalProps {
   editVariationGroup: VariationGroup;
@@ -96,8 +97,8 @@ export const EditVariationGroupModal = ({
 
   return (
     <Dialog open={!!editVariationGroup} onOpenChange={(open) => !open && setEditVariationGroup(null)}>
-      <DialogContent className="max-w-md">
-        <div className="flex justify-between items-center mb-4">
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 className="text-xl font-bold">
             {variationGroups.some(g => g.id === editVariationGroup.id) 
               ? "Editar Grupo de Variações" 
@@ -111,95 +112,98 @@ export const EditVariationGroupModal = ({
             <XCircle className="h-5 w-5" />
           </Button>
         </div>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="group-name">Nome do Grupo</Label>
-            <Input
-              id="group-name"
-              value={editVariationGroup.name}
-              onChange={(e) => setEditVariationGroup({...editVariationGroup, name: e.target.value})}
-              placeholder="Ex: Sabores, Recheios, Complementos"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+        
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+              <Label htmlFor="group-name">Nome do Grupo</Label>
               <Input
-                id="min-required"
-                type="number"
-                min="0"
-                value={editVariationGroup.minRequired}
-                onChange={(e) => setEditVariationGroup({
-                  ...editVariationGroup, 
-                  minRequired: parseInt(e.target.value)
-                })}
+                id="group-name"
+                value={editVariationGroup.name}
+                onChange={(e) => setEditVariationGroup({...editVariationGroup, name: e.target.value})}
+                placeholder="Ex: Sabores, Recheios, Complementos"
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="min-required">Mínimo Obrigatório</Label>
+                <Input
+                  id="min-required"
+                  type="number"
+                  min="0"
+                  value={editVariationGroup.minRequired}
+                  onChange={(e) => setEditVariationGroup({
+                    ...editVariationGroup, 
+                    minRequired: parseInt(e.target.value)
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="max-allowed">Máximo Permitido</Label>
+                <Input
+                  id="max-allowed"
+                  type="number"
+                  min="1"
+                  value={editVariationGroup.maxAllowed}
+                  onChange={(e) => setEditVariationGroup({
+                    ...editVariationGroup, 
+                    maxAllowed: parseInt(e.target.value)
+                  })}
+                />
+              </div>
+            </div>
+            
             <div>
-              <Label htmlFor="max-allowed">Máximo Permitido</Label>
+              <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
               <Input
-                id="max-allowed"
-                type="number"
-                min="1"
-                value={editVariationGroup.maxAllowed}
+                id="custom-message"
+                value={editVariationGroup.customMessage || ""}
                 onChange={(e) => setEditVariationGroup({
                   ...editVariationGroup, 
-                  maxAllowed: parseInt(e.target.value)
+                  customMessage: e.target.value
                 })}
+                placeholder="Ex: Escolha {min} opções"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Use {"{min}"} para o número mínimo, {"{max}"} para o máximo e {"{count}"} para quantidade selecionada
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Variações Disponíveis</Label>
+              <div className="max-h-60 overflow-y-auto border rounded-md p-2">
+                {variations.map((variation) => (
+                  <div key={variation.id} className="flex items-center space-x-2 py-1">
+                    <Checkbox 
+                      id={`var-${variation.id}`}
+                      checked={editVariationGroup.variations.includes(variation.id)}
+                      onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
+                    />
+                    <Label htmlFor={`var-${variation.id}`}>
+                      {variation.name}
+                      {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
+                    </Label>
+                  </div>
+                ))}
+                {variations.length === 0 && (
+                  <p className="text-sm text-gray-500 py-2">
+                    Nenhuma variação disponível. Adicione variações primeiro.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-          
-          <div>
-            <Label htmlFor="custom-message">Mensagem Personalizada (opcional)</Label>
-            <Input
-              id="custom-message"
-              value={editVariationGroup.customMessage || ""}
-              onChange={(e) => setEditVariationGroup({
-                ...editVariationGroup, 
-                customMessage: e.target.value
-              })}
-              placeholder="Ex: Escolha {min} opções"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Use {"{min}"} para o número mínimo, {"{max}"} para o máximo e {"{count}"} para quantidade selecionada
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Variações Disponíveis</Label>
-            <div className="max-h-60 overflow-y-auto border rounded-md p-2">
-              {variations.map((variation) => (
-                <div key={variation.id} className="flex items-center space-x-2 py-1">
-                  <Checkbox 
-                    id={`var-${variation.id}`}
-                    checked={editVariationGroup.variations.includes(variation.id)}
-                    onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
-                  />
-                  <Label htmlFor={`var-${variation.id}`}>
-                    {variation.name}
-                    {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
-                  </Label>
-                </div>
-              ))}
-              {variations.length === 0 && (
-                <p className="text-sm text-gray-500 py-2">
-                  Nenhuma variação disponível. Adicione variações primeiro.
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setEditVariationGroup(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSaveVariationGroup}>
-              <Save className="h-4 w-4 mr-1" />
-              Salvar
-            </Button>
-          </div>
+        </ScrollArea>
+        
+        <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
+          <Button variant="outline" onClick={() => setEditVariationGroup(null)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveVariationGroup}>
+            <Save className="h-4 w-4 mr-1" />
+            Salvar
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
