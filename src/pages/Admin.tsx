@@ -132,82 +132,116 @@ const Admin = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gerenciamento do Cardápio</h1>
-        <div className="flex gap-2">
-          <SeedDataButton />
-          <Button onClick={() => navigate("/")} variant="outline">
-            Voltar para o Cardápio
-          </Button>
-        </div>
-      </div>
-
-      {loading && <div className="text-center py-4">Carregando dados...</div>}
-
-      {/* Alerta para coleções vazias */}
-      {!loading && (menuItems.length === 0 || categories.length === 0) && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Database className="h-5 w-5 text-yellow-600" />
-            <h3 className="font-medium text-yellow-800">Coleções do Firebase Vazias</h3>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
+        {/* Header responsivo */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <h1 className="text-xl sm:text-2xl font-bold leading-tight">
+            Gerenciamento do Cardápio
+          </h1>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <SeedDataButton />
+            <Button 
+              onClick={() => navigate("/")} 
+              variant="outline"
+              className="w-full sm:w-auto text-sm"
+            >
+              Voltar para o Cardápio
+            </Button>
           </div>
-          <p className="text-yellow-700 mb-3">
-            Parece que as coleções do Firebase estão vazias ou foram excluídas. 
-            Use o botão "Recriar Coleções Firebase" acima para restaurar todos os dados iniciais.
-          </p>
-          <p className="text-yellow-600 text-sm">
-            Isso irá criar: categorias, itens do menu, variações e grupos de variações.
-          </p>
         </div>
-      )}
 
-      <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 w-full">
-          <TabsTrigger value="menu" className="flex-1">Itens do Menu</TabsTrigger>
-          <TabsTrigger value="categories" className="flex-1">Categorias</TabsTrigger>
-          <TabsTrigger value="variations" className="flex-1">Variações</TabsTrigger>
-          <TabsTrigger value="groups" className="flex-1">Grupos de Variações</TabsTrigger>
-        </TabsList>
+        {loading && <div className="text-center py-4 text-sm">Carregando dados...</div>}
 
-        <TabsContent value="menu">
-          <MenuItemsTab 
-            menuItems={menuItems}
-            categories={categories}
-            variations={variations}
-            variationGroups={variationGroups}
-            loading={loading}
-            onDataChange={loadData}
-          />
-        </TabsContent>
+        {/* Alerta para coleções vazias - mobile friendly */}
+        {!loading && (menuItems.length === 0 || categories.length === 0) && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex items-start gap-2 mb-2">
+              <Database className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <h3 className="font-medium text-yellow-800 text-sm sm:text-base">
+                Coleções do Firebase Vazias
+              </h3>
+            </div>
+            <p className="text-yellow-700 mb-3 text-xs sm:text-sm leading-relaxed">
+              Parece que as coleções do Firebase estão vazias ou foram excluídas. 
+              Use o botão "Recriar Coleções Firebase" acima para restaurar todos os dados iniciais.
+            </p>
+            <p className="text-yellow-600 text-xs leading-relaxed">
+              Isso irá criar: categorias, itens do menu, variações e grupos de variações.
+            </p>
+          </div>
+        )}
 
-        <TabsContent value="categories">
-          <CategoriesTab 
-            categories={categories}
-            loading={loading}
-            onDataChange={loadData}
-            onSeedData={handleSeedData}
-          />
-        </TabsContent>
+        {/* Tabs responsivas */}
+        <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto p-1">
+            <TabsTrigger 
+              value="menu" 
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Itens
+            </TabsTrigger>
+            <TabsTrigger 
+              value="categories" 
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Categorias
+            </TabsTrigger>
+            <TabsTrigger 
+              value="variations" 
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Variações
+            </TabsTrigger>
+            <TabsTrigger 
+              value="groups" 
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Grupos
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="variations">
-          <VariationsTab 
-            variations={variations}
-            categories={categories}
-            loading={loading}
-            onDataChange={loadData}
-          />
-        </TabsContent>
-        
-        <TabsContent value="groups">
-          <VariationGroupsTab 
-            variationGroups={variationGroups}
-            variations={variations}
-            loading={loading}
-            onDataChange={loadData}
-          />
-        </TabsContent>
-      </Tabs>
+          <div className="w-full overflow-x-hidden">
+            <TabsContent value="menu" className="mt-0">
+              <MenuItemsTab 
+                menuItems={menuItems}
+                categories={categories}
+                variations={variations}
+                variationGroups={variationGroups}
+                loading={loading}
+                onDataChange={loadData}
+              />
+            </TabsContent>
+
+            <TabsContent value="categories" className="mt-0">
+              <CategoriesTab 
+                categories={categories}
+                loading={loading}
+                onDataChange={loadData}
+                onSeedData={handleSeedData}
+              />
+            </TabsContent>
+
+            <TabsContent value="variations" className="mt-0">
+              <VariationsTab 
+                variations={variations}
+                categories={categories}
+                loading={loading}
+                onDataChange={loadData}
+              />
+            </TabsContent>
+            
+            <TabsContent value="groups" className="mt-0">
+              <VariationGroupsTab 
+                variationGroups={variationGroups}
+                variations={variations}
+                loading={loading}
+                onDataChange={loadData}
+              />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 };
