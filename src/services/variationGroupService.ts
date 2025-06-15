@@ -1,4 +1,3 @@
-
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -19,31 +18,45 @@ export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
     const variationGroupsSnapshot = await getDocs(
       query(variationGroupsCollection)
     );
-    const groups = variationGroupsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as VariationGroup[];
     
-    // Detectar e remover duplicatas locais
-    const uniqueGroups = new Map();
-    const duplicates = [];
+    // Map documents and immediately filter out invalid ones
+    const rawGroups = variationGroupsSnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }) as VariationGroup)
+      .filter(group => {
+        // Filter out groups with empty or invalid IDs
+        const isValid = group.id && typeof group.id === 'string' && group.id.trim() !== '';
+        if (!isValid) {
+          console.warn("Filtering out invalid variation group during load:", group);
+        }
+        return isValid;
+      });
     
-    groups.forEach(group => {
+    console.log("Raw groups after initial filtering:", rawGroups.length);
+    
+    // Remove duplicates based on ID
+    const uniqueGroups = new Map<string, VariationGroup>();
+    const duplicateIds = new Set<string>();
+    
+    rawGroups.forEach(group => {
       if (uniqueGroups.has(group.id)) {
-        duplicates.push(group.id);
-        console.warn(`DUPLICATA DETECTADA: ID ${group.id} aparece múltiplas vezes`);
+        duplicateIds.add(group.id);
+        console.warn(`DUPLICATA DETECTADA NO FIRESTORE: ID ${group.id}`);
       } else {
         uniqueGroups.set(group.id, group);
       }
     });
     
-    if (duplicates.length > 0) {
-      console.warn("IDs duplicados encontrados:", duplicates);
-      console.log("Removendo duplicatas e retornando apenas grupos únicos");
+    const cleanGroups = Array.from(uniqueGroups.values());
+    
+    if (duplicateIds.size > 0) {
+      console.warn("Total de IDs duplicados encontrados:", Array.from(duplicateIds));
+      console.log("Grupos únicos após limpeza:", cleanGroups.length);
     }
     
-    const cleanGroups = Array.from(uniqueGroups.values());
-    console.log("Grupos de variação carregados (limpos):", cleanGroups.length);
+    console.log("Grupos de variação carregados (finais):", cleanGroups.length);
     return cleanGroups;
   } catch (error) {
     console.error("Erro ao buscar grupos de variação:", error);
@@ -86,7 +99,7 @@ export const saveVariationGroup = async (
     console.log("Salvando grupo de variação:", variationGroup);
     
     // Validate required fields
-    if (!variationGroup.name) {
+    if (!variationGroup.name || variationGroup.name.trim() === '') {
       throw new Error("Nome do grupo de variação é obrigatório");
     }
     
@@ -107,7 +120,16 @@ export const saveVariationGroup = async (
       throw new Error("O mínimo obrigatório não pode ser maior que o máximo permitido");
     }
 
-    if (variationGroup.id) {
+    // Clean the data before saving - remove any empty/invalid properties
+    const cleanVariationGroup = {
+      name: variationGroup.name.trim(),
+      minRequired: variationGroup.minRequired,
+      maxAllowed: variationGroup.maxAllowed,
+      variations: variationGroup.variations.filter(id => id && id.trim() !== ''),
+      customMessage: variationGroup.customMessage?.trim() || ""
+    };
+
+    if (variationGroup.id && variationGroup.id.trim() !== '') {
       // Check if the document actually exists before trying to update
       console.log("Verificando se o grupo de variação existe:", variationGroup.id);
       const variationGroupDocRef = doc(db, "variationGroups", variationGroup.id);
@@ -116,15 +138,14 @@ export const saveVariationGroup = async (
       if (existingDoc.exists()) {
         // Update existing variation group
         console.log("Atualizando grupo existente:", variationGroup.id);
-        const { id, ...variationGroupData } = variationGroup;
-        await updateDoc(variationGroupDocRef, variationGroupData);
+        await updateDoc(variationGroupDocRef, cleanVariationGroup);
         console.log("Grupo atualizado com sucesso");
         return variationGroup.id;
       } else {
         // Document doesn't exist, create a new one instead
         console.log("Documento não existe, criando novo grupo em vez de atualizar");
         const variationGroupsCollection = collection(db, "variationGroups");
-        const docRef = await addDoc(variationGroupsCollection, variationGroup);
+        const docRef = await addDoc(variationGroupsCollection, cleanVariationGroup);
         console.log("Novo grupo criado com ID:", docRef.id);
         return docRef.id;
       }
@@ -132,7 +153,7 @@ export const saveVariationGroup = async (
       // Create new variation group
       console.log("Criando novo grupo de variação");
       const variationGroupsCollection = collection(db, "variationGroups");
-      const docRef = await addDoc(variationGroupsCollection, variationGroup);
+      const docRef = await addDoc(variationGroupsCollection, cleanVariationGroup);
       console.log("Novo grupo criado com ID:", docRef.id);
       return docRef.id;
     }

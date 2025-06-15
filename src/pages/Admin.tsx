@@ -82,11 +82,11 @@ const Admin = () => {
         return isValid;
       });
 
-      // Ensure all variation groups have valid IDs
+      // Variation groups are already filtered in the service, but double-check
       const validVariationGroups = groups.filter(group => {
-        const isValid = group && group.id && typeof group.id === 'string' && group.id.trim() !== '';
+        const isValid = group && group.id && typeof group.id === 'string' && group.id.trim() !== '' && group.name && group.name.trim() !== '';
         if (!isValid) {
-          console.warn("Filtering out invalid variation group:", group);
+          console.warn("Filtering out invalid variation group in Admin:", group);
         }
         return isValid;
       });
@@ -94,7 +94,7 @@ const Admin = () => {
       console.log("Admin: Loaded items:", items.length, items);
       console.log("Admin: Loaded valid categories:", validCategories.length, validCategories);
       console.log("Admin: Loaded valid variations:", validVariations.length, validVariations);
-      console.log("Admin: Loaded valid variation groups (APÓS FILTRO):", validVariationGroups.length, validVariationGroups);
+      console.log("Admin: Loaded valid variation groups (FINAL):", validVariationGroups.length, validVariationGroups);
       
       setMenuItems(items);
       setCategories(validCategories);
