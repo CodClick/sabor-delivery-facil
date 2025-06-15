@@ -26,7 +26,7 @@ export const VariationsTab = ({
 
   const handleAddVariation = () => {
     const newVariation: Variation = {
-      id: crypto.randomUUID(),
+      id: "", // ID vazio para nova variação
       name: "",
       description: "",
       additionalPrice: 0,

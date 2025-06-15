@@ -74,8 +74,16 @@ export const saveVariation = async (variation: Variation): Promise<string> => {
       variation.additionalPrice = 0;
     }
 
-    if (variation.id) {
-      // Check if the document actually exists before trying to update
+    // Se ID está vazio ou não existe, é uma nova variação
+    if (!variation.id || variation.id.trim() === "") {
+      console.log("Criando nova variação (ID vazio)");
+      const variationsCollection = collection(db, "variations");
+      const { id, ...variationData } = variation; // Remove o ID vazio
+      const docRef = await addDoc(variationsCollection, variationData);
+      console.log("Nova variação criada com ID:", docRef.id);
+      return docRef.id;
+    } else {
+      // Verificar se o documento realmente existe antes de tentar atualizar
       console.log("Verificando se a variação existe:", variation.id);
       const variationDocRef = doc(db, "variations", variation.id);
       const existingDoc = await getDoc(variationDocRef);
@@ -88,20 +96,14 @@ export const saveVariation = async (variation: Variation): Promise<string> => {
         console.log("Variação atualizada com sucesso");
         return variation.id;
       } else {
-        // Document doesn't exist, create a new one instead
-        console.log("Documento não existe, criando nova variação em vez de atualizar");
+        // Documento não existe, criar novo
+        console.log("Documento não existe, criando nova variação");
         const variationsCollection = collection(db, "variations");
-        const docRef = await addDoc(variationsCollection, variation);
+        const { id, ...variationData } = variation; // Remove o ID que não existe
+        const docRef = await addDoc(variationsCollection, variationData);
         console.log("Nova variação criada com ID:", docRef.id);
         return docRef.id;
       }
-    } else {
-      // Create new variation
-      console.log("Criando nova variação");
-      const variationsCollection = collection(db, "variations");
-      const docRef = await addDoc(variationsCollection, variation);
-      console.log("Nova variação criada com ID:", docRef.id);
-      return docRef.id;
     }
   } catch (error) {
     console.error("Erro detalhado ao salvar variação:", error);
