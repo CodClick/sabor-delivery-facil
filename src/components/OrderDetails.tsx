@@ -1,7 +1,17 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -27,6 +37,8 @@ interface OrderDetailsProps {
 }
 
 const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) => {
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
   // Debug do pedido completo
   console.log("=== ORDER DETAILS DEBUG ===");
   console.log("Pedido completo:", order);
@@ -140,16 +152,52 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     return total;
   };
 
+  // Função para confirmar cancelamento
+  const handleCancelOrder = () => {
+    onUpdateStatus(order.id, "cancelled");
+    setIsConfirmDialogOpen(false);
+  };
+
   // Lista de botões para atualização de status
   const nextStatusButtons = getNextStatusOptions(order.status).map(status => {
     const icon = getStatusIcon(status);
     const label = translateStatus(status);
     
+    if (status === "cancelled") {
+      return (
+        <AlertDialog key={status} open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="destructive"
+              className="flex items-center gap-1"
+            >
+              {icon}
+              {label}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancelar o Pedido?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. O pedido será marcado como cancelado.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Não</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCancelOrder} className="bg-red-600 hover:bg-red-700">
+                Sim
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      );
+    }
+    
     return (
       <Button
         key={status}
         onClick={() => onUpdateStatus(order.id, status)}
-        variant={status === "cancelled" ? "destructive" : "default"}
+        variant="default"
         className="flex items-center gap-1"
       >
         {icon}
