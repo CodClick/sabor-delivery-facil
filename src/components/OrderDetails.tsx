@@ -379,64 +379,62 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
               return (
                 <React.Fragment key={index}>
                   <TableRow>
-                    <TableCell className="font-medium">
-                      <div>
-                        <div className="font-semibold">{item.name}</div>
-                        
-                        {/* Exibir variações se existirem */}
-                        {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
-                          <div className="mt-2 space-y-2">
-                            {item.selectedVariations.map((group, groupIndex) => {
-                              console.log(`Grupo ${groupIndex}:`, JSON.stringify(group, null, 2));
-                              
-                              return (
-                                <div key={groupIndex} className="text-sm border-l-2 border-gray-200 pl-3">
-                                  <div className="font-medium text-gray-700 mb-1">
-                                    {group.groupName || `Grupo ${groupIndex + 1}`}:
-                                  </div>
-                                  <div className="space-y-1">
-                                    {group.variations && Array.isArray(group.variations) && group.variations.length > 0 ? (
-                                      group.variations.map((variation, varIndex) => {
-                                        console.log(`Variação ${varIndex}:`, JSON.stringify(variation, null, 2));
-                                        
-                                        const additionalPrice = variation.additionalPrice || 0;
-                                        const quantity = variation.quantity || 1;
-                                        const variationTotal = additionalPrice * quantity;
-                                        
-                                        return (
-                                          <div key={varIndex} className="flex justify-between items-center text-gray-600">
-                                            <span>
-                                              • {variation.name || `Variação ${varIndex + 1}`}
-                                              {quantity > 1 && ` (${quantity}x)`}
-                                            </span>
-                                            {additionalPrice > 0 && (
-                                              <span className="text-green-600 font-medium">
-                                                +R$ {variationTotal.toFixed(2)}
-                                              </span>
-                                            )}
-                                          </div>
-                                        );
-                                      })
-                                    ) : (
-                                      <div className="text-gray-500 italic">
-                                        Nenhuma variação no grupo
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-gray-400 mt-1">
-                            (Sem variações selecionadas)
-                          </div>
-                        )}
-                      </div>
+                    {/* ITEM COLUMN: Name + Variations as stacked block */}
+                    <TableCell className="font-medium align-top w-[280px] min-w-[220px]">
+                      <div className="font-semibold">{item.name}</div>
+                      {/* Exibir variações se existirem */}
+                      {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
+                        <div className="mt-1">
+                          {item.selectedVariations.map((group, groupIndex) => (
+                            <div key={groupIndex} className="pl-2 text-xs text-gray-700 border-l-2 border-gray-200 mb-1">
+                              {group.groupName && (
+                                <div className="font-medium text-[12px] text-gray-600 mb-0.5">{group.groupName}:</div>
+                              )}
+                              {group.variations && Array.isArray(group.variations) && group.variations.length > 0 ? (
+                                group.variations.map((variation, varIndex) => {
+                                  const additionalPrice = variation.additionalPrice || 0;
+                                  const quantity = variation.quantity || 1;
+                                  const variationTotal = additionalPrice * quantity;
+                                  return (
+                                    <div key={varIndex} className="flex justify-between items-center text-gray-700">
+                                      <span>
+                                        • {variation.name || `Variação ${varIndex + 1}`}
+                                        {quantity > 1 && (
+                                          <span className="ml-0.5 text-[11px]">({quantity}x)</span>
+                                        )}
+                                      </span>
+                                      {additionalPrice > 0 && (
+                                        <span className="text-green-600 font-extrabold tabular-nums text-[13px] ml-2 whitespace-nowrap">
+                                          +R$ {variationTotal.toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div className="text-gray-400 italic">Nenhuma variação</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-400 mt-1">
+                          (Sem variações selecionadas)
+                        </div>
+                      )}
                     </TableCell>
-                    <TableCell>R$ {(item.price || 0).toFixed(2)}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell className="font-medium">R$ {calculateItemSubtotal(item).toFixed(2)}</TableCell>
+                    {/* PREÇO BASE */}
+                    <TableCell className="align-top w-28 text-right font-normal tabular-nums">
+                      R$ {(item.price || 0).toFixed(2)}
+                    </TableCell>
+                    {/* QTD */}
+                    <TableCell className="align-top w-12 text-center tabular-nums">
+                      {item.quantity}
+                    </TableCell>
+                    {/* SUBTOTAL */}
+                    <TableCell className="align-top w-28 text-right font-semibold tabular-nums">
+                      R$ {calculateItemSubtotal(item).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                 </React.Fragment>
               );
