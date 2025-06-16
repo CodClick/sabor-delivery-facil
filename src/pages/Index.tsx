@@ -118,12 +118,12 @@ const Index = () => {
         <div className="flex space-x-2">
           {currentUser ? (
             <>
-              <Button asChild variant="outline" className="flex items-center gap-2">
+  <!--            <Button asChild variant="outline" className="flex items-center gap-2">
                 <Link to="/admin-dashboard">
                   <Settings size={16} />
                   Administração
-                </Link>
-              </Button>
+                </Link>  
+              </Button> -->
               <Button onClick={logOut} variant="outline" className="flex items-center gap-2">
                 <LogOut size={16} />
                 Sair
