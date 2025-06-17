@@ -166,7 +166,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
   const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
     try {
-      const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/status_pedido", {
+      const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
