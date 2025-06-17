@@ -235,7 +235,7 @@ const ShoppingCart: React.FC = () => {
                           {/* Total das variações */}
                           {variationsTotal > 0 && (
                             <div className="text-xs text-green-600 font-medium border-t border-gray-200 pt-1">
-                              Variações: {formatCurrency(variationsTotal)}
+                              Complementos/Adicionais: {formatCurrency(variationsTotal)}
                             </div>
                           )}
                         </div>
