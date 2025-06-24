@@ -104,7 +104,7 @@ const Checkout = () => {
         description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
       });
       
-      navigate("/sabor-delivery-facil.lovable.app");
+      navigate("/Api");
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
       toast({
