@@ -104,7 +104,7 @@ const Checkout = () => {
         description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
       });
       
-      navigate("/orders");
+      navigate("https://delivery-facil-v1-delivery-facil.yh11mi.easypanel.host");
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
       toast({
