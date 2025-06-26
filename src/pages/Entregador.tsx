@@ -1,25 +1,23 @@
+// Página Entregador com botão "Marcar como Recebido"
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { updateOrder } from "@/services/orderService";
 
-const Entregador = () => {
+const EntregadorPedidos = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const start = new Date();
+    const today = new Date();
+    const start = new Date(today);
     start.setHours(0, 0, 0, 0);
-    const end = new Date();
+    const end = new Date(today);
     end.setHours(23, 59, 59, 999);
 
     const startTimestamp = Timestamp.fromDate(start);
@@ -30,37 +28,46 @@ const Entregador = () => {
       ordersRef,
       where("createdAt", ">=", startTimestamp),
       where("createdAt", "<=", endTimestamp),
-      where("status", "==", "delivering"),
       orderBy("createdAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
-      const fetchedOrders: Order[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Order[];
-      setOrders(fetchedOrders);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        const newOrders: Order[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() as Order;
+          newOrders.push({ ...data, id: doc.id });
+        });
+        setOrders(newOrders);
+      },
+      (err) => {
+        console.error("Erro no listener:", err);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os pedidos.",
+          variant: "destructive",
+        });
+      }
+    );
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
-  const handleConfirmEntrega = async (order: Order) => {
-    const novoStatus = order.paymentMethod === "dinheiro" ? "received" : "delivered";
-
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
     try {
-      await updateOrder(order.id, { status: novoStatus });
+      const updatedOrder = await updateOrder(orderId, { status: newStatus });
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? updatedOrder : order)));
+
       toast({
-        title: "Status atualizado",
-        description: `Pedido #${order.id.substring(0, 6)} marcado como ${translateStatus(novoStatus)}`,
+        title: "Pedido atualizado",
+        description: `Status alterado para ${translateStatus(newStatus)}`,
       });
-      setOrders((prev) => prev.filter((o) => o.id !== order.id));
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Erro ao atualizar pedido:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o status do pedido.",
+        description: "Não foi possível atualizar o pedido.",
         variant: "destructive",
       });
     }
@@ -80,62 +87,66 @@ const Entregador = () => {
     return statusMap[status] || status;
   };
 
-  const formatFullDate = (input: string | Timestamp) => {
-  let date: Date;
-
-  if (input instanceof Timestamp) {
-    date = input.toDate();
-  } else {
-    date = new Date(input);
-  }
-
-  if (isNaN(date.getTime())) return "Data inválida";
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
+  const formatFullDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Pedidos em rota de entrega</h1>
+    <div className="container mx-auto px-4 py-6">
+      <h1 className="text-xl font-bold mb-4">Pedidos do Entregador</h1>
 
-      {loading ? (
-        <p className="text-gray-500">Carregando pedidos...</p>
-      ) : orders.length === 0 ? (
-        <p className="text-gray-500">Nenhum pedido em rota de entrega.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orders.map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              <CardHeader className="bg-gray-50 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {orders.map((order) => (
+          <Card key={order.id} className="overflow-hidden">
+            <CardHeader className="bg-gray-50 py-4">
+              <div className="flex justify-between">
                 <div>
                   <p className="text-sm text-gray-500">
-                    Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt)}
+                    Pedido #{order.id.substring(0, 6)}
                   </p>
                   <p className="text-sm font-medium text-gray-700">
-                    Cliente: {order.customerName}
+                    {formatFullDate(order.createdAt as string)}
                   </p>
-                  <p className="text-sm text-gray-500">Fone: {order.customerPhone}</p>
                 </div>
-              </CardHeader>
-              <CardContent className="py-4 space-y-2">
+                <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                  {translateStatus(order.status)}
+                </span>
+              </div>
+              <div className="mt-2">
+                <div className="font-semibold">{order.customerName}</div>
+                <div className="text-sm text-gray-500">{order.customerPhone}</div>
+              </div>
+            </CardHeader>
+            <CardContent className="py-4">
+              <div className="space-y-2">
                 <p className="text-sm font-medium">Itens: {order.items.length}</p>
                 <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
-                <Button onClick={() => handleConfirmEntrega(order)} className="w-full mt-2">
-                  Confirmar entrega
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                {order.status !== "received" && order.status !== "delivered" && (
+                  <Button
+                    onClick={() => {
+                      const novoStatus = order.status === "delivering" ? "delivered" : "received";
+                      handleUpdateOrderStatus(order.id, novoStatus);
+                    }}
+                    variant="secondary"
+                    className="w-full mt-2"
+                  >
+                    ✅ Marcar como Recebido
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default Entregador;
+export default EntregadorPedidos;
