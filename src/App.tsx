@@ -14,7 +14,7 @@ import Admin from "./pages/Admin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Orders from "./pages/Orders";
 import AdminOrders from "./pages/AdminOrders";
-import Entregador from "./pages/Entregador";
+import Entregador from "./pages/entregador";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
