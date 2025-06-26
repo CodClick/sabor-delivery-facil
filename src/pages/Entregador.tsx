@@ -80,16 +80,25 @@ const Entregador = () => {
     return statusMap[status] || status;
   };
 
-  const formatFullDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
+  const formatFullDate = (input: string | Timestamp) => {
+  let date: Date;
+
+  if (input instanceof Timestamp) {
+    date = input.toDate();
+  } else {
+    date = new Date(input);
+  }
+
+  if (isNaN(date.getTime())) return "Data inválida";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
 
   return (
     <div className="container mx-auto px-4 py-8">
