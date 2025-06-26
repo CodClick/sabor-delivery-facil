@@ -82,16 +82,26 @@ const ordersQuery = query(
     return statusMap[status] || status;
   };
 
-  const formatFullDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
+const formatFullDate = (input: string | Timestamp) => {
+  let date: Date;
+
+  if (input instanceof Timestamp) {
+    date = input.toDate();
+  } else {
+    date = new Date(input);
+  }
+
+  if (isNaN(date.getTime())) return "Data inválida";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -107,9 +117,7 @@ const ordersQuery = query(
             <Card key={order.id} className="overflow-hidden">
               <CardHeader className="bg-gray-50 py-4">
                 <div>
-                  <p className="text-sm text-gray-500">
-                    Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt as string)}
-                  </p>
+                  <p className="text-sm text-gray-500">Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt)}</p>
                   <p className="text-sm font-medium text-gray-700">
                     Cliente: {order.customerName}
                   </p>
