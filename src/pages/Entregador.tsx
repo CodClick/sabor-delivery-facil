@@ -1,73 +1,68 @@
-// Página Entregador com botão "Marcar como Recebido"
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { updateOrder } from "@/services/orderService";
 
-const EntregadorPedidos = () => {
+const Entregador = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const today = new Date();
-    const start = new Date(today);
+    const start = new Date();
     start.setHours(0, 0, 0, 0);
-    const end = new Date(today);
+    const end = new Date();
     end.setHours(23, 59, 59, 999);
 
     const startTimestamp = Timestamp.fromDate(start);
     const endTimestamp = Timestamp.fromDate(end);
 
     const ordersRef = collection(db, "orders");
-    const ordersQuery = query(
-      ordersRef,
-      where("createdAt", ">=", startTimestamp),
-      where("createdAt", "<=", endTimestamp),
-      orderBy("createdAt", "desc")
-    );
+const ordersQuery = query(
+  ordersRef,
+  where("status", "==", "delivering"),
+  where("createdAt", ">=", startTimestamp),
+  where("createdAt", "<=", endTimestamp),
+  orderBy("status"),
+  orderBy("createdAt", "desc")
+);
 
-    const unsubscribe = onSnapshot(
-      ordersQuery,
-      (snapshot) => {
-        const newOrders: Order[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as Order;
-          newOrders.push({ ...data, id: doc.id });
-        });
-        setOrders(newOrders);
-      },
-      (err) => {
-        console.error("Erro no listener:", err);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os pedidos.",
-          variant: "destructive",
-        });
-      }
-    );
+
+    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+      const fetchedOrders: Order[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Order[];
+      setOrders(fetchedOrders);
+      setLoading(false);
+    });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, []);
 
-  const handleUpdateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
+  const handleConfirmEntrega = async (order: Order) => {
+    const novoStatus = order.paymentMethod === "dinheiro" ? "received" : "delivered";
+
     try {
-      const updatedOrder = await updateOrder(orderId, { status: newStatus });
-      setOrders((prev) => prev.map((order) => (order.id === orderId ? updatedOrder : order)));
-
+      await updateOrder(order.id, { status: novoStatus });
       toast({
-        title: "Pedido atualizado",
-        description: `Status alterado para ${translateStatus(newStatus)}`,
+        title: "Status atualizado",
+        description: `Pedido #${order.id.substring(0, 6)} marcado como ${translateStatus(novoStatus)}`,
       });
-    } catch (error) {
-      console.error("Erro ao atualizar pedido:", error);
+      setOrders((prev) => prev.filter((o) => o.id !== order.id));
+    } catch (err) {
+      console.error(err);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o pedido.",
+        description: "Não foi possível atualizar o status do pedido.",
         variant: "destructive",
       });
     }
@@ -99,52 +94,39 @@ const EntregadorPedidos = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold mb-4">Pedidos do Entregador</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Pedidos em rota de entrega</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {orders.map((order) => (
-          <Card key={order.id} className="overflow-hidden">
-            <CardHeader className="bg-gray-50 py-4">
-              <div className="flex justify-between">
+      {loading ? (
+        <p className="text-gray-500">Carregando pedidos...</p>
+      ) : orders.length === 0 ? (
+        <p className="text-gray-500">Nenhum pedido em rota de entrega.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {orders.map((order) => (
+            <Card key={order.id} className="overflow-hidden">
+              <CardHeader className="bg-gray-50 py-4">
                 <div>
                   <p className="text-sm text-gray-500">
-                    Pedido #{order.id.substring(0, 6)}
+                    Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt as string)}
                   </p>
                   <p className="text-sm font-medium text-gray-700">
-                    {formatFullDate(order.createdAt as string)}
+                    Cliente: {order.customerName}
                   </p>
+                  <p className="text-sm text-gray-500">Fone: {order.customerPhone}</p>
                 </div>
-                <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
-                  {translateStatus(order.status)}
-                </span>
-              </div>
-              <div className="mt-2">
-                <div className="font-semibold">{order.customerName}</div>
-                <div className="text-sm text-gray-500">{order.customerPhone}</div>
-              </div>
-            </CardHeader>
-            <CardContent className="py-4">
-              <div className="space-y-2">
+              </CardHeader>
+              <CardContent className="py-4 space-y-2">
                 <p className="text-sm font-medium">Itens: {order.items.length}</p>
                 <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
-                {order.status !== "received" && order.status !== "delivered" && (
-                  <Button
-                    onClick={() => {
-                      const novoStatus = order.status === "delivering" ? "delivered" : "received";
-                      handleUpdateOrderStatus(order.id, novoStatus);
-                    }}
-                    variant="secondary"
-                    className="w-full mt-2"
-                  >
-                    ✅ Marcar como Recebido
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <Button onClick={() => handleConfirmEntrega(order)} className="w-full mt-2">
+                  Confirmar entrega
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
