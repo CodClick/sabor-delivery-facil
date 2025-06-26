@@ -14,7 +14,7 @@ import Admin from "./pages/Admin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Orders from "./pages/Orders";
 import AdminOrders from "./pages/AdminOrders";
-import entregador from "./pages/entregador";
+import Entregador from "./pages/Entregador";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
@@ -59,7 +59,7 @@ const App = () => (
               } />
               <Route path="/orders" element={<Orders />} />
               <Route path="/admin-orders" element={<AdminOrders />} />
-              <Route path="/entregador" element={<entregador />} />
+              <Route path="/Entregador" element={<Entregador />} />
               
               <Route path="/api/*" element={<Api />} />
               <Route path="*" element={<NotFound />} />
