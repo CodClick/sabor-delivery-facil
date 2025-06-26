@@ -149,4 +149,4 @@ const EntregadorPedidos = () => {
   );
 };
 
-export default EntregadorPedidos;
+export default Entregador;
