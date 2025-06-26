@@ -115,7 +115,7 @@ const Entregador = () => {
               <CardHeader className="bg-gray-50 py-4">
                 <div>
                   <p className="text-sm text-gray-500">
-                    Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt as string)}
+                    Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt)}
                   </p>
                   <p className="text-sm font-medium text-gray-700">
                     Cliente: {order.customerName}
