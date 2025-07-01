@@ -59,7 +59,7 @@ const App = () => (
               } />
               <Route path="/orders" element={<Orders />} />
               <Route path="/admin-orders" element={<AdminOrders />} />
-              <Route path="/Entregador" element={<Entregador />} />
+              <Route path="/entregador" element={<Entregador />} />
               
               <Route path="/api/*" element={<Api />} />
               <Route path="*" element={<NotFound />} />

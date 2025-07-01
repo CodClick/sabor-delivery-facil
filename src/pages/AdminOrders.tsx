@@ -229,6 +229,10 @@ const AdminOrders = () => {
     loadOrders(activeStatus, dateRange);
   };
 
+  // Calculate summary statistics
+  const totalOrders = orders.length;
+  const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -316,6 +320,26 @@ const AdminOrders = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Summary Footer */}
+      <div className="mt-8 p-4 bg-gray-100 rounded-lg border-t-4 border-blue-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Total de Pedidos no Período</p>
+            <p className="text-2xl font-bold text-blue-600">{totalOrders}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Valor Total das Vendas</p>
+            <p className="text-2xl font-bold text-green-600">R$ {totalSales.toFixed(2)}</p>
+          </div>
+        </div>
+        {dateRange?.from && (
+          <div className="text-center mt-2 text-sm text-gray-500">
+            Período: {dateRange.from.toLocaleDateString('pt-BR')} 
+            {dateRange.to && dateRange.to !== dateRange.from && ` até ${dateRange.to.toLocaleDateString('pt-BR')}`}
+          </div>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
