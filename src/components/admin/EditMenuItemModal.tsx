@@ -12,6 +12,7 @@ import { Save, XCircle } from "lucide-react";
 import { saveMenuItem } from "@/services/menuItemService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VariationGroupsSection } from "./VariationGroupsSection";
+import { formatCurrency } from "@/lib/utils";
 
 interface EditMenuItemModalProps {
   editItem: MenuItem;
@@ -245,13 +246,13 @@ export const EditMenuItemModal = ({
             <Label htmlFor="priceFrom">Preço "a partir de" (valor base não será somado no carrinho)</Label>
           </div>
 
-          {/* Variation groups section */}
-          <VariationGroupsSection
+          {/* Variation groups section with enhanced display */}
+          <VariationGroupsSectionWithPrices
             editItem={editItem}
             setEditItem={setEditItem}
             variations={variations}
             variationGroups={variationGroups}
-            onDataChange={onSuccess} // Pass the onSuccess callback to refresh data
+            onDataChange={onSuccess}
           />
           
           <div className="flex justify-end gap-2 pt-4">
@@ -266,5 +267,39 @@ export const EditMenuItemModal = ({
         </div>
       </DialogContent>
     </Dialog>
+  );
+};
+
+const VariationGroupsSectionWithPrices = ({
+  editItem,
+  setEditItem,
+  variations,
+  variationGroups,
+  onDataChange,
+}: {
+  editItem: MenuItem;
+  setEditItem: (item: MenuItem) => void;
+  variations: Variation[];
+  variationGroups: VariationGroup[];
+  onDataChange?: () => void;
+}) => {
+  const getVariationName = (variationId: string): string => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation ? variation.name : "Variação não encontrada";
+  };
+
+  const getVariationPrice = (variationId: string): number => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.additionalPrice || 0;
+  };
+
+  return (
+    <VariationGroupsSection
+      editItem={editItem}
+      setEditItem={setEditItem}
+      variations={variations}
+      variationGroups={variationGroups}
+      onDataChange={onDataChange}
+    />
   );
 };

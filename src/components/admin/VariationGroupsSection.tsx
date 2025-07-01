@@ -6,6 +6,7 @@ import { Trash2, Plus, Edit } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { AddVariationGroupModal } from "./AddVariationGroupModal";
+import { formatCurrency } from "@/lib/utils";
 
 interface VariationGroupsSectionProps {
   editItem: MenuItem;
@@ -65,6 +66,11 @@ export const VariationGroupsSection = ({
   const getVariationName = (variationId: string): string => {
     const variation = variations.find(v => v.id === variationId);
     return variation ? variation.name : "Variação não encontrada";
+  };
+
+  const getVariationPrice = (variationId: string): number => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.additionalPrice || 0;
   };
 
   return (
@@ -147,19 +153,27 @@ export const VariationGroupsSection = ({
               
               <div className="mt-2">
                 <p className="text-sm font-semibold">Variações:</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {group.variations.map(varId => (
-                    <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
-                      {getVariationName(varId)}
-                    </span>
-                  ))}
+                <div className="grid grid-cols-1 gap-2 mt-1">
+                  {group.variations.map(varId => {
+                    const price = getVariationPrice(varId);
+                    const name = getVariationName(varId);
+                    
+                    return (
+                      <div key={varId} className="flex items-center justify-between bg-white rounded px-3 py-2 border">
+                        <span className="text-sm font-medium">{name}</span>
+                        <span className="text-sm font-semibold text-green-600">
+                          {price > 0 ? `+${formatCurrency(price)}` : 'Grátis'}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               {group.customMessage && (
                 <div className="mt-2">
                   <p className="text-sm font-semibold">Mensagem personalizada:</p>
-                  <p className="text-xs text-gray-600">"{group.customMessage}"</p>
+                  <p className="text-xs text-gray-600 bg-white rounded px-2 py-1 border">"{group.customMessage}"</p>
                 </div>
               )}
             </div>
