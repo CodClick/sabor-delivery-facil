@@ -89,7 +89,8 @@ const Checkout = () => {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          selectedVariations: item.selectedVariations || []
+          selectedVariations: item.selectedVariations || [],
+          priceFrom: item.priceFrom || false
         }))
       };
 
@@ -281,12 +282,19 @@ const Checkout = () => {
                     <div>
                       <p className="font-semibold text-lg">{item.name}</p>
                       <p className="text-sm text-gray-600">
-                        {item.quantity}x R$ {item.price.toFixed(2)}
+                        {item.quantity}x {item.priceFrom ? (
+                          <span>
+                            <span className="text-xs text-gray-500">a partir de</span> R$ 0,00
+                          </span>
+                        ) : (
+                          `R$ ${item.price.toFixed(2)}`
+                        )}
                       </p>
                     </div>
                     <div className="text-right font-semibold text-lg">
                       R$ {(
-                        (item.price +
+                        // Se o item tem "a partir de", o preço base é 0
+                        ((item.priceFrom ? 0 : item.price) +
                           (item.selectedVariations
                             ? item.selectedVariations.reduce((acc, group) => {
                                 return (

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -111,7 +110,8 @@ const ShoppingCart: React.FC = () => {
 
   // Função para calcular o total do item (base + variações) x quantidade
   const calculateItemTotal = (item: any): number => {
-    const basePrice = item.price || 0;
+    // Se o item tem "a partir de", o preço base é 0
+    const basePrice = item.priceFrom ? 0 : (item.price || 0);
     const variationsTotal = calculateVariationsTotal(item);
     return (basePrice + variationsTotal) * item.quantity;
   };
@@ -172,7 +172,8 @@ const ShoppingCart: React.FC = () => {
           <>
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => {
-                const basePrice = item.price || 0;
+                // Se o item tem "a partir de", o preço base é 0
+                const basePrice = item.priceFrom ? 0 : (item.price || 0);
                 const variationsTotal = calculateVariationsTotal(item);
                 const itemTotal = calculateItemTotal(item);
 
@@ -202,7 +203,11 @@ const ShoppingCart: React.FC = () => {
                       
                       {/* Preço base do item */}
                       <div className="text-sm text-gray-600">
-                        <span>Item: {formatCurrency(basePrice)}</span>
+                        {item.priceFrom ? (
+                          <span>Item: <span className="text-xs text-gray-500">a partir de</span> {formatCurrency(0)}</span>
+                        ) : (
+                          <span>Item: {formatCurrency(basePrice)}</span>
+                        )}
                       </div>
                       
                       {/* Variações selecionadas */}

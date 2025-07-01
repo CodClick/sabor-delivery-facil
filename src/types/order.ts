@@ -5,6 +5,7 @@ export interface OrderItem {
   price: number;
   quantity: number;
   selectedVariations?: SelectedVariationGroup[];
+  priceFrom?: boolean;
 }
 
 export interface SelectedVariationGroup {
@@ -33,6 +34,7 @@ export interface Order {
   total: number;
   createdAt: Date | string;
   updatedAt: Date | string;
+  cancellationReason?: string;
 }
 
 export interface CreateOrderRequest {
@@ -47,6 +49,7 @@ export interface CreateOrderRequest {
     price: number;
     quantity: number;
     selectedVariations?: SelectedVariationGroup[];
+    priceFrom?: boolean;
   }[];
 }
 

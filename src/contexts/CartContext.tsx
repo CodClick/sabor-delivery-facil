@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";

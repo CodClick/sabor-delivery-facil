@@ -131,7 +131,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   const calculateItemSubtotal = (item: any) => {
     console.log("Calculando subtotal para item:", item);
     
-    let basePrice = (item.price || 0) * item.quantity;
+    // Se o item tem "a partir de", o preço base é 0
+    let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
     let variationsTotal = 0;
     
     if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
@@ -381,7 +382,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                   <TableRow>
                     {/* ITEM COLUMN: Name + Variations as stacked block */}
                     <TableCell className="font-medium align-top w-[280px] min-w-[220px]">
-                      <div className="font-semibold">{item.name}</div>
+                      <div className="font-semibold">
+                        {item.name}
+                        {item.priceFrom && (
+                          <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            a partir de
+                          </span>
+                        )}
+                      </div>
                       {/* Exibir variações se existirem */}
                       {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
                         <div className="mt-1">
@@ -425,7 +433,11 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                     </TableCell>
                     {/* PREÇO BASE */}
                     <TableCell className="align-top w-28 text-right font-normal tabular-nums">
-                      R$ {(item.price || 0).toFixed(2)}
+                      {item.priceFrom ? (
+                        <span className="text-gray-500">R$ 0,00</span>
+                      ) : (
+                        `R$ ${(item.price || 0).toFixed(2)}`
+                      )}
                     </TableCell>
                     {/* QTD */}
                     <TableCell className="align-top w-12 text-center tabular-nums">
