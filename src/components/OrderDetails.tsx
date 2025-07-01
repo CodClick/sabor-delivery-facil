@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -36,9 +37,11 @@ import {
   Package,
   Truck,
   XCircle,
-  Check
+  Check,
+  DollarSign
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatusService";
 
 interface OrderDetailsProps {
   order: Order;
@@ -97,21 +100,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Definir próximos status possíveis com base no status atual
-  const getNextStatusOptions = (currentStatus: Order["status"]) => {
-    const statusFlow: Record<Order["status"], Order["status"][]> = {
-      pending: ["confirmed", "cancelled"],
-      confirmed: ["preparing", "cancelled"],
-      preparing: ["ready", "cancelled"],
-      ready: ["delivering", "cancelled"],
-      delivering: ["received", "cancelled"],
-      received: ["delivered", "cancelled"],
-      delivered: [],
-      cancelled: []
-    };
-    return statusFlow[currentStatus] || [];
-  };
-
   // Obter ícone para cada status
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
@@ -120,7 +108,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       case "preparing": return <ChefHat className="h-5 w-5" />;
       case "ready": return <Package className="h-5 w-5" />;
       case "delivering": return <Truck className="h-5 w-5" />;
-      case "received": return <Check className="h-5 w-5" />;
+      case "received": return <DollarSign className="h-5 w-5" />;
       case "delivered": return <CheckCircle2 className="h-5 w-5" />;
       case "cancelled": return <XCircle className="h-5 w-5" />;
       default: return <ClipboardList className="h-5 w-5" />;
@@ -216,8 +204,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     setCancellationReason("");
   };
 
+  // Usar a nova lógica de sequência de status
+  const paymentReceived = hasReceivedPayment(order);
+  const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived);
+
   // Lista de botões para atualização de status
-  const nextStatusButtons = getNextStatusOptions(order.status).map(status => {
+  const nextStatusButtons = nextStatusOptions.map(status => {
     const icon = getStatusIcon(status);
     const label = translateStatus(status);
 
@@ -288,12 +280,18 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       );
     }
 
+    // Destacar o botão "Recebido" com cor diferente
+    const buttonVariant = status === "received" ? "secondary" : "default";
+    const buttonClass = status === "received" 
+      ? "flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300" 
+      : "flex items-center gap-1";
+
     return (
       <Button
         key={status}
         onClick={() => handleUpdateStatus(order.id, status)}
-        variant="default"
-        className="flex items-center gap-1"
+        variant={buttonVariant}
+        className={buttonClass}
       >
         {icon}
         {label}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -26,15 +27,14 @@ const Entregador = () => {
     const endTimestamp = Timestamp.fromDate(end);
 
     const ordersRef = collection(db, "orders");
-const ordersQuery = query(
-  ordersRef,
-  where("status", "==", "delivering"),
-  where("createdAt", ">=", startTimestamp),
-  where("createdAt", "<=", endTimestamp),
-  orderBy("status"),
-  orderBy("createdAt", "desc")
-);
-
+    const ordersQuery = query(
+      ordersRef,
+      where("status", "==", "delivering"),
+      where("createdAt", ">=", startTimestamp),
+      where("createdAt", "<=", endTimestamp),
+      orderBy("status"),
+      orderBy("createdAt", "desc")
+    );
 
     const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
       const fetchedOrders: Order[] = snapshot.docs.map((doc) => ({
@@ -49,7 +49,8 @@ const ordersQuery = query(
   }, []);
 
   const handleConfirmEntrega = async (order: Order) => {
-    const novoStatus = order.paymentMethod === "dinheiro" ? "received" : "delivered";
+    // Corrigido: verificar se o pagamento é "cash" em vez de "dinheiro"
+    const novoStatus = order.paymentMethod === "cash" ? "received" : "delivered";
 
     try {
       await updateOrder(order.id, { status: novoStatus });
@@ -82,26 +83,27 @@ const ordersQuery = query(
     return statusMap[status] || status;
   };
 
-const formatFullDate = (input: string | Timestamp) => {
-  let date: Date;
+  const formatFullDate = (input: string | Date | Timestamp) => {
+    let date: Date;
 
-  if (input instanceof Timestamp) {
-    date = input.toDate();
-  } else {
-    date = new Date(input);
-  }
+    if (input instanceof Timestamp) {
+      date = input.toDate();
+    } else if (typeof input === 'string') {
+      date = new Date(input);
+    } else {
+      date = input;
+    }
 
-  if (isNaN(date.getTime())) return "Data inválida";
+    if (isNaN(date.getTime())) return "Data inválida";
 
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
-
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
