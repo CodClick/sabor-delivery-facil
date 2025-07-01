@@ -234,6 +234,17 @@ export const EditMenuItemModal = ({
             <Label htmlFor="popular">Item popular (destacado no cardápio)</Label>
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="priceFrom"
+              checked={editItem.priceFrom || false}
+              onCheckedChange={(checked) => 
+                setEditItem({...editItem, priceFrom: checked === true})
+              }
+            />
+            <Label htmlFor="priceFrom">Preço "a partir de" (valor base não será somado no carrinho)</Label>
+          </div>
+
           {/* Variation groups section */}
           <VariationGroupsSection
             editItem={editItem}

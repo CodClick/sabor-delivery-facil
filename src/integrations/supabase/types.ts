@@ -130,6 +130,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cardapio_best_pizza: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: number
+          link: string | null
+          nome_da_pizza: string | null
+          "preco_pizza_brotinho (4 pedaços)": number | null
+          "preco_pizza_grande (8 pedaços)": number | null
+          "preco_pizza_média (6 pedaços)": number | null
+          preço_refrigerante_2L: number | null
+          preço_refrigerante_lata_350ml: number | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: number
+          link?: string | null
+          nome_da_pizza?: string | null
+          "preco_pizza_brotinho (4 pedaços)"?: number | null
+          "preco_pizza_grande (8 pedaços)"?: number | null
+          "preco_pizza_média (6 pedaços)"?: number | null
+          preço_refrigerante_2L?: number | null
+          preço_refrigerante_lata_350ml?: number | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: number
+          link?: string | null
+          nome_da_pizza?: string | null
+          "preco_pizza_brotinho (4 pedaços)"?: number | null
+          "preco_pizza_grande (8 pedaços)"?: number | null
+          "preco_pizza_média (6 pedaços)"?: number | null
+          preço_refrigerante_2L?: number | null
+          preço_refrigerante_lata_350ml?: number | null
+        }
+        Relationships: []
+      }
       cardapio_codclick: {
         Row: {
           criado_em: string | null
@@ -340,6 +379,90 @@ export type Database = {
         }
         Relationships: []
       }
+      endereco: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          created_at: string
+          estado: string | null
+          id: number
+          numero: string | null
+          rua: string | null
+          sessao: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: number
+          numero?: string | null
+          rua?: string | null
+          sessao: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: number
+          numero?: string | null
+          rua?: string | null
+          sessao?: string
+        }
+        Relationships: []
+      }
+      endereco_cliente: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          created_at: string
+          eatado: string | null
+          empresa_whatsapp: string | null
+          id: number
+          instancia: string | null
+          nome_cliente: string | null
+          numero: string | null
+          rua: string | null
+          sessao: string
+          whatsapp: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string
+          eatado?: string | null
+          empresa_whatsapp?: string | null
+          id?: number
+          instancia?: string | null
+          nome_cliente?: string | null
+          numero?: string | null
+          rua?: string | null
+          sessao: string
+          whatsapp?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string
+          eatado?: string | null
+          empresa_whatsapp?: string | null
+          id?: number
+          instancia?: string | null
+          nome_cliente?: string | null
+          numero?: string | null
+          rua?: string | null
+          sessao?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       faixas_ceps_atendidos: {
         Row: {
           cep_fim: string
@@ -532,13 +655,61 @@ export type Database = {
         }
         Relationships: []
       }
+      kasuo_accon_users: {
+        Row: {
+          ano: string | null
+          ativo: boolean | null
+          created_at: string
+          dia: string | null
+          documento: string | null
+          email: string | null
+          felicitacoes_enviadas: boolean
+          id: number
+          mes: string | null
+          nome: string | null
+          pedidos: string | null
+          ultima_compra: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          ano?: string | null
+          ativo?: boolean | null
+          created_at?: string
+          dia?: string | null
+          documento?: string | null
+          email?: string | null
+          felicitacoes_enviadas?: boolean
+          id?: number
+          mes?: string | null
+          nome?: string | null
+          pedidos?: string | null
+          ultima_compra?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          ano?: string | null
+          ativo?: boolean | null
+          created_at?: string
+          dia?: string | null
+          documento?: string | null
+          email?: string | null
+          felicitacoes_enviadas?: boolean
+          id?: number
+          mes?: string | null
+          nome?: string | null
+          pedidos?: string | null
+          ultima_compra?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       kasuo_wi_fi_users: {
         Row: {
           ano: string | null
           created_at: string
-          data_de_nascimento: string | null
           dia: string | null
           email: string | null
+          felicitacoes_enviadas: boolean
           id: number
           mes: string | null
           nome: string | null
@@ -547,9 +718,9 @@ export type Database = {
         Insert: {
           ano?: string | null
           created_at?: string
-          data_de_nascimento?: string | null
           dia?: string | null
           email?: string | null
+          felicitacoes_enviadas?: boolean
           id?: number
           mes?: string | null
           nome?: string | null
@@ -558,12 +729,51 @@ export type Database = {
         Update: {
           ano?: string | null
           created_at?: string
-          data_de_nascimento?: string | null
           dia?: string | null
           email?: string | null
+          felicitacoes_enviadas?: boolean
           id?: number
           mes?: string | null
           nome?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      pedidos_best_pizza: {
+        Row: {
+          created_at: string
+          empresa: string | null
+          endereco: string
+          id: number
+          nome: string
+          pagamento: string | null
+          pedido: string
+          sessao: string
+          total: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          empresa?: string | null
+          endereco: string
+          id?: number
+          nome: string
+          pagamento?: string | null
+          pedido: string
+          sessao: string
+          total: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          empresa?: string | null
+          endereco?: string
+          id?: number
+          nome?: string
+          pagamento?: string | null
+          pedido?: string
+          sessao?: string
+          total?: string
           whatsapp?: string
         }
         Relationships: []
@@ -692,6 +902,27 @@ export type Database = {
           id?: string
           saudacao?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      set_nicho: {
+        Row: {
+          created_at: string
+          id: number
+          nicho: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          nicho?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          nicho?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }

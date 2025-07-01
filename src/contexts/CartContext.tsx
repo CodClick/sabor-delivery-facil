@@ -77,7 +77,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Calculate cart total and item count including variations
     const { total, count } = cartItems.reduce(
       (acc, item) => {
-        const basePrice = item.price || 0;
+        // Se o item tem preço "a partir de", não soma o preço base, apenas as variações
+        const basePrice = item.priceFrom ? 0 : (item.price || 0);
         const variationsTotal = calculateVariationsTotal(item);
         const itemTotal = (basePrice + variationsTotal) * item.quantity;
         

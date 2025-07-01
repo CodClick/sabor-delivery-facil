@@ -335,23 +335,35 @@ export const MenuItemsTab = ({
                               <div>
                                 <h3 className="font-bold">{item.name}</h3>
                                 <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
-                                <p className="mt-2 font-semibold text-brand">R$ {item.price.toFixed(2)}</p>
+                                <div className="mt-2">
+                                  {item.priceFrom && (
+                                    <p className="text-xs text-gray-500">a partir de</p>
+                                  )}
+                                  <p className="font-semibold text-brand">R$ {item.price.toFixed(2)}</p>
+                                </div>
                                 <p className="text-xs text-gray-500 mt-1">
                                   Categoria: {categories.find(c => c.id === item.category)?.name || item.category}
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1 break-all">
                                   ID: {item.id}
                                 </p>
-                                {item.popular && (
-                                  <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded mt-2">
-                                    Popular
-                                  </span>
-                                )}
-                                {item.hasVariations && (
-                                  <span className="inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded mt-2 ml-2">
-                                    Com variações
-                                  </span>
-                                )}
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {item.popular && (
+                                    <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded">
+                                      Popular
+                                    </span>
+                                  )}
+                                  {item.hasVariations && (
+                                    <span className="inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                      Com variações
+                                    </span>
+                                  )}
+                                  {item.priceFrom && (
+                                    <span className="inline-block bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                                      A partir de
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex flex-col gap-2">
                                 <Button 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { MenuItem, Variation, SelectedVariationGroup, VariationGroup } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
@@ -73,8 +74,6 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
     });
   };
 
-  
-
   return (
     <>
       <div className="food-item bg-white rounded-lg overflow-hidden shadow-md p-4 flex flex-col">
@@ -96,7 +95,12 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           <p className="text-gray-600 text-sm mb-3 line-clamp-3">{item.description}</p>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-lg font-bold text-brand">{formatCurrency(item.price)}</span>
+          <div className="flex flex-col">
+            {item.priceFrom && (
+              <span className="text-xs text-gray-500 mb-1">a partir de</span>
+            )}
+            <span className="text-lg font-bold text-brand">{formatCurrency(item.price)}</span>
+          </div>
           <Button
             onClick={handleButtonClick}
             className="add-to-cart-btn"

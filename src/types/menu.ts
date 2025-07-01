@@ -1,4 +1,3 @@
-
 export interface MenuItem {
   id: string;
   name: string;
@@ -9,6 +8,7 @@ export interface MenuItem {
   popular?: boolean;
   hasVariations?: boolean;
   variationGroups?: VariationGroup[]; // Now accepts only VariationGroup objects
+  priceFrom?: boolean; // New property to indicate "a partir de" pricing
 }
 
 export interface CartItem extends MenuItem {

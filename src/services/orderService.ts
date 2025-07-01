@@ -30,8 +30,10 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
       console.log(`\n--- PROCESSANDO ITEM: ${item.name} ---`);
       console.log("Item original:", JSON.stringify(item, null, 2));
       
-      let itemTotal = (item.price || 0) * item.quantity;
-      console.log(`Preço base: R$ ${item.price} x ${item.quantity} = R$ ${itemTotal}`);
+      // Se o item tem preço "a partir de", não soma o preço base
+      const basePrice = item.priceFrom ? 0 : (item.price || 0);
+      let itemTotal = basePrice * item.quantity;
+      console.log(`Preço base: R$ ${basePrice} x ${item.quantity} = R$ ${itemTotal}`);
       
       // Processar variações selecionadas
       let processedVariations = [];
@@ -92,7 +94,8 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<Order>
         name: item.name,
         price: item.price || 0,
         quantity: item.quantity,
-        selectedVariations: processedVariations
+        selectedVariations: processedVariations,
+        priceFrom: item.priceFrom || false
       };
     }));
 
