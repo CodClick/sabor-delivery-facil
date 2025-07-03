@@ -8,16 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
+import { getAllVariations } from "@/services/variationService";
+import { getAllVariationGroups } from "@/services/variationGroupService";
 import { createOrder } from "@/services/orderService";
-import { MenuItem, Category } from "@/types/menu";
+import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { CreateOrderRequest } from "@/types/order";
-import { Trash2, Plus, Minus, Search, User, UserPlus } from "lucide-react";
+import { Trash2, Plus, Minus, User, UserPlus } from "lucide-react";
+import ProductVariationDialog from "@/components/ProductVariationDialog";
 
 interface Customer {
   id: string;
@@ -33,6 +35,8 @@ const PDV = () => {
   // Estados para dados
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -51,18 +55,26 @@ const PDV = () => {
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "pix">("cash");
   const [observations, setObservations] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  
+  // Estados para variações
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showVariationDialog, setShowVariationDialog] = useState(false);
 
   // Carregar dados iniciais
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [itemsData, categoriesData] = await Promise.all([
+        const [itemsData, categoriesData, variationsData, variationGroupsData] = await Promise.all([
           getAllMenuItems(),
-          getAllCategories()
+          getAllCategories(),
+          getAllVariations(),
+          getAllVariationGroups()
         ]);
         
         setMenuItems(itemsData);
         setCategories(categoriesData);
+        setVariations(variationsData);
+        setVariationGroups(variationGroupsData);
         
         // Carregar clientes do localStorage
         const savedCustomers = localStorage.getItem('pdv-customers');
@@ -90,6 +102,43 @@ const PDV = () => {
     const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Criar mapeamento de variações por grupo
+  const groupVariations = React.useMemo(() => {
+    const mapping: {[groupId: string]: Variation[]} = {};
+    
+    variationGroups.forEach(group => {
+      if (group.variations && Array.isArray(group.variations)) {
+        mapping[group.id] = group.variations
+          .map(variationId => variations.find(v => v.id === variationId))
+          .filter((v): v is Variation => v !== undefined);
+      }
+    });
+    
+    return mapping;
+  }, [variations, variationGroups]);
+
+  // Função para adicionar item ao carrinho
+  const handleAddItem = (item: MenuItem) => {
+    // Se o item tem variações, abrir diálogo
+    if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
+      setSelectedItem(item);
+      setShowVariationDialog(true);
+    } else {
+      // Adicionar diretamente ao carrinho
+      addItem(item);
+    }
+  };
+
+  // Função para adicionar item com variações ao carrinho
+  const handleAddItemWithVariations = (item: MenuItem, selectedVariationGroups: any[]) => {
+    addItem({
+      ...item,
+      selectedVariations: selectedVariationGroups
+    });
+    setShowVariationDialog(false);
+    setSelectedItem(null);
+  };
 
   // Salvar cliente
   const saveCustomer = () => {
@@ -253,8 +302,13 @@ const PDV = () => {
                       {item.description && (
                         <p className="text-xs text-gray-600 mb-3">{item.description}</p>
                       )}
+                      {item.hasVariations && (
+                        <p className="text-xs text-blue-600 mb-2">
+                          Produto com variações disponíveis
+                        </p>
+                      )}
                       <Button
-                        onClick={() => addItem(item)}
+                        onClick={() => handleAddItem(item)}
                         size="sm"
                         className="w-full"
                       >
@@ -344,6 +398,15 @@ const PDV = () => {
                         <p className="text-xs text-gray-600">
                           R$ {item.price.toFixed(2)} x {item.quantity}
                         </p>
+                        {item.selectedVariations && item.selectedVariations.length > 0 && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            {item.selectedVariations.map(group => (
+                              <div key={group.groupId}>
+                                {group.groupName}: {group.variations.map(v => v.name).join(', ')}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -470,6 +533,21 @@ const PDV = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Variações */}
+      {selectedItem && (
+        <ProductVariationDialog
+          item={selectedItem}
+          isOpen={showVariationDialog}
+          onClose={() => {
+            setShowVariationDialog(false);
+            setSelectedItem(null);
+          }}
+          onAddToCart={handleAddItemWithVariations}
+          availableVariations={variations}
+          groupVariations={groupVariations}
+        />
+      )}
     </div>
   );
 };
