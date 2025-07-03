@@ -102,6 +102,6 @@ export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["sta
 
 // Verificar se o pedido já recebeu pagamento
 export const hasReceivedPayment = (order: Order): boolean => {
-  // Verificar se o status atual é "received" ou se o método de pagamento é cartão
-  return order.status === "received" || order.paymentMethod === "card";
+  // Verificar se o status atual é "received" ou se o método de pagamento é cartão ou desconto em folha
+  return order.status === "received" || order.paymentMethod === "card" || order.paymentMethod === "payroll_discount";
 };

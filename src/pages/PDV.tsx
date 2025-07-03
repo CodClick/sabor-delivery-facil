@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -52,7 +51,7 @@ const PDV = () => {
   const [customerAddress, setCustomerAddress] = useState("");
   
   // Estados para pedido
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "pix">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "pix" | "payroll_discount">("cash");
   const [observations, setObservations] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   
@@ -453,6 +452,7 @@ const PDV = () => {
                       <SelectItem value="cash">Dinheiro</SelectItem>
                       <SelectItem value="card">Cartão</SelectItem>
                       <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="payroll_discount">Desconto em Folha</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
