@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Orders from "./pages/Orders";
 import AdminOrders from "./pages/AdminOrders";
 import Entregador from "./pages/Entregador";
+import PDV from "./pages/PDV";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/pdv" element={<PDV />} />
               <Route path="/admin-dashboard" element={
                 <PrivateRoute>
                   <AdminDashboard />

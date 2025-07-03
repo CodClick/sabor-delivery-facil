@@ -71,7 +71,7 @@ export const getNextStatusOptions = (
   }
 
   // Sempre permitir "received" (pagamento) e "cancelled"
-  if (currentStatus !== "received") {
+  if (currentStatus !== "received" && !hasReceivedPayment) {
     nextStatuses.push("received");
   }
   nextStatuses.push("cancelled");
