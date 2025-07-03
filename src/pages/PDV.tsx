@@ -17,7 +17,8 @@ import { getAllVariationGroups } from "@/services/variationGroupService";
 import { createOrder } from "@/services/orderService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { CreateOrderRequest } from "@/types/order";
-import { Trash2, Plus, Minus, User, UserPlus } from "lucide-react";
+import { Trash2, Plus, Minus, User, UserPlus, ClipboardList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
 
 interface Customer {
@@ -30,6 +31,7 @@ interface Customer {
 const PDV = () => {
   const { cartItems, addItem, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, cartTotal } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Estados para dados
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -478,6 +480,16 @@ const PDV = () => {
                   size="lg"
                 >
                   {isProcessingOrder ? "Processando..." : "Finalizar Pedido"}
+                </Button>
+
+                <Button
+                  onClick={() => navigate('/admin-orders')}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Ver Pedidos
                 </Button>
               </div>
             </CardContent>

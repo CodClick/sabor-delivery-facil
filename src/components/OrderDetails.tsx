@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -71,6 +70,17 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       cancelled: "Cancelado"
     };
     return statusMap[status] || status;
+  };
+
+  // Traduzir método de pagamento para português
+  const translatePaymentMethod = (method: Order["paymentMethod"]) => {
+    const methodMap: Record<Order["paymentMethod"], string> = {
+      card: "Cartão",
+      cash: "Dinheiro", 
+      pix: "PIX",
+      payroll_discount: "Desconto em Folha"
+    };
+    return methodMap[method] || method;
   };
 
   // Formatar data para exibição
@@ -324,6 +334,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           <p className="mt-1">{order.address}</p>
         </div>
         <div>
+          <h3 className="text-sm font-medium text-gray-500">Forma de Pagamento</h3>
+          <p className="mt-1 font-medium">{translatePaymentMethod(order.paymentMethod)}</p>
+        </div>
+        <div>
           <h3 className="text-sm font-medium text-gray-500">Total</h3>
           <p className="mt-1 font-semibold">R$ {order.total.toFixed(2)}</p>
         </div>
@@ -465,6 +479,17 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           <h3 className="text-md font-medium mb-2">Atualizar Status</h3>
           <div className="flex flex-wrap gap-2">
             {nextStatusButtons}
+            {/* Botão Finalizado - apenas para desconto em folha */}
+            {order.paymentMethod === "payroll_discount" && order.status !== "delivered" && order.status !== "cancelled" && (
+              <Button
+                onClick={() => handleUpdateStatus(order.id, "delivered")}
+                variant="default"
+                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Check className="h-5 w-5" />
+                Finalizado
+              </Button>
+            )}
           </div>
         </div>
       )}
