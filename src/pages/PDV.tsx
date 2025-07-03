@@ -152,7 +152,7 @@ const PDV = () => {
         customerName: selectedCustomer.name,
         customerPhone: selectedCustomer.phone,
         address: selectedCustomer.address,
-        paymentMethod: paymentMethod as "card" | "cash",
+        paymentMethod: paymentMethod,
         observations,
         items: cartItems.map(item => ({
           menuItemId: item.id,
