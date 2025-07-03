@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
@@ -14,6 +15,7 @@ import { Link } from "react-router-dom";
 const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const { itemCount, isCartOpen, setIsCartOpen } = useCart();
 
   useEffect(() => {
@@ -34,7 +36,11 @@ const Index = () => {
   return (
     <div>
       <RestaurantHeader />
-      <CategoryNav categories={categories} />
+      <CategoryNav 
+        categories={categories} 
+        activeCategory={activeCategory}
+        onSelectCategory={setActiveCategory}
+      />
       <MenuSection title="Nosso Menu" items={menuItems} />
 
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">

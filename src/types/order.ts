@@ -27,7 +27,7 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   address: string;
-  paymentMethod: "card" | "cash";
+  paymentMethod: "card" | "cash" | "pix";
   observations?: string;
   items: OrderItem[];
   status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled";
@@ -41,7 +41,7 @@ export interface CreateOrderRequest {
   customerName: string;
   customerPhone: string;
   address: string;
-  paymentMethod: "card" | "cash";
+  paymentMethod: "card" | "cash" | "pix";
   observations?: string;
   items: {
     menuItemId: string;

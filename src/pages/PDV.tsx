@@ -87,7 +87,7 @@ const PDV = () => {
   // Filtrar itens do menu
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.categoryId === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -152,7 +152,7 @@ const PDV = () => {
         customerName: selectedCustomer.name,
         customerPhone: selectedCustomer.phone,
         address: selectedCustomer.address,
-        paymentMethod,
+        paymentMethod: paymentMethod as "card" | "cash",
         observations,
         items: cartItems.map(item => ({
           menuItemId: item.id,
