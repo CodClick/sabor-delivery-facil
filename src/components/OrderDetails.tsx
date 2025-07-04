@@ -67,7 +67,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       delivering: "Saiu para entrega",
       received: "Recebido",
       delivered: "Entrega finalizada",
-      cancelled: "Cancelado"
+      cancelled: "Cancelado",
+      to_deduct: "A descontar",
+      paid: "Pago"
     };
     return statusMap[status] || status;
   };
@@ -106,6 +108,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       case "received": return "bg-blue-200 text-blue-800";
       case "delivered": return "bg-green-100 text-green-800";
       case "cancelled": return "bg-red-100 text-red-800";
+      case "to_deduct": return "bg-orange-100 text-orange-800";
+      case "paid": return "bg-blue-100 text-blue-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -121,6 +125,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       case "received": return <DollarSign className="h-5 w-5" />;
       case "delivered": return <CheckCircle2 className="h-5 w-5" />;
       case "cancelled": return <XCircle className="h-5 w-5" />;
+      case "to_deduct": return <DollarSign className="h-5 w-5" />;
+      case "paid": return <CheckCircle2 className="h-5 w-5" />;
       default: return <ClipboardList className="h-5 w-5" />;
     }
   };
@@ -216,7 +222,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
 
   // Usar a nova lógica de sequência de status
   const paymentReceived = hasReceivedPayment(order);
-  const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived);
+  const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived, order.paymentMethod);
 
   // Lista de botões para atualização de status
   const nextStatusButtons = nextStatusOptions.map(status => {
@@ -290,11 +296,18 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       );
     }
 
-    // Destacar o botão "Recebido" com cor diferente
-    const buttonVariant = status === "received" ? "secondary" : "default";
-    const buttonClass = status === "received" 
-      ? "flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300" 
-      : "flex items-center gap-1";
+    // Destacar botões específicos com cores diferentes
+    let buttonVariant: "default" | "secondary" | "outline" = "default";
+    let buttonClass = "flex items-center gap-1";
+    
+    if (status === "received") {
+      buttonVariant = "secondary";
+      buttonClass = "flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300";
+    } else if (status === "to_deduct") {
+      buttonClass = "flex items-center gap-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-orange-300";
+    } else if (status === "paid") {
+      buttonClass = "flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300";
+    }
 
     return (
       <Button
@@ -480,7 +493,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           <div className="flex flex-wrap gap-2">
             {nextStatusButtons}
             {/* Botão Finalizado - apenas para desconto em folha */}
-            {order.paymentMethod === "payroll_discount" && order.status !== "delivered" && order.status !== "cancelled" && (
+            {order.paymentMethod === "payroll_discount" && order.status === "paid" && (
               <Button
                 onClick={() => handleUpdateStatus(order.id, "delivered")}
                 variant="default"

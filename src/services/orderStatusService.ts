@@ -12,17 +12,45 @@ const STATUS_SEQUENCE: Order["status"][] = [
   "delivered"
 ];
 
+// Sequência específica para desconto em folha
+const PAYROLL_DISCOUNT_SEQUENCE: Order["status"][] = [
+  "to_deduct",
+  "paid"
+];
+
 // Status especiais que podem ser aplicados a qualquer momento
 const SPECIAL_STATUS: Order["status"][] = ["cancelled", "received"];
 
 // Obter próximos status possíveis com base no status atual
 export const getNextStatusOptions = (
   currentStatus: Order["status"], 
-  hasReceivedPayment: boolean = false
+  hasReceivedPayment: boolean = false,
+  paymentMethod?: Order["paymentMethod"]
 ): Order["status"][] => {
   // Se o pedido está cancelado ou entregue, não há próximos status
   if (currentStatus === "cancelled" || currentStatus === "delivered") {
     return [];
+  }
+
+  // Lógica específica para desconto em folha
+  if (paymentMethod === "payroll_discount") {
+    // Se está pago, próximo é finalizado (delivered)
+    if (currentStatus === "paid") {
+      return ["delivered", "cancelled"];
+    }
+    
+    // Se está pendente, próximo é "a descontar"
+    if (currentStatus === "pending") {
+      return ["to_deduct", "cancelled"];
+    }
+    
+    // Se está "a descontar", próximo é "pago"
+    if (currentStatus === "to_deduct") {
+      return ["paid", "cancelled"];
+    }
+    
+    // Para outros status no fluxo de desconto em folha, só cancelar
+    return ["cancelled"];
   }
 
   const currentIndex = STATUS_SEQUENCE.indexOf(currentStatus);
@@ -83,9 +111,10 @@ export const getNextStatusOptions = (
 export const canTransitionToStatus = (
   currentStatus: Order["status"],
   targetStatus: Order["status"],
-  hasReceivedPayment: boolean = false
+  hasReceivedPayment: boolean = false,
+  paymentMethod?: Order["paymentMethod"]
 ): boolean => {
-  const allowedNextStatuses = getNextStatusOptions(currentStatus, hasReceivedPayment);
+  const allowedNextStatuses = getNextStatusOptions(currentStatus, hasReceivedPayment, paymentMethod);
   return allowedNextStatuses.includes(targetStatus);
 };
 
@@ -102,6 +131,6 @@ export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["sta
 
 // Verificar se o pedido já recebeu pagamento
 export const hasReceivedPayment = (order: Order): boolean => {
-  // Verificar se o status atual é "received" ou se o método de pagamento é cartão ou desconto em folha
-  return order.status === "received" || order.paymentMethod === "card" || order.paymentMethod === "payroll_discount";
+  // Verificar se o status atual é "received", "paid" ou se o método de pagamento é cartão ou desconto em folha
+  return order.status === "received" || order.status === "paid" || order.paymentMethod === "card" || order.paymentMethod === "payroll_discount";
 };
