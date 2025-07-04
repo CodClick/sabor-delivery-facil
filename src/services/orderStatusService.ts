@@ -99,7 +99,8 @@ export const getNextStatusOptions = (
   }
 
   // Sempre permitir "received" (pagamento) e "cancelled" - mas verificar se já não está recebido
-  if (currentStatus !== "received" && !hasReceivedPayment) {
+  // Corrigido: só adicionar received se não for um status específico de desconto em folha
+  if (currentStatus !== "received" && currentStatus !== "to_deduct" && currentStatus !== "paid" && !hasReceivedPayment) {
     nextStatuses.push("received");
   }
   nextStatuses.push("cancelled");

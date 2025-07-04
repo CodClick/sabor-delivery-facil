@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { ClipboardList, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator } from "lucide-react";
 
 const AdminDashboard = () => {
   const { currentUser, logOut } = useAuth();
@@ -31,7 +31,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
@@ -65,13 +65,30 @@ const AdminDashboard = () => {
             </Button>
           </CardContent>
         </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
+              <Calculator className="h-8 w-8 text-purple-600" />
+            </div>
+            <CardTitle className="text-xl">Ponto de Venda</CardTitle>
+            <CardDescription>
+              Acesse o sistema de ponto de venda para registrar pedidos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/pdv">Acessar PDV</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Bem-vindo, Administrador!</h2>
         <p className="text-gray-600">
           Use este painel para gerenciar todos os aspectos do seu restaurante. 
-          Você pode visualizar e atualizar pedidos, além de gerenciar o cardápio completo.
+          Você pode visualizar e atualizar pedidos, gerenciar o cardápio completo e acessar o sistema de PDV.
         </p>
       </div>
     </div>
