@@ -25,12 +25,31 @@ const Index = () => {
 
     const loadCategories = async () => {
       const categories = await getAllCategories();
-      setCategories(categories);
+      setCategories([{ id: "all", name: "Todos", order: 0 }, ...categories]);
     };
 
     loadMenuItems();
     loadCategories();
   }, []);
+
+  // Filtrar itens por categoria
+  const filteredItems = activeCategory === "all" 
+    ? menuItems 
+    : menuItems.filter(item => item.category === activeCategory);
+
+  // Agrupar itens filtrados por categoria para exibição
+  const groupedItems = categories.reduce((acc, category) => {
+    if (category.id === "all") return acc;
+    
+    const categoryItems = filteredItems.filter(item => item.category === category.id);
+    if (categoryItems.length > 0) {
+      acc.push({
+        category,
+        items: categoryItems
+      });
+    }
+    return acc;
+  }, [] as Array<{ category: Category; items: MenuItem[] }>);
 
   return (
     <div>
@@ -40,7 +59,25 @@ const Index = () => {
         activeCategory={activeCategory}
         onSelectCategory={setActiveCategory}
       />
-      <MenuSection title="Nosso Menu" items={menuItems} />
+      
+      <div className="container mx-auto px-4 py-8">
+        {activeCategory === "all" ? (
+          // Mostrar todas as categorias com seus itens
+          groupedItems.map(({ category, items }) => (
+            <MenuSection 
+              key={category.id}
+              title={category.name} 
+              items={items} 
+            />
+          ))
+        ) : (
+          // Mostrar apenas a categoria selecionada
+          <MenuSection 
+            title={categories.find(cat => cat.id === activeCategory)?.name || "Menu"} 
+            items={filteredItems} 
+          />
+        )}
+      </div>
 
       <div className="fixed bottom-4 right-4 z-50">
         <Button

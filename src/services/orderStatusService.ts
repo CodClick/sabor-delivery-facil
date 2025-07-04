@@ -1,4 +1,3 @@
-
 import { Order } from "@/types/order";
 
 // Definir a sequência natural dos status
@@ -134,4 +133,72 @@ export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["sta
 export const hasReceivedPayment = (order: Order): boolean => {
   // Verificar se o status atual é "received", "paid" ou se o método de pagamento é cartão ou desconto em folha
   return order.status === "received" || order.status === "paid" || order.paymentMethod === "card" || order.paymentMethod === "payroll_discount";
+};
+
+export const getNextStatus = (currentStatus: OrderStatus, payrollDiscount = false): OrderStatus | null => {
+  if (payrollDiscount) {
+    switch (currentStatus) {
+      case "pending":
+        return "confirmed";
+      case "confirmed":
+        return "preparing";
+      case "preparing":
+        return "ready";
+      case "ready":
+        return "to_deduct";
+      case "to_deduct":
+        return "paid";
+      case "paid":
+        return null;
+      default:
+        return null;
+    }
+  } else {
+    switch (currentStatus) {
+      case "pending":
+        return "confirmed";
+      case "confirmed":
+        return "preparing";
+      case "preparing":
+        return "ready";
+      case "ready":
+        return "paid";
+      case "paid":
+        return null;
+      default:
+        return null;
+    }
+  }
+};
+
+export const getPreviousStatus = (currentStatus: OrderStatus, payrollDiscount = false): OrderStatus | null => {
+  if (payrollDiscount) {
+    switch (currentStatus) {
+      case "confirmed":
+        return "pending";
+      case "preparing":
+        return "confirmed";
+      case "ready":
+        return "preparing";
+      case "to_deduct":
+        return "ready";
+      case "paid":
+        return "to_deduct";
+      default:
+        return null;
+    }
+  } else {
+    switch (currentStatus) {
+      case "confirmed":
+        return "pending";
+      case "preparing":
+        return "confirmed";
+      case "ready":
+        return "preparing";
+      case "paid":
+        return "ready";
+      default:
+        return null;
+    }
+  }
 };
