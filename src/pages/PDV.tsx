@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
 import { getAllVariations } from "@/services/variationService";
@@ -17,9 +19,10 @@ import { getAllVariationGroups } from "@/services/variationGroupService";
 import { createOrder } from "@/services/orderService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { CreateOrderRequest } from "@/types/order";
-import { Trash2, Plus, Minus, User, UserPlus, ClipboardList } from "lucide-react";
+import { Trash2, Plus, Minus, User, UserPlus, ClipboardList, Check, ChevronsUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
+import { cn } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -51,6 +54,7 @@ const PDV = () => {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [openCustomerSelect, setOpenCustomerSelect] = useState(false);
   
   // Estados para pedido
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "pix" | "payroll_discount">("cash");
@@ -353,21 +357,50 @@ const PDV = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <Select onValueChange={(value) => {
-                    const customer = customers.find(c => c.id === value);
-                    if (customer) setSelectedCustomer(customer);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar cliente existente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map(customer => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name} - {customer.phone}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openCustomerSelect} onOpenChange={setOpenCustomerSelect}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openCustomerSelect}
+                        className="w-full justify-between"
+                      >
+                        Selecionar cliente existente
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar cliente..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {customers.map((customer) => (
+                              <CommandItem
+                                key={customer.id}
+                                value={customer.name}
+                                onSelect={() => {
+                                  setSelectedCustomer(customer);
+                                  setOpenCustomerSelect(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div>
+                                  <div className="font-medium">{customer.name}</div>
+                                  <div className="text-sm text-gray-600">{customer.phone}</div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   
                   <Button
                     onClick={() => setShowNewCustomerForm(true)}

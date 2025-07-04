@@ -8,9 +8,8 @@ import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Calculator } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { Link } from "react-router-dom";
 
 const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -43,7 +42,7 @@ const Index = () => {
       />
       <MenuSection title="Nosso Menu" items={menuItems} />
 
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-50">
         <Button
           onClick={() => setIsCartOpen(true)}
           className="bg-brand hover:bg-brand-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
@@ -58,12 +57,6 @@ const Index = () => {
             </Badge>
           )}
         </Button>
-        
-        <Link to="/pdv">
-          <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
-            <Calculator className="h-6 w-6" />
-          </Button>
-        </Link>
       </div>
     </div>
   );
