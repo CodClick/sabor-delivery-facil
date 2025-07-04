@@ -56,7 +56,7 @@ const AdminDashboard = () => {
             </div>
             <CardTitle className="text-xl">Gerenciamento do Cardápio</CardTitle>
             <CardDescription>
-              Gerencie categorias, itens do menu e variações
+              Gerencie categorias, itens do menu, grupos e variações
             </CardDescription>
           </CardHeader>
           <CardContent>
