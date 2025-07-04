@@ -183,7 +183,9 @@ const AdminOrders = () => {
       delivering: "Saiu para entrega",
       received: "Recebido",
       delivered: "Entrega finalizada",
-      cancelled: "Cancelado"
+      cancelled: "Cancelado",
+      to_deduct: "A descontar",
+      paid: "Pago"
     };
     return statusMap[status] || status;
   };
@@ -198,6 +200,8 @@ const AdminOrders = () => {
       case "received": return "bg-blue-200 text-blue-800";
       case "delivered": return "bg-green-100 text-green-800";
       case "cancelled": return "bg-red-100 text-red-800";
+      case "to_deduct": return "bg-orange-100 text-orange-800";
+      case "paid": return "bg-blue-100 text-blue-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -222,7 +226,9 @@ const AdminOrders = () => {
     { value: "delivering", label: "Em Entrega" },
     { value: "received", label: "Recebidos" },
     { value: "delivered", label: "Finalizados" },
-    { value: "cancelled", label: "Cancelados" }
+    { value: "cancelled", label: "Cancelados" },
+    { value: "to_deduct", label: "A descontar" },
+    { value: "paid", label: "Pagos" }
   ];
 
   const handleRetryLoad = () => {

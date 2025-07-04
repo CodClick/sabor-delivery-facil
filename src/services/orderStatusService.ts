@@ -36,7 +36,7 @@ export const getNextStatusOptions = (
   if (paymentMethod === "payroll_discount") {
     // Se está pago, próximo é finalizado (delivered)
     if (currentStatus === "paid") {
-      return ["delivered", "cancelled"];
+      return ["delivered"];
     }
     
     // Se está pendente, próximo é "a descontar"
@@ -44,9 +44,9 @@ export const getNextStatusOptions = (
       return ["to_deduct", "cancelled"];
     }
     
-    // Se está "a descontar", próximo é "pago"
+    // Se está "a descontar", próximo é "pago" (SEM cancelar)
     if (currentStatus === "to_deduct") {
-      return ["paid", "cancelled"];
+      return ["paid"];
     }
     
     // Para outros status no fluxo de desconto em folha, só cancelar

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getOrdersByPhone, updateOrder } from "@/services/orderService";
@@ -112,7 +111,9 @@ const Orders = () => {
       delivering: "Saiu para entrega",
       received: "Recebido",
       delivered: "Entrega finalizada",
-      cancelled: "Cancelado"
+      cancelled: "Cancelado",
+      to_deduct: "A descontar",
+      paid: "Pago"
     };
     return statusMap[status] || status;
   };

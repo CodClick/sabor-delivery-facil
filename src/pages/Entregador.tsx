@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -79,6 +78,8 @@ const Entregador = () => {
       received: "Recebido",
       delivered: "Entrega finalizada",
       cancelled: "Cancelado",
+      to_deduct: "A descontar",
+      paid: "Pago"
     };
     return statusMap[status] || status;
   };
