@@ -1,3 +1,4 @@
+
 import { Order } from "@/types/order";
 
 // Definir a sequência natural dos status
@@ -7,18 +8,19 @@ const STATUS_SEQUENCE: Order["status"][] = [
   "preparing",
   "ready",
   "delivering",
-  "received",
   "delivered"
 ];
 
 // Sequência específica para desconto em folha
 const PAYROLL_DISCOUNT_SEQUENCE: Order["status"][] = [
+  "pending",
+  "confirmed", 
+  "preparing",
+  "ready",
   "to_deduct",
-  "paid"
+  "paid",
+  "delivered"
 ];
-
-// Status especiais que podem ser aplicados a qualquer momento
-const SPECIAL_STATUS: Order["status"][] = ["cancelled", "received"];
 
 // Obter próximos status possíveis com base no status atual
 export const getNextStatusOptions = (
@@ -31,78 +33,78 @@ export const getNextStatusOptions = (
     return [];
   }
 
-  // Lógica específica para desconto em folha
-  if (paymentMethod === "payroll_discount") {
-    // Se está pago, próximo é finalizado (delivered)
-    if (currentStatus === "paid") {
-      return ["delivered"];
-    }
-    
-    // Se está pendente, próximo é "a descontar"
-    if (currentStatus === "pending") {
-      return ["to_deduct", "cancelled"];
-    }
-    
-    // Se está "a descontar", próximo é "pago" (SEM cancelar)
-    if (currentStatus === "to_deduct") {
-      return ["paid"];
-    }
-    
-    // Para outros status no fluxo de desconto em folha, só cancelar
-    return ["cancelled"];
-  }
-
-  const currentIndex = STATUS_SEQUENCE.indexOf(currentStatus);
-  
-  // Se não encontrou na sequência, permitir apenas cancelar
-  if (currentIndex === -1) {
-    return ["cancelled"];
-  }
-
   const nextStatuses: Order["status"][] = [];
 
-  // Lógica especial para quando está "delivering" (saiu para entrega)
-  if (currentStatus === "delivering") {
-    // Se já recebeu pagamento, próximo é "delivered"
-    // Se ainda não recebeu, próximo é "received" 
-    if (hasReceivedPayment) {
-      nextStatuses.push("delivered");
-    } else {
-      nextStatuses.push("received");
+  // Lógica específica para desconto em folha
+  if (paymentMethod === "payroll_discount") {
+    switch (currentStatus) {
+      case "pending":
+        nextStatuses.push("confirmed", "cancelled");
+        break;
+      case "confirmed":
+        nextStatuses.push("preparing", "cancelled");
+        break;
+      case "preparing":
+        nextStatuses.push("ready", "cancelled");
+        break;
+      case "ready":
+        nextStatuses.push("to_deduct", "cancelled");
+        break;
+      case "to_deduct":
+        nextStatuses.push("paid", "cancelled");
+        break;
+      case "paid":
+        nextStatuses.push("delivered", "cancelled");
+        break;
+      default:
+        nextStatuses.push("cancelled");
     }
-    nextStatuses.push("cancelled");
     return nextStatuses;
   }
 
-  // Lógica especial para quando está "received" (recebido)
-  if (currentStatus === "received") {
-    nextStatuses.push("delivered");
-    nextStatuses.push("cancelled");
-    return nextStatuses;
-  }
-
-  // Para outros status, seguir a sequência natural
-  const nextIndex = currentIndex + 1;
-  if (nextIndex < STATUS_SEQUENCE.length) {
-    const nextStatus = STATUS_SEQUENCE[nextIndex];
-    
-    // Se o próximo seria "received" mas já foi marcado como recebido,
-    // pular para "delivered"
-    if (nextStatus === "received" && hasReceivedPayment) {
-      if (nextIndex + 1 < STATUS_SEQUENCE.length) {
-        nextStatuses.push(STATUS_SEQUENCE[nextIndex + 1]); // delivered
+  // Lógica para outras formas de pagamento
+  switch (currentStatus) {
+    case "pending":
+      nextStatuses.push("confirmed");
+      break;
+    case "confirmed":
+      nextStatuses.push("preparing");
+      break;
+    case "preparing":
+      nextStatuses.push("ready");
+      break;
+    case "ready":
+      nextStatuses.push("delivering");
+      break;
+    case "delivering":
+      // Se já recebeu pagamento, próximo é "delivered"
+      // Se ainda não recebeu, próximo é "received" 
+      if (hasReceivedPayment) {
+        nextStatuses.push("delivered");
+      } else {
+        nextStatuses.push("received");
       }
-    } else {
-      nextStatuses.push(nextStatus);
-    }
+      break;
+    case "received":
+      nextStatuses.push("delivered");
+      break;
+    default:
+      break;
   }
 
-  // Sempre permitir "received" (pagamento) e "cancelled" - mas verificar se já não está recebido
-  // Corrigido: só adicionar received se não for um status específico de desconto em folha
-  if (currentStatus !== "received" && currentStatus !== "to_deduct" && currentStatus !== "paid" && !hasReceivedPayment) {
+  // Sempre permitir "received" (pagamento) para formas de pagamento que não sejam desconto em folha
+  // Mas não se já está recebido ou se é desconto em folha ou se já está entregue
+  if (currentStatus !== "received" && 
+      currentStatus !== "delivered" && 
+      paymentMethod !== "payroll_discount" && 
+      !hasReceivedPayment) {
     nextStatuses.push("received");
   }
-  nextStatuses.push("cancelled");
+
+  // Sempre permitir cancelar (exceto se já entregue)
+  if (currentStatus !== "delivered") {
+    nextStatuses.push("cancelled");
+  }
 
   return nextStatuses;
 };
@@ -131,74 +133,8 @@ export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["sta
 
 // Verificar se o pedido já recebeu pagamento
 export const hasReceivedPayment = (order: Order): boolean => {
-  // Verificar se o status atual é "received", "paid" ou se o método de pagamento é cartão ou desconto em folha
-  return order.status === "received" || order.status === "paid" || order.paymentMethod === "card" || order.paymentMethod === "payroll_discount";
-};
-
-export const getNextStatus = (currentStatus: OrderStatus, payrollDiscount = false): OrderStatus | null => {
-  if (payrollDiscount) {
-    switch (currentStatus) {
-      case "pending":
-        return "confirmed";
-      case "confirmed":
-        return "preparing";
-      case "preparing":
-        return "ready";
-      case "ready":
-        return "to_deduct";
-      case "to_deduct":
-        return "paid";
-      case "paid":
-        return null;
-      default:
-        return null;
-    }
-  } else {
-    switch (currentStatus) {
-      case "pending":
-        return "confirmed";
-      case "confirmed":
-        return "preparing";
-      case "preparing":
-        return "ready";
-      case "ready":
-        return "paid";
-      case "paid":
-        return null;
-      default:
-        return null;
-    }
-  }
-};
-
-export const getPreviousStatus = (currentStatus: OrderStatus, payrollDiscount = false): OrderStatus | null => {
-  if (payrollDiscount) {
-    switch (currentStatus) {
-      case "confirmed":
-        return "pending";
-      case "preparing":
-        return "confirmed";
-      case "ready":
-        return "preparing";
-      case "to_deduct":
-        return "ready";
-      case "paid":
-        return "to_deduct";
-      default:
-        return null;
-    }
-  } else {
-    switch (currentStatus) {
-      case "confirmed":
-        return "pending";
-      case "preparing":
-        return "confirmed";
-      case "ready":
-        return "preparing";
-      case "paid":
-        return "ready";
-      default:
-        return null;
-    }
-  }
+  // Verificar se o status atual é "received", "paid" ou se o método de pagamento é cartão
+  return order.status === "received" || 
+         order.status === "paid" || 
+         order.paymentMethod === "card";
 };
