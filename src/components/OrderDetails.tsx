@@ -224,6 +224,18 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   const paymentReceived = hasReceivedPayment(order);
   const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived, order.paymentMethod);
 
+  // ADICIONAR LÓGICA ESPECIAL PARA BOTÃO "RECEBIDO"
+  // O botão "recebido" deve aparecer sempre que:
+  // 1. Não for desconto em folha
+  // 2. Não estiver já em "received", "delivered" ou "cancelled"
+  // 3. Não tiver recebido pagamento ainda
+  const shouldShowReceivedButton = 
+    order.paymentMethod !== "payroll_discount" &&
+    order.status !== "received" &&
+    order.status !== "delivered" &&
+    order.status !== "cancelled" &&
+    !paymentReceived;
+
   // Lista de botões para atualização de status
   const nextStatusButtons = nextStatusOptions.map(status => {
     const icon = getStatusIcon(status);
@@ -321,6 +333,22 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       </Button>
     );
   });
+
+  // ADICIONAR BOTÃO "RECEBIDO" SEPARADAMENTE SE NECESSÁRIO
+  if (shouldShowReceivedButton && !nextStatusOptions.includes("received")) {
+    const receivedButton = (
+      <Button
+        key="received-special"
+        onClick={() => handleUpdateStatus(order.id, "received")}
+        variant="secondary"
+        className="flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
+      >
+        {getStatusIcon("received")}
+        {translateStatus("received")}
+      </Button>
+    );
+    nextStatusButtons.push(receivedButton);
+  }
 
   return (
     <div className="space-y-6">

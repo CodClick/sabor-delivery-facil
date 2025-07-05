@@ -80,8 +80,7 @@ export const getNextStatusOptions = (
       nextStatuses.push("delivered");
       break;
     case "received":
-      // Se está em "received", volta para a sequência normal baseada no status anterior
-      // Como não temos histórico, assumimos que pode ir para "delivered" se estava em "delivering"
+      // Status "received" é independente - pode ir para "delivered"
       nextStatuses.push("delivered");
       break;
     default:
