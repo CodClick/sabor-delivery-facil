@@ -44,7 +44,7 @@ import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatus
 
 interface OrderDetailsProps {
   order: Order;
-  onUpdateStatus: (orderId: string, status: Order["status"], cancellationReason?: string) => void;
+  onUpdateStatus: (orderId: string, status: Order["status"], cancellationReason?: string, paymentStatus?: "a_receber" | "recebido") => void;
 }
 
 const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) => {
@@ -200,6 +200,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     onUpdateStatus(orderId, status, cancellationReasonValue);
   };
 
+  // Função para atualizar apenas o status de pagamento
+  const handleUpdatePaymentStatus = (orderId: string, paymentStatus: "a_receber" | "recebido") => {
+    const updatedOrder: Order = { ...order, paymentStatus };
+    sendOrderStatusWebhook(updatedOrder);
+    // Como não temos onUpdatePaymentStatus, vamos usar uma extensão do onUpdateStatus
+    onUpdateStatus(orderId, order.status, undefined, paymentStatus);
+  };
+
   // Quando confirmar o cancelamento no primeiro modal, abrir o do motivo
   const handleConfirmCancelDialogYes = () => {
     setIsConfirmDialogOpen(false);
@@ -223,18 +231,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   // Usar a nova lógica de sequência de status
   const paymentReceived = hasReceivedPayment(order);
   const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived, order.paymentMethod);
-
-  // ADICIONAR LÓGICA ESPECIAL PARA BOTÃO "RECEBIDO"
-  // O botão "recebido" deve aparecer sempre que:
-  // 1. Não for desconto em folha
-  // 2. Não estiver já em "received", "delivered" ou "cancelled"
-  // 3. Não tiver recebido pagamento ainda
-  const shouldShowReceivedButton = 
-    order.paymentMethod !== "payroll_discount" &&
-    order.status !== "received" &&
-    order.status !== "delivered" &&
-    order.status !== "cancelled" &&
-    !paymentReceived;
 
   // Lista de botões para atualização de status
   const nextStatusButtons = nextStatusOptions.map(status => {
@@ -334,22 +330,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     );
   });
 
-  // ADICIONAR BOTÃO "RECEBIDO" SEPARADAMENTE SE NECESSÁRIO
-  if (shouldShowReceivedButton && !nextStatusOptions.includes("received")) {
-    const receivedButton = (
-      <Button
-        key="received-special"
-        onClick={() => handleUpdateStatus(order.id, "received")}
-        variant="secondary"
-        className="flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
-      >
-        {getStatusIcon("received")}
-        {translateStatus("received")}
-      </Button>
-    );
-    nextStatusButtons.push(receivedButton);
-  }
-
   return (
     <div className="space-y-6">
       {/* Informações básicas do pedido */}
@@ -397,6 +377,29 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
             <p className="mt-1">{order.observations}</p>
           </div>
         )}
+      </div>
+
+      {/* Status de Pagamento - Novo grupo separado */}
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
+        <h3 className="text-md font-medium mb-3 text-blue-800">Status de Pagamento</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-blue-600" />
+            <span className="font-medium">
+              Status: {order.paymentStatus === "recebido" ? "Recebido" : "A Receber"}
+            </span>
+          </div>
+          {order.paymentStatus !== "recebido" && (
+            <Button
+              onClick={() => handleUpdatePaymentStatus(order.id, "recebido")}
+              variant="default"
+              className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <DollarSign className="h-4 w-4" />
+              Marcar como Recebido
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Motivo do cancelamento, se existir */}
@@ -517,7 +520,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       {/* Botões de atualização de status */}
       {nextStatusButtons.length > 0 && (
         <div>
-          <h3 className="text-md font-medium mb-2">Atualizar Status</h3>
+          <h3 className="text-md font-medium mb-2">Atualizar Status do Pedido</h3>
           <div className="flex flex-wrap gap-2">
             {nextStatusButtons}
             {/* Botão Finalizado - apenas para desconto em folha */}

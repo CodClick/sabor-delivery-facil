@@ -594,6 +594,7 @@ export type Database = {
           itens_pedido: string | null
           nome: string | null
           numero_casa: string | null
+          payment_status: string | null
           preco_final: number | null
           sessao: string
           street: string | null
@@ -609,6 +610,7 @@ export type Database = {
           itens_pedido?: string | null
           nome?: string | null
           numero_casa?: string | null
+          payment_status?: string | null
           preco_final?: number | null
           sessao: string
           street?: string | null
@@ -624,6 +626,7 @@ export type Database = {
           itens_pedido?: string | null
           nome?: string | null
           numero_casa?: string | null
+          payment_status?: string | null
           preco_final?: number | null
           sessao?: string
           street?: string | null

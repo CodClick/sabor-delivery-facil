@@ -87,15 +87,6 @@ export const getNextStatusOptions = (
       break;
   }
 
-  // Sempre permitir "received" (pagamento) para formas de pagamento que não sejam desconto em folha
-  // Mas não se já está recebido ou se é desconto em folha ou se já está entregue
-  if (currentStatus !== "received" && 
-      currentStatus !== "delivered" && 
-      paymentMethod !== "payroll_discount" && 
-      !hasReceivedPayment) {
-    nextStatuses.push("received");
-  }
-
   // Sempre permitir cancelar (exceto se já entregue)
   if (currentStatus !== "delivered") {
     nextStatuses.push("cancelled");
@@ -126,10 +117,9 @@ export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["sta
   return STATUS_SEQUENCE[currentIndex + 1];
 };
 
-// Verificar se o pedido já recebeu pagamento
+// Verificar se o pedido já recebeu pagamento (agora baseado no paymentStatus)
 export const hasReceivedPayment = (order: Order): boolean => {
-  // Verificar se o status atual é "received", "paid" ou se o método de pagamento é cartão
-  return order.status === "received" || 
-         order.status === "paid" || 
+  // Verificar se o paymentStatus é "recebido" ou se o método de pagamento é cartão
+  return order.paymentStatus === "recebido" || 
          order.paymentMethod === "card";
 };

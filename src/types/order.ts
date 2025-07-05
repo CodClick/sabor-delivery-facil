@@ -31,6 +31,7 @@ export interface Order {
   observations?: string;
   items: OrderItem[];
   status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid";
+  paymentStatus?: "a_receber" | "recebido";
   total: number;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -55,4 +56,5 @@ export interface CreateOrderRequest {
 
 export interface UpdateOrderRequest {
   status?: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid";
+  paymentStatus?: "a_receber" | "recebido";
 }
