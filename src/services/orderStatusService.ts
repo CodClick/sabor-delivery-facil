@@ -77,15 +77,11 @@ export const getNextStatusOptions = (
       nextStatuses.push("delivering");
       break;
     case "delivering":
-      // Se já recebeu pagamento, próximo é "delivered"
-      // Se ainda não recebeu, próximo é "received" 
-      if (hasReceivedPayment) {
-        nextStatuses.push("delivered");
-      } else {
-        nextStatuses.push("received");
-      }
+      nextStatuses.push("delivered");
       break;
     case "received":
+      // Se está em "received", volta para a sequência normal baseada no status anterior
+      // Como não temos histórico, assumimos que pode ir para "delivered" se estava em "delivering"
       nextStatuses.push("delivered");
       break;
     default:
