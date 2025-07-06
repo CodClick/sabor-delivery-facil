@@ -490,6 +490,7 @@ export type Database = {
       horario_funcionamento: {
         Row: {
           created_at: string
+          empresa: string | null
           horario_ativo: string
           horario_extra: string | null
           id: string
@@ -498,6 +499,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          empresa?: string | null
           horario_ativo: string
           horario_extra?: string | null
           id?: string
@@ -506,6 +508,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          empresa?: string | null
           horario_ativo?: string
           horario_extra?: string | null
           id?: string
@@ -825,6 +828,7 @@ export type Database = {
       promocoes: {
         Row: {
           created_at: string
+          empresa: string | null
           id: string
           promocao_ativa: string
           regras_da_promocao: string | null
@@ -833,6 +837,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          empresa?: string | null
           id?: string
           promocao_ativa: string
           regras_da_promocao?: string | null
@@ -841,6 +846,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          empresa?: string | null
           id?: string
           promocao_ativa?: string
           regras_da_promocao?: string | null
@@ -888,6 +894,7 @@ export type Database = {
         Row: {
           ativa: string | null
           created_at: string
+          empresa: string | null
           id: string
           saudacao: string | null
           user_id: string
@@ -895,6 +902,7 @@ export type Database = {
         Insert: {
           ativa?: string | null
           created_at?: string
+          empresa?: string | null
           id?: string
           saudacao?: string | null
           user_id?: string
@@ -902,6 +910,7 @@ export type Database = {
         Update: {
           ativa?: string | null
           created_at?: string
+          empresa?: string | null
           id?: string
           saudacao?: string | null
           user_id?: string
@@ -1056,6 +1065,10 @@ export type Database = {
           email: string
           data_de_nascimento: string
         }[]
+      }
+      get_dados_agente: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {

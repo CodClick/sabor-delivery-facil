@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   // Debug do pedido completo
   console.log("=== ORDER DETAILS DEBUG ===");
   console.log("Pedido completo:", order);
-  console.log("Itens do pedido:", order.items);
+  console.log("Status de pagamento:", order.paymentStatus);
   
   // Traduzir status para português
   const translateStatus = (status: Order["status"]) => {
@@ -187,24 +188,23 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Função wrapper para atualizar o status, enviando o motivo se for cancelamento
+  // Função wrapper para atualizar o status principal do pedido
   const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
-    // Atualizar o status e enviar o webhook
+    console.log("Atualizando status principal para:", status);
     const updatedOrder: Order & { cancellationReason?: string } = { ...order, status };
-    // Incluir o motivo do cancelamento se for cancelamento
     if (status === "cancelled" && cancellationReasonValue) {
       updatedOrder.cancellationReason = cancellationReasonValue;
     }
     sendOrderStatusWebhook(updatedOrder);
-    // Enviar o motivo junto na alteração de status (poderia ser guardado em um campo, se persistente)
     onUpdateStatus(orderId, status, cancellationReasonValue);
   };
 
-  // Função para atualizar apenas o status de pagamento
+  // Função SEPARADA para atualizar APENAS o status de pagamento
   const handleUpdatePaymentStatus = (orderId: string, paymentStatus: "a_receber" | "recebido") => {
+    console.log("Atualizando APENAS status de pagamento para:", paymentStatus);
     const updatedOrder: Order = { ...order, paymentStatus };
     sendOrderStatusWebhook(updatedOrder);
-    // Como não temos onUpdatePaymentStatus, vamos usar uma extensão do onUpdateStatus
+    // Chama onUpdateStatus mantendo o status atual, mas passando o paymentStatus
     onUpdateStatus(orderId, order.status, undefined, paymentStatus);
   };
 

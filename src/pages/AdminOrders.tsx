@@ -142,28 +142,48 @@ const AdminOrders = () => {
     setDialogOpen(true);
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
+  const handleUpdateOrderStatus = async (
+    orderId: string, 
+    newStatus?: Order["status"], 
+    cancellationReason?: string, 
+    paymentStatus?: "a_receber" | "recebido"
+  ) => {
     try {
-      const updatedOrder = await updateOrder(orderId, { status: newStatus });
+      console.log("AdminOrders - Atualizando pedido:", { orderId, newStatus, paymentStatus });
+      
+      // Preparar objeto de atualização
+      const updateData: any = {};
+      
+      if (newStatus) {
+        updateData.status = newStatus;
+      }
+      
+      if (paymentStatus) {
+        updateData.paymentStatus = paymentStatus;
+      }
+
+      const updatedOrder = await updateOrder(orderId, updateData);
 
       if (updatedOrder) {
-        if (activeStatus === "all" || updatedOrder.status === activeStatus) {
-          setOrders(prev =>
-            prev.map(order => order.id === orderId ? updatedOrder : order)
-          );
-        } else {
-          setOrders(prev => prev.filter(order => order.id !== orderId));
-        }
+        // Atualizar a lista de pedidos
+        setOrders(prev =>
+          prev.map(order => order.id === orderId ? updatedOrder : order)
+        );
 
+        // Atualizar o pedido selecionado se for o mesmo
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updatedOrder);
         }
-      }
 
-      toast({
-        title: "Pedido atualizado",
-        description: `Status alterado para ${translateStatus(newStatus)}`,
-      });
+        const statusMessage = newStatus ? 
+          `Status alterado para ${translateStatus(newStatus)}` :
+          `Status de pagamento alterado para ${paymentStatus === "recebido" ? "Recebido" : "A Receber"}`;
+
+        toast({
+          title: "Pedido atualizado",
+          description: statusMessage,
+        });
+      }
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
       toast({
