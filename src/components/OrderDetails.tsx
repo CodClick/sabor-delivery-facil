@@ -58,6 +58,27 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     }
   };
 
+  // Função para obter todos os status possíveis (não apenas os próximos)
+  const getAllAvailableStatuses = (): Order["status"][] => {
+    const allStatuses: Order["status"][] = [
+      "pending",
+      "confirmed", 
+      "preparing",
+      "ready",
+      "delivering",
+      "received",
+      "delivered",
+      "cancelled"
+    ];
+
+    // Adicionar status específicos para desconto em folha
+    if (order.paymentMethod === "payroll_discount") {
+      allStatuses.push("to_deduct", "paid");
+    }
+
+    return allStatuses;
+  };
+
   const handleStatusChange = async (newStatus: Order["status"]) => {
     if (!onUpdateStatus) return;
     
@@ -86,7 +107,7 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     return dateObj.toLocaleString('pt-BR');
   };
 
-  const nextStatusOptions = getNextStatusOptions(order.status, order.paymentStatus === "recebido", order.paymentMethod);
+  const availableStatuses = getAllAvailableStatuses();
 
   return (
     <div className="space-y-6">
@@ -171,12 +192,10 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={order.status}>
-                {translateStatus(order.status)} (Atual)
-              </SelectItem>
-              {nextStatusOptions.map(status => (
+              {availableStatuses.map(status => (
                 <SelectItem key={status} value={status}>
                   {translateStatus(status)}
+                  {status === order.status && " (Atual)"}
                 </SelectItem>
               ))}
             </SelectContent>
