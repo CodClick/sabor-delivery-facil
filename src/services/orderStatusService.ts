@@ -88,8 +88,8 @@ export const getNextStatusOptions = (
       break;
   }
 
-  // Sempre permitir cancelar (exceto se já entregue)
-  if (currentStatus !== "delivered") {
+  // Sempre permitir cancelar (exceto se já entregue ou cancelado)
+  if (currentStatus !== "delivered" && currentStatus !== "cancelled") {
     nextStatuses.push("cancelled");
   }
 

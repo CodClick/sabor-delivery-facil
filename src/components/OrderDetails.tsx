@@ -1,13 +1,6 @@
 
 import React, { useState } from "react";
 import { Order } from "@/types/order";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -58,27 +51,6 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     }
   };
 
-  // Função para obter todos os status possíveis (não apenas os próximos)
-  const getAllAvailableStatuses = (): Order["status"][] => {
-    const allStatuses: Order["status"][] = [
-      "pending",
-      "confirmed", 
-      "preparing",
-      "ready",
-      "delivering",
-      "received",
-      "delivered",
-      "cancelled"
-    ];
-
-    // Adicionar status específicos para desconto em folha
-    if (order.paymentMethod === "payroll_discount") {
-      allStatuses.push("to_deduct", "paid");
-    }
-
-    return allStatuses;
-  };
-
   const handleStatusChange = async (newStatus: Order["status"]) => {
     if (!onUpdateStatus) return;
     
@@ -107,7 +79,7 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     return dateObj.toLocaleString('pt-BR');
   };
 
-  const availableStatuses = getAllAvailableStatuses();
+  const nextStatusOptions = getNextStatusOptions(order.status, order.paymentStatus === "recebido", order.paymentMethod);
 
   return (
     <div className="space-y-6">
@@ -176,33 +148,26 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
 
       <Separator />
 
-      {/* Status Management */}
+      {/* Status Actions */}
       <div className="space-y-4">
-        <h4 className="font-medium">Gerenciar Status</h4>
+        <h4 className="font-medium">Ações do Pedido</h4>
         
-        {/* Main Status */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Status do Pedido</label>
-          <Select 
-            value={order.status} 
-            onValueChange={handleStatusChange}
-            disabled={isUpdating}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {availableStatuses.map(status => (
-                <SelectItem key={status} value={status}>
-                  {translateStatus(status)}
-                  {status === order.status && " (Atual)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Status Progression Buttons */}
+        <div className="flex flex-wrap gap-2">
+          {nextStatusOptions.map(status => (
+            <Button
+              key={status}
+              onClick={() => handleStatusChange(status)}
+              disabled={isUpdating}
+              variant={status === "cancelled" ? "destructive" : "default"}
+              size="sm"
+            >
+              {status === "cancelled" ? "Cancelar Pedido" : `Marcar como ${translateStatus(status)}`}
+            </Button>
+          ))}
         </div>
 
-        {/* Payment Status */}
+        {/* Payment Status Section */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Status de Pagamento</label>
           <div className="flex items-center gap-3">
