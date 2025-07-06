@@ -1,4 +1,5 @@
 
+
 import { Order } from "@/types/order";
 
 // Definir a sequência natural dos status
@@ -22,11 +23,19 @@ const PAYROLL_DISCOUNT_SEQUENCE: Order["status"][] = [
   "delivered"
 ];
 
+// Sequência simplificada para PDV (pula etapas intermediárias)
+const PDV_STATUS_SEQUENCE: Order["status"][] = [
+  "pending",
+  "confirmed",
+  "delivered"
+];
+
 // Obter próximos status possíveis com base no status atual
 export const getNextStatusOptions = (
   currentStatus: Order["status"], 
   hasReceivedPayment: boolean = false,
-  paymentMethod?: Order["paymentMethod"]
+  paymentMethod?: Order["paymentMethod"],
+  isPDVOrder: boolean = false
 ): Order["status"][] => {
   // Se o pedido está cancelado ou entregue, não há próximos status
   if (currentStatus === "cancelled" || currentStatus === "delivered") {
@@ -34,6 +43,27 @@ export const getNextStatusOptions = (
   }
 
   const nextStatuses: Order["status"][] = [];
+
+  // Lógica simplificada para pedidos do PDV
+  if (isPDVOrder) {
+    switch (currentStatus) {
+      case "pending":
+        nextStatuses.push("confirmed");
+        break;
+      case "confirmed":
+        nextStatuses.push("delivered");
+        break;
+      default:
+        break;
+    }
+    
+    // Sempre permitir cancelar (exceto se já entregue ou cancelado)
+    if (currentStatus !== "delivered" && currentStatus !== "cancelled") {
+      nextStatuses.push("cancelled");
+    }
+    
+    return nextStatuses;
+  }
 
   // Lógica específica para desconto em folha
   if (paymentMethod === "payroll_discount") {
@@ -101,9 +131,10 @@ export const canTransitionToStatus = (
   currentStatus: Order["status"],
   targetStatus: Order["status"],
   hasReceivedPayment: boolean = false,
-  paymentMethod?: Order["paymentMethod"]
+  paymentMethod?: Order["paymentMethod"],
+  isPDVOrder: boolean = false
 ): boolean => {
-  const allowedNextStatuses = getNextStatusOptions(currentStatus, hasReceivedPayment, paymentMethod);
+  const allowedNextStatuses = getNextStatusOptions(currentStatus, hasReceivedPayment, paymentMethod, isPDVOrder);
   return allowedNextStatuses.includes(targetStatus);
 };
 
@@ -124,3 +155,4 @@ export const hasReceivedPayment = (order: Order): boolean => {
   return order.paymentStatus === "recebido" || 
          order.paymentMethod === "card";
 };
+

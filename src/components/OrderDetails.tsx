@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -79,7 +78,15 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     return dateObj.toLocaleString('pt-BR');
   };
 
-  const nextStatusOptions = getNextStatusOptions(order.status, order.paymentStatus === "recebido", order.paymentMethod);
+  // Verificar se é um pedido do PDV (assumindo que PDV orders não têm userId definido)
+  const isPDVOrder = !order.userId;
+  
+  const nextStatusOptions = getNextStatusOptions(
+    order.status, 
+    order.paymentStatus === "recebido", 
+    order.paymentMethod,
+    isPDVOrder
+  );
 
   return (
     <div className="space-y-6">
@@ -88,6 +95,7 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
         <div>
           <h3 className="text-lg font-semibold">
             Pedido #{order.id.substring(0, 6)}
+            {isPDVOrder && <span className="text-sm text-blue-600 ml-2">(PDV)</span>}
           </h3>
           <p className="text-sm text-gray-500">
             {formatDate(order.createdAt)}
