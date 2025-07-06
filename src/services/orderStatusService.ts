@@ -58,6 +58,7 @@ export const getNextStatusOptions = (
         break;
       default:
         nextStatuses.push("cancelled");
+        break;
     }
     return nextStatuses;
   }
