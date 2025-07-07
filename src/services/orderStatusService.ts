@@ -1,8 +1,8 @@
 
 import { Order } from "@/types/order";
 
-// Definir a sequência natural dos status
-const STATUS_SEQUENCE: Order["status"][] = [
+// Definir a sequência natural dos status para pedidos do cardápio
+const MENU_STATUS_SEQUENCE: Order["status"][] = [
   "pending",
   "confirmed", 
   "preparing",
@@ -64,7 +64,7 @@ export const getNextStatusOptions = (
     return nextStatuses;
   }
 
-  // Lógica específica para desconto em folha
+  // Lógica específica para desconto em folha (pedidos do cardápio)
   if (paymentMethod === "payroll_discount") {
     switch (currentStatus) {
       case "pending":
@@ -137,15 +137,15 @@ export const canTransitionToStatus = (
   return allowedNextStatuses.includes(targetStatus);
 };
 
-// Obter o próximo status na sequência natural
+// Obter o próximo status na sequência natural (para pedidos do cardápio)
 export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["status"] | null => {
-  const currentIndex = STATUS_SEQUENCE.indexOf(currentStatus);
+  const currentIndex = MENU_STATUS_SEQUENCE.indexOf(currentStatus);
   
-  if (currentIndex === -1 || currentIndex === STATUS_SEQUENCE.length - 1) {
+  if (currentIndex === -1 || currentIndex === MENU_STATUS_SEQUENCE.length - 1) {
     return null;
   }
   
-  return STATUS_SEQUENCE[currentIndex + 1];
+  return MENU_STATUS_SEQUENCE[currentIndex + 1];
 };
 
 // Verificar se o pedido já recebeu pagamento (agora baseado no paymentStatus)

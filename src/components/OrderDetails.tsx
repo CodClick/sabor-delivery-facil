@@ -79,10 +79,12 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     return dateObj.toLocaleString('pt-BR');
   };
 
-  // Verificar se é um pedido do PDV baseado na falta de userId ou campo específico
-  // Para agora, vamos usar uma lógica mais específica: pedidos do PDV não têm userId definido
-  // E também podemos verificar se o endereço contém indicativos de PDV
-  const isPDVOrder = !order.userId || order.address.toLowerCase().includes('pdv') || order.address.toLowerCase().includes('balcão');
+  // Lógica mais rigorosa para identificar pedidos do PDV
+  // PDV orders são identificados pela ausência de userId e/ou endereço específico
+  const isPDVOrder = !order.userId || 
+                     order.address.toLowerCase().includes('pdv') || 
+                     order.address.toLowerCase().includes('balcão') ||
+                     order.address.toLowerCase().includes('retirada');
   
   const nextStatusOptions = getNextStatusOptions(
     order.status, 
