@@ -1,8 +1,8 @@
 
 import { Order } from "@/types/order";
 
-// Definir a sequência natural dos status para pedidos do cardápio
-const MENU_STATUS_SEQUENCE: Order["status"][] = [
+// Definir a sequência natural dos status
+const STATUS_SEQUENCE: Order["status"][] = [
   "pending",
   "confirmed", 
   "preparing",
@@ -22,19 +22,11 @@ const PAYROLL_DISCOUNT_SEQUENCE: Order["status"][] = [
   "delivered"
 ];
 
-// Sequência simplificada para PDV (pula etapas intermediárias)
-const PDV_STATUS_SEQUENCE: Order["status"][] = [
-  "pending",
-  "confirmed",
-  "delivered"
-];
-
 // Obter próximos status possíveis com base no status atual
 export const getNextStatusOptions = (
   currentStatus: Order["status"], 
   hasReceivedPayment: boolean = false,
-  paymentMethod?: Order["paymentMethod"],
-  isPDVOrder: boolean = false
+  paymentMethod?: Order["paymentMethod"]
 ): Order["status"][] => {
   // Se o pedido está cancelado ou entregue, não há próximos status
   if (currentStatus === "cancelled" || currentStatus === "delivered") {
@@ -43,28 +35,7 @@ export const getNextStatusOptions = (
 
   const nextStatuses: Order["status"][] = [];
 
-  // Lógica simplificada para pedidos do PDV
-  if (isPDVOrder) {
-    switch (currentStatus) {
-      case "pending":
-        nextStatuses.push("confirmed");
-        break;
-      case "confirmed":
-        nextStatuses.push("delivered");
-        break;
-      default:
-        break;
-    }
-    
-    // Sempre permitir cancelar (exceto se já entregue ou cancelado)
-    if (currentStatus !== "delivered" && currentStatus !== "cancelled") {
-      nextStatuses.push("cancelled");
-    }
-    
-    return nextStatuses;
-  }
-
-  // Lógica específica para desconto em folha (pedidos do cardápio)
+  // Lógica específica para desconto em folha
   if (paymentMethod === "payroll_discount") {
     switch (currentStatus) {
       case "pending":
@@ -87,12 +58,11 @@ export const getNextStatusOptions = (
         break;
       default:
         nextStatuses.push("cancelled");
-        break;
     }
     return nextStatuses;
   }
 
-  // Lógica para outras formas de pagamento (sequência completa do cardápio)
+  // Lógica para outras formas de pagamento
   switch (currentStatus) {
     case "pending":
       nextStatuses.push("confirmed");
@@ -117,8 +87,8 @@ export const getNextStatusOptions = (
       break;
   }
 
-  // Sempre permitir cancelar (exceto se já entregue ou cancelado)
-  if (currentStatus !== "delivered" && currentStatus !== "cancelled") {
+  // Sempre permitir cancelar (exceto se já entregue)
+  if (currentStatus !== "delivered") {
     nextStatuses.push("cancelled");
   }
 
@@ -130,22 +100,21 @@ export const canTransitionToStatus = (
   currentStatus: Order["status"],
   targetStatus: Order["status"],
   hasReceivedPayment: boolean = false,
-  paymentMethod?: Order["paymentMethod"],
-  isPDVOrder: boolean = false
+  paymentMethod?: Order["paymentMethod"]
 ): boolean => {
-  const allowedNextStatuses = getNextStatusOptions(currentStatus, hasReceivedPayment, paymentMethod, isPDVOrder);
+  const allowedNextStatuses = getNextStatusOptions(currentStatus, hasReceivedPayment, paymentMethod);
   return allowedNextStatuses.includes(targetStatus);
 };
 
-// Obter o próximo status na sequência natural (para pedidos do cardápio)
+// Obter o próximo status na sequência natural
 export const getNextNaturalStatus = (currentStatus: Order["status"]): Order["status"] | null => {
-  const currentIndex = MENU_STATUS_SEQUENCE.indexOf(currentStatus);
+  const currentIndex = STATUS_SEQUENCE.indexOf(currentStatus);
   
-  if (currentIndex === -1 || currentIndex === MENU_STATUS_SEQUENCE.length - 1) {
+  if (currentIndex === -1 || currentIndex === STATUS_SEQUENCE.length - 1) {
     return null;
   }
   
-  return MENU_STATUS_SEQUENCE[currentIndex + 1];
+  return STATUS_SEQUENCE[currentIndex + 1];
 };
 
 // Verificar se o pedido já recebeu pagamento (agora baseado no paymentStatus)

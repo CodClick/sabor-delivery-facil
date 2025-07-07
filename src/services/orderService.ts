@@ -1,44 +1,10 @@
 
-
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
 import { getAllVariations } from "@/services/variationService";
 
 const ORDERS_COLLECTION = "orders";
-
-// Função para enviar webhook de atualização de status
-const sendStatusWebhook = async (order: Order, oldStatus?: Order["status"]) => {
-  try {
-    const webhookUrl = "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido";
-    
-    const webhookData = {
-      orderId: order.id,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      oldStatus: oldStatus,
-      newStatus: order.status,
-      paymentStatus: order.paymentStatus,
-      total: order.total,
-      updatedAt: new Date().toISOString()
-    };
-
-    console.log("Enviando webhook de status:", webhookData);
-
-    await fetch(webhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(webhookData),
-    });
-
-    console.log("Webhook de status enviado com sucesso");
-  } catch (error) {
-    console.error("Erro ao enviar webhook de status:", error);
-    // Não propagar o erro para não afetar a atualização do pedido
-  }
-};
 
 // Função para obter o preço adicional da variação
 const getVariationPrice = async (variationId: string): Promise<number> => {
@@ -336,9 +302,6 @@ export const updateOrder = async (orderId: string, updates: UpdateOrderRequest):
     
     if (!orderSnap.exists()) return null;
     
-    const currentOrderData = orderSnap.data() as Record<string, any>;
-    const oldStatus = currentOrderData.status;
-    
     const updateData = {
       ...updates,
       updatedAt: new Date()
@@ -346,14 +309,7 @@ export const updateOrder = async (orderId: string, updates: UpdateOrderRequest):
     
     await updateDoc(orderRef, updateData);
     
-    const updatedOrder = await getOrderById(orderId);
-    
-    // Enviar webhook se o status mudou
-    if (updatedOrder && updates.status && updates.status !== oldStatus) {
-      await sendStatusWebhook(updatedOrder, oldStatus);
-    }
-    
-    return updatedOrder;
+    return getOrderById(orderId);
   } catch (error) {
     console.error("Erro ao atualizar pedido:", error);
     throw error;
