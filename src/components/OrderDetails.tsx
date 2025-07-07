@@ -79,12 +79,12 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     return dateObj.toLocaleString('pt-BR');
   };
 
-  // Lógica mais rigorosa para identificar pedidos do PDV
-  // PDV orders são identificados pela ausência de userId e/ou endereço específico
-  const isPDVOrder = !order.userId || 
-                     order.address.toLowerCase().includes('pdv') || 
-                     order.address.toLowerCase().includes('balcão') ||
-                     order.address.toLowerCase().includes('retirada');
+  // Lógica mais específica para identificar pedidos do PDV
+  // Pedidos do PDV são identificados APENAS pela ausência de userId
+  // Pedidos do cardápio sempre têm userId
+  const isPDVOrder = !order.userId;
+  
+  console.log(`[OrderDetails] Pedido ${order.id.substring(0, 6)}: isPDVOrder = ${isPDVOrder}, userId = ${order.userId}`);
   
   const nextStatusOptions = getNextStatusOptions(
     order.status, 
@@ -92,6 +92,8 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     order.paymentMethod,
     isPDVOrder
   );
+
+  console.log(`[OrderDetails] Status atual: ${order.status}, Próximos status: [${nextStatusOptions.join(', ')}]`);
 
   return (
     <div className="space-y-6">
