@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -78,8 +79,10 @@ const OrderDetails = ({ order, onUpdateStatus }: OrderDetailsProps) => {
     return dateObj.toLocaleString('pt-BR');
   };
 
-  // Verificar se é um pedido do PDV (assumindo que PDV orders não têm userId definido)
-  const isPDVOrder = !order.userId;
+  // Verificar se é um pedido do PDV baseado na falta de userId ou campo específico
+  // Para agora, vamos usar uma lógica mais específica: pedidos do PDV não têm userId definido
+  // E também podemos verificar se o endereço contém indicativos de PDV
+  const isPDVOrder = !order.userId || order.address.toLowerCase().includes('pdv') || order.address.toLowerCase().includes('balcão');
   
   const nextStatusOptions = getNextStatusOptions(
     order.status, 

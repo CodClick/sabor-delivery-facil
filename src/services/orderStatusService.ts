@@ -1,6 +1,4 @@
 
-
-
 import { Order } from "@/types/order";
 
 // Definir a sequência natural dos status
@@ -94,7 +92,7 @@ export const getNextStatusOptions = (
     return nextStatuses;
   }
 
-  // Lógica para outras formas de pagamento
+  // Lógica para outras formas de pagamento (sequência completa do cardápio)
   switch (currentStatus) {
     case "pending":
       nextStatuses.push("confirmed");
@@ -156,4 +154,3 @@ export const hasReceivedPayment = (order: Order): boolean => {
   return order.paymentStatus === "recebido" || 
          order.paymentMethod === "card";
 };
-
