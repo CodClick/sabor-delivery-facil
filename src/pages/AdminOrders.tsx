@@ -106,10 +106,21 @@ const AdminOrders = () => {
     const updatedId = change.doc.id;
 
     setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === updatedId ? { ...order, ...updatedData } : order
-      )
-    );
+  prevOrders.map((order) => {
+    if (order.id === updatedId) {
+      return {
+        ...order,
+        ...updatedData,
+        createdAt: updatedData.createdAt?.toDate?.().toISOString() || order.createdAt,
+        items: updatedData.items ?? order.items,
+        total: updatedData.total ?? order.total,
+        customerName: updatedData.customerName ?? order.customerName,
+        customerPhone: updatedData.customerPhone ?? order.customerPhone
+      };
+    }
+    return order;
+  })
+);
   }
 
   if (change.type === "added") {
