@@ -133,18 +133,23 @@ const AdminOrders = () => {
             }
 
             if (change.type === "modified") {
-              setOrders((prev) =>
-                prev.map((order) =>
-                  order.id === orderId ? { ...order, ...data } : order
-                )
-              );
+  const normalizedData = {
+    ...data,
+    createdAt: data.createdAt?.toDate().toISOString?.() ?? data.createdAt
+  };
 
-              if (selectedOrder?.id === orderId) {
-                setSelectedOrder((prev) =>
-                  prev ? { ...prev, ...data } : prev
-                );
-              }
-            }
+  setOrders((prev) =>
+    prev.map((order) =>
+      order.id === orderId ? { ...order, ...normalizedData } : order
+    )
+  );
+
+  if (selectedOrder?.id === orderId) {
+    setSelectedOrder((prev) =>
+      prev ? { ...prev, ...normalizedData } : prev
+    );
+  }
+}
           });
         },
         (err) => {
