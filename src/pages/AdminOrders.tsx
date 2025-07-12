@@ -100,9 +100,31 @@ const AdminOrders = () => {
       const unsubscribe = onSnapshot(
         ordersQuery,
         (snapshot) => {
-          if (!snapshot.empty) {
-            loadOrders(activeStatus, dateRange);
-          }
+          snapshot.docChanges().forEach((change) => {
+  if (change.type === "modified") {
+    const updatedData = change.doc.data();
+    const updatedId = change.doc.id;
+
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === updatedId ? { ...order, ...updatedData } : order
+      )
+    );
+  }
+
+  if (change.type === "added") {
+    const data = change.doc.data();
+    const createdAt = data.createdAt?.toDate() || new Date();
+    const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
+
+    if (isRecent && data.status === "pending") {
+      toast({
+        title: "Novo pedido recebido!",
+        description: `Cliente: ${data.customerName}`,
+      });
+    }
+  }
+});
 
           snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
