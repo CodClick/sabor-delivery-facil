@@ -55,47 +55,13 @@ if (dateRange?.from) {
   const unsubscribe = onSnapshot(
     ordersQuery,
     (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        const data = change.doc.data();
-        const orderId = change.doc.id;
+      const updatedOrders: Order[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate().toISOString() ?? doc.data().createdAt,
+      })) as Order[];
 
-        if (change.type === "added") {
-          const createdAt = data.createdAt?.toDate?.() || new Date();
-          const isRecent = new Date().getTime() - createdAt.getTime() < 10000;
-
-          if (isRecent && data.status === "pending") {
-            toast({
-              title: "Novo pedido recebido!",
-              description: `Cliente: ${data.customerName}`,
-            });
-          }
-          loadOrders(activeStatus, dateRange);
-        }
-
-        if (change.type === "modified") {
-          const normalizedData = {
-            ...data,
-            id: orderId,
-            createdAt: data.createdAt?.toDate().toISOString?.() ?? data.createdAt,
-          };
-
-          setOrders((prev) => {
-            const index = prev.findIndex((order) => order.id === orderId);
-            if (index !== -1) {
-              const newOrders = [...prev];
-              newOrders[index] = { ...newOrders[index], ...normalizedData };
-              return newOrders;
-            }
-            return prev;
-          });
-
-          if (selectedOrder?.id === orderId) {
-            setSelectedOrder((prev) =>
-              prev ? { ...prev, ...normalizedData } : prev
-            );
-          }
-        }
-      });
+      setOrders(updatedOrders);
     },
     (err) => {
       console.error("Erro no listener:", err);
@@ -112,6 +78,7 @@ if (dateRange?.from) {
 
 }, [activeStatus, dateRange, toast]);
 
-return ( <div className="container mx-auto px-4 py-8"> <p className="text-gray-700">Página carregada com sucesso. Conteúdo será exibido aqui.</p> </div> ); };
+return ( <div className="container mx-auto px-4 py-8"> {orders.length === 0 ? ( <p className="text-gray-500">Nenhum pedido encontrado.</p> ) : ( <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {orders.map((order) => ( <Card key={order.id} className="overflow-hidden"> <CardHeader className="bg-gray-50 py-4"> <div> <p className="text-sm text-gray-500">Pedido #{order.id.substring(0, 6)}</p> <p className="text-sm font-medium text-gray-700"> Cliente: {order.customerName} </p> </div> </CardHeader> <CardContent className="py-4 space-y-2"> <p className="text-sm font-medium">Itens: {order.items.length}</p> <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p> </CardContent> </Card> ))} </div> )} </div> ); };
 
 export default AdminOrders;
+
