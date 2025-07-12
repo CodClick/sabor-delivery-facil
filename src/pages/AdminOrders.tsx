@@ -132,7 +132,7 @@ const AdminOrders = () => {
               }
             }
 
-            if (change.type === "modified") {
+   if (change.type === "modified") {
   const normalizedData = {
     ...data,
     createdAt: data.createdAt?.toDate().toISOString?.() ?? data.createdAt
@@ -263,16 +263,27 @@ const AdminOrders = () => {
     }
   };
 
-  const formatFullDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
+  const formatFullDate = (input: string | Date | Timestamp) => {
+  let date: Date;
+
+  if (input instanceof Timestamp) {
+    date = input.toDate();
+  } else if (typeof input === "string") {
+    date = new Date(input);
+  } else {
+    date = input;
+  }
+
+  if (isNaN(date.getTime())) return "Data inválida";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
 
   const statusOptions = [
     { value: "all", label: "Todos" },
