@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatusService";
+import { printOrder } from "@/utils/printUtils";
 
 interface OrderDetailsProps {
   order: Order;
@@ -191,6 +192,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   // Função wrapper para atualizar o status principal do pedido
   const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
     console.log("Atualizando status principal para:", status);
+    
+    // Se o status for "confirmed" (aceito), imprimir o pedido
+    if (status === "confirmed") {
+      printOrder(order);
+    }
+    
     const updatedOrder: Order & { cancellationReason?: string } = { ...order, status };
     if (status === "cancelled" && cancellationReasonValue) {
       updatedOrder.cancellationReason = cancellationReasonValue;

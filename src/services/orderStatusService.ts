@@ -65,31 +65,26 @@ export const getNextStatusOptions = (
   // Lógica para outras formas de pagamento
   switch (currentStatus) {
     case "pending":
-      nextStatuses.push("confirmed");
+      nextStatuses.push("confirmed", "cancelled");
       break;
     case "confirmed":
-      nextStatuses.push("preparing");
+      nextStatuses.push("preparing", "cancelled");
       break;
     case "preparing":
-      nextStatuses.push("ready");
+      nextStatuses.push("ready", "cancelled");
       break;
     case "ready":
-      nextStatuses.push("delivering");
+      nextStatuses.push("delivering", "cancelled");
       break;
     case "delivering":
-      nextStatuses.push("delivered");
+      nextStatuses.push("delivered", "cancelled");
       break;
     case "received":
       // Status "received" é independente - pode ir para "delivered"
-      nextStatuses.push("delivered");
+      nextStatuses.push("delivered", "cancelled");
       break;
     default:
       break;
-  }
-
-  // Sempre permitir cancelar (exceto se já entregue)
-  if (currentStatus !== "delivered") {
-    nextStatuses.push("cancelled");
   }
 
   return nextStatuses;
