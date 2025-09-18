@@ -8,14 +8,18 @@ import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, LogIn, LogOut } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const { itemCount, isCartOpen, setIsCartOpen } = useCart();
+  const { currentUser, logOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadMenuItems = async () => {
@@ -51,9 +55,47 @@ const Index = () => {
     return acc;
   }, [] as Array<{ category: Category; items: MenuItem[] }>);
 
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  };
+
   return (
     <div>
       <RestaurantHeader />
+      
+      {/* Header com botão de login/logout */}
+      <div className="bg-background border-b">
+        <div className="container mx-auto px-4 py-4 flex justify-end">
+          {currentUser ? (
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          ) : (
+            <Button 
+              variant="default" 
+              onClick={handleLogin}
+              className="flex items-center gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              Entrar
+            </Button>
+          )}
+        </div>
+      </div>
+
       <CategoryNav 
         categories={categories} 
         activeCategory={activeCategory}
