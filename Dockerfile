@@ -1,15 +1,26 @@
-# Etapa 1: Build com Bun
-FROM oven/bun:1.1 AS builder
+# Etapa 1: Build da aplicação
+FROM node:20 AS builder
+
 WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
 COPY . .
-RUN bun install
-RUN bun run build
+RUN npm run build
 
-# Etapa 2: Runtime com Node
+# Etapa 2: Imagem final, somente para servir os arquivos gerados
 FROM node:20-alpine
-WORKDIR /app
-COPY --from=builder /app /app
-RUN npm install -g vite
 
-EXPOSE 4173
-CMD ["vite", "preview", "--host", "0.0.0.0"]
+WORKDIR /app
+
+# Instala o pacote global "serve"
+RUN npm install -g serve
+
+# Copia apenas os arquivos da build final
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 3000
+
+# Comando que inicia o servidor de arquivos estáticos na porta 3000
+CMD ["serve", "dist", "-l", "3000", "-s"]
