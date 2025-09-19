@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { createOrder } from "@/services/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { fetchAddressByCep } from "@/services/cepService";
+import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -30,6 +31,40 @@ const Checkout = () => {
   const [observations, setObservations] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+
+  const handlePhoneChange = async (value: string) => {
+    setCustomerPhone(value);
+    
+    // Buscar dados do cliente quando o telefone tiver 10 ou 11 dígitos
+    const cleanPhone = value.replace(/\D/g, '');
+    if (cleanPhone.length >= 10) {
+      setPhoneLoading(true);
+      try {
+        const customerData = await getCustomerByPhone(value);
+        if (customerData) {
+          // Preencher os campos com os dados salvos
+          setCustomerName(customerData.name || "");
+          setCep(customerData.cep || "");
+          setStreet(customerData.street || "");
+          setNumber(customerData.number || "");
+          setComplement(customerData.complement || "");
+          setNeighborhood(customerData.neighborhood || "");
+          setCity(customerData.city || "");
+          setState(customerData.state || "");
+          
+          toast({
+            title: "Dados carregados!",
+            description: "Seus dados foram preenchidos automaticamente.",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados do cliente:", error);
+      } finally {
+        setPhoneLoading(false);
+      }
+    }
+  };
 
   const handleCepChange = async (value: string) => {
     setCep(value);
@@ -98,6 +133,19 @@ const Checkout = () => {
 
       const order = await createOrder(orderData);
       
+      // Salvar dados do cliente após criar o pedido
+      await saveCustomerData({
+        name: customerName,
+        phone: customerPhone,
+        cep,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
+      });
+      
       clearCart();
       
       toast({
@@ -160,9 +208,11 @@ const Checkout = () => {
                   id="customerPhone"
                   type="tel"
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  disabled={phoneLoading}
                   required
                 />
+                {phoneLoading && <p className="text-sm text-gray-500 mt-1">Buscando dados...</p>}
               </div>
 
               <Separator />
