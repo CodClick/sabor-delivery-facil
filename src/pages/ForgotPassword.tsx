@@ -6,8 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail } from "lucide-react";
 
-// 🚀 IMPORTAÇÃO DO SEU CLIENTE SUPABASE REAL AQUI!
-import { supabase } from "@/lib/supabaseClient"; // Ajuste o caminho se for diferente
+import { supabase } from "@/integrations/supabase/client";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -72,7 +71,7 @@ const ForgotPassword = () => {
         )}
 
         {successMessage && (
-          <Alert variant="success" className="bg-green-50 border-green-200 text-green-700">
+          <Alert className="bg-green-50 border-green-200 text-green-700">
             <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
