@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save, XCircle } from "lucide-react";
+import { Save, XCircle, Upload, Image as ImageIcon } from "lucide-react";
 import { saveMenuItem } from "@/services/menuItemService";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VariationGroupsSection } from "./VariationGroupsSection";
 import { formatCurrency } from "@/lib/utils";
@@ -34,6 +35,7 @@ export const EditMenuItemModal = ({
   onSuccess,
 }: EditMenuItemModalProps) => {
   const { toast } = useToast();
+  const { uploadImage, isUploading } = useImageUpload();
 
   const handleSaveItem = async () => {
     console.log("Tentando salvar item:", editItem);
@@ -120,6 +122,36 @@ export const EditMenuItemModal = ({
 
   console.log("Valid categories for select:", validCategories);
   console.log("Current editItem category:", editItem.category);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Arquivo inválido",
+        description: "Por favor, selecione apenas arquivos de imagem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (max 1MB)
+    if (file.size > 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O arquivo deve ter no máximo 1MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const imageUrl = await uploadImage(file);
+    if (imageUrl) {
+      setEditItem({...editItem, image: imageUrl});
+    }
+  };
 
   return (
     <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
@@ -215,13 +247,72 @@ export const EditMenuItemModal = ({
           </div>
           
           <div>
-            <Label htmlFor="image">URL da Imagem</Label>
-            <Input
-              id="image"
-              value={editItem.image}
-              onChange={(e) => setEditItem({...editItem, image: e.target.value})}
-              placeholder="URL da imagem ou deixe em branco para usar placeholder"
-            />
+            <Label htmlFor="image">Imagem do Item</Label>
+            <div className="space-y-3">
+              <Input
+                id="image"
+                value={editItem.image}
+                onChange={(e) => setEditItem({...editItem, image: e.target.value})}
+                placeholder="URL da imagem ou faça upload de uma imagem"
+              />
+              
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                    disabled={isUploading}
+                  />
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    disabled={isUploading}
+                    className="w-full"
+                  >
+                    {isUploading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Enviando...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Enviar Imagem
+                      </div>
+                    )}
+                  </Button>
+                </div>
+                
+                {editItem.image && (
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => window.open(editItem.image, '_blank')}
+                    className="px-3"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {editItem.image && (
+                <div className="mt-2">
+                  <img 
+                    src={editItem.image} 
+                    alt="Preview" 
+                    className="max-w-full max-h-32 object-cover rounded-md border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center space-x-2">
