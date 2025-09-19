@@ -180,7 +180,7 @@ const Admin = () => {
               variant="outline"
               className="w-full sm:w-auto text-sm"
             >
-              Voltar para o Cardápio
+              Ver Cardápio
             </Button>
           </div>
         </div>
