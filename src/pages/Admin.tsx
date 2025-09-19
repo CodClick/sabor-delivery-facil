@@ -174,7 +174,7 @@ const Admin = () => {
             Gerenciamento do Cardápio
           </h1>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <SeedDataButton />
+
             <Button 
               onClick={() => navigate("/")} 
               variant="outline"
