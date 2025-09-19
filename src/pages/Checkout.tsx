@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { saveCustomerData, getCustomerByPhone } from "@/services/customerService
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -32,6 +34,21 @@ const Checkout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [phoneLoading, setPhoneLoading] = useState(false);
+
+  // Preencher dados automaticamente se o usuário estiver logado
+  useEffect(() => {
+    if (currentUser) {
+      setCustomerName(currentUser.displayName || "");
+      // Se o usuário tem telefone no perfil, usar esse telefone
+      if (currentUser.phoneNumber) {
+        setCustomerPhone(currentUser.phoneNumber);
+        // Tentar buscar dados salvos com esse telefone
+        handlePhoneChange(currentUser.phoneNumber);
+      }
+      // Se não tiver telefone mas tem email, tentar buscar por telefone salvo anteriormente
+      // Aqui você pode implementar uma busca por email se necessário
+    }
+  }, [currentUser]);
 
   const handlePhoneChange = async (value: string) => {
     setCustomerPhone(value);
