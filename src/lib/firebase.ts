@@ -6,13 +6,11 @@ import { getFirestore } from "firebase/firestore";
 
 // Configuração do Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyDMeBrASTP0QiDbC2frw-E-WY1XEoGqKRY",
-  authDomain: "delivery-facil-51030.firebaseapp.com",
-  projectId: "delivery-facil-51030",
-  storageBucket: "delivery-facil-51030.firebasestorage.app",
-  messagingSenderId: "580404329384",
-  appId: "1:580404329384:web:b22fbaa09b7cc42cdd3b9d",
-  measurementId: "G-0EW4YWQQCY"
+OK  apiKey: "AIzaSyCcAoWOxsYOO2ArFpzUIeKHgM307GPnBBM",
+OK  authDomain: "appdelivery-39c86.firebaseapp.com",  
+OK  projectId: "appdelivery-39c86",  
+OK  messagingSenderId: "910010327512",
+OK  appId: "1:910010327512:web:1106825570fbaeda1552ad",
 };
 
 // Inicializar o Firebase
