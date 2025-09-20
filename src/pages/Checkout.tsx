@@ -449,7 +449,5 @@ const Checkout = () => {
         </Card>
       </div>
     </div>
-  );
 };
-
 export default Checkout;
