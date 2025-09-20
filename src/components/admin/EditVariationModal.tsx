@@ -29,9 +29,10 @@ export const EditVariationModal = ({
   const { toast } = useToast();
 
   const handleCategoryCheckboxChange = (categoryId: string) => {
-    const updatedCategoryIds = editVariation.categoryIds.includes(categoryId)
-      ? editVariation.categoryIds.filter(id => id !== categoryId)
-      : [...editVariation.categoryIds, categoryId];
+    const currentCategoryIds = editVariation.categoryIds || [];
+    const updatedCategoryIds = currentCategoryIds.includes(categoryId)
+      ? currentCategoryIds.filter(id => id !== categoryId)
+      : [...currentCategoryIds, categoryId];
     
     setEditVariation({
       ...editVariation,
@@ -155,7 +156,7 @@ export const EditVariationModal = ({
                   <div key={category.id} className="flex items-center space-x-2 py-1">
                     <Checkbox 
                       id={`cat-${category.id}`}
-                      checked={editVariation.categoryIds.includes(category.id)}
+                      checked={(editVariation.categoryIds || []).includes(category.id)}
                       onCheckedChange={() => handleCategoryCheckboxChange(category.id)}
                     />
                     <Label htmlFor={`cat-${category.id}`}>{category.name}</Label>
