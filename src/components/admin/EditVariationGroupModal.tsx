@@ -29,9 +29,10 @@ export const EditVariationGroupModal = ({
   const { toast } = useToast();
 
   const handleVariationCheckboxChange = (variationId: string) => {
-    const updatedVariations = editVariationGroup.variations.includes(variationId)
-      ? editVariationGroup.variations.filter(id => id !== variationId)
-      : [...editVariationGroup.variations, variationId];
+    const currentVariations = editVariationGroup.variations || [];
+    const updatedVariations = currentVariations.includes(variationId)
+      ? currentVariations.filter(id => id !== variationId)
+      : [...currentVariations, variationId];
     
     setEditVariationGroup({
       ...editVariationGroup,
@@ -49,7 +50,7 @@ export const EditVariationGroupModal = ({
       return;
     }
 
-    if (editVariationGroup.variations.length === 0) {
+    if (!editVariationGroup.variations || editVariationGroup.variations.length === 0) {
       toast({
         title: "Variações obrigatórias",
         description: "Selecione pelo menos uma variação para o grupo",
@@ -173,7 +174,7 @@ export const EditVariationGroupModal = ({
                   <div key={variation.id} className="flex items-center space-x-2 py-1">
                     <Checkbox 
                       id={`var-${variation.id}`}
-                      checked={editVariationGroup.variations.includes(variation.id)}
+                      checked={(editVariationGroup.variations || []).includes(variation.id)}
                       onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
                     />
                     <Label htmlFor={`var-${variation.id}`}>
