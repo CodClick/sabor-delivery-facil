@@ -7,8 +7,8 @@ import { getFirestore } from "firebase/firestore";
 // Configuração do Firebase
 const firebaseConfig = {
 OK  apiKey: "AIzaSyCcAoWOxsYOO2ArFpzUIeKHgM307GPnBBM",
-OK  authDomain: "appdelivery-39c86.firebaseapp.com",  
-OK  projectId: "appdelivery-39c86",  
+OK  authDomain: "appdelivery-39c86.firebaseapp.com",
+OK  projectId: "appdelivery-39c86",
 OK  messagingSenderId: "910010327512",
 OK  appId: "1:910010327512:web:1106825570fbaeda1552ad",
 };
