@@ -199,15 +199,6 @@ const Checkout = () => {
   }
 
   return (
-        <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-2">
-          <Button onClick={() => navigate("/")} variant="outline" className="flex items-center gap-2">
-            <ArrowLeft size={16} />
-            Voltar ao Cardápio
-          </Button>
-        </div>
-      </div>
-    
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
       
