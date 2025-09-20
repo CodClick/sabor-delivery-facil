@@ -198,19 +198,24 @@ const Checkout = () => {
     );
   }
 
-    <div className="container mx-auto px-4 py-8">
-      {/* 🔹 Botão de voltar */}
+  return (
+        <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Finalizar Pedido</h1>
-        <Button
-          onClick={() => navigate("/")}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Voltar ao Cardápio
-        </Button>
-      </div>    
+        <h1 className="text-3xl font-bold">Painel de Administração</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate("/")} variant="outline" className="flex items-center gap-2">
+            <ArrowLeft size={16} />
+            Voltar ao Cardápio
+          </Button>
+          <Button onClick={logOut} variant="outline" className="flex items-center gap-2">
+            <LogOut size={16} />
+            Sair
+          </Button>
+        </div>
+      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
@@ -449,5 +454,7 @@ const Checkout = () => {
         </Card>
       </div>
     </div>
+  );
 };
+
 export default Checkout;
