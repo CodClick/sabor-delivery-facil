@@ -111,7 +111,7 @@ export const VariationsTab = ({
                   <div className="mt-2">
                     <p className="text-xs text-gray-500">
                       Categorias: {
-                        variation.categoryIds.length > 0 
+                        (variation.categoryIds && variation.categoryIds.length > 0)
                           ? variation.categoryIds.map(id => 
                             categories.find(c => c.id === id)?.name || id
                           ).join(", ")

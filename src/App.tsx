@@ -36,6 +36,36 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppRoutes = () => (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/pdv" element={<PDV />} />
+      <Route path="/admin-dashboard" element={
+        <PrivateRoute>
+          <AdminDashboard />
+        </PrivateRoute>
+      } />
+      <Route path="/admin" element={
+        <PrivateRoute>
+          <Admin />
+        </PrivateRoute>
+      } />
+      <Route path="/orders" element={<Orders />} />
+      <Route path="/admin-orders" element={<AdminOrders />} />
+      <Route path="/entregador" element={<Entregador />} />
+      
+      <Route path="/api/*" element={<Api />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+    <ShoppingCart />
+  </BrowserRouter>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -43,33 +73,7 @@ const App = () => (
         <CartProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/pdv" element={<PDV />} />
-              <Route path="/admin-dashboard" element={
-                <PrivateRoute>
-                  <AdminDashboard />
-                </PrivateRoute>
-              } />
-              <Route path="/admin" element={
-                <PrivateRoute>
-                  <Admin />
-                </PrivateRoute>
-              } />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/admin-orders" element={<AdminOrders />} />
-              <Route path="/entregador" element={<Entregador />} />
-              
-              <Route path="/api/*" element={<Api />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <ShoppingCart />
-          </BrowserRouter>
+          <AppRoutes />
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>
