@@ -174,11 +174,13 @@ export const VariationGroupsTab = ({
                   <div className="mt-3">
                     <p className="text-sm font-semibold mb-1">Variações:</p>
                     <div className="flex flex-wrap gap-1">
-                      {group.variations.map(varId => (
+                      {(group.variations && group.variations.length > 0) ? group.variations.map(varId => (
                         <span key={varId} className="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs">
                           {getVariationName(varId)}
                         </span>
-                      ))}
+                      )) : (
+                        <span className="text-xs text-gray-500">Nenhuma variação selecionada</span>
+                      )}
                     </div>
                   </div>
                   
