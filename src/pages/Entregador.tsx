@@ -31,7 +31,6 @@ const Entregador = () => {
       where("status", "==", "delivering"),
       where("createdAt", ">=", startTimestamp),
       where("createdAt", "<=", endTimestamp),
-      orderBy("status"),
       orderBy("createdAt", "desc")
     );
 
