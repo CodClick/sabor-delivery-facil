@@ -14,7 +14,10 @@ import { updateOrder } from "@/services/orderService";
 const Entregador = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+
+  console.log("[Entregador] Componente carregado");
 
   useEffect(() => {
     console.log("[Entregador] Iniciando consulta de pedidos...");
@@ -62,6 +65,36 @@ const Entregador = () => {
       console.log("[Entregador] Cleanup - desconectando listener");
       unsubscribe();
     };
+  }, []);
+
+  // Query de debug para ver todos os pedidos do dia
+  useEffect(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const startTimestamp = Timestamp.fromDate(start);
+    const endTimestamp = Timestamp.fromDate(end);
+
+    const ordersRef = collection(db, "orders");
+    const allOrdersQuery = query(
+      ordersRef,
+      where("createdAt", ">=", startTimestamp),
+      where("createdAt", "<=", endTimestamp),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(allOrdersQuery, (snapshot) => {
+      const allOrdersData: Order[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Order[];
+      console.log("[Debug] Todos os pedidos do dia:", allOrdersData);
+      setAllOrders(allOrdersData);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleConfirmEntrega = async (order: Order) => {
@@ -126,6 +159,27 @@ const Entregador = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Pedidos em rota de entrega</h1>
+
+      {/* Debug info */}
+      <div className="bg-yellow-50 border border-yellow-200 p-4 mb-6 rounded">
+        <h3 className="font-bold text-sm mb-2">Debug Info:</h3>
+        <p className="text-sm">Pedidos "delivering": {orders.length}</p>
+        <p className="text-sm">Total de pedidos hoje: {allOrders.length}</p>
+        <p className="text-sm">Status disponíveis: {Array.from(new Set(allOrders.map(o => o.status))).join(", ")}</p>
+        <div className="text-xs mt-2">
+          <p>Pedidos por status:</p>
+          {Object.entries(
+            allOrders.reduce((acc, order) => {
+              acc[order.status] = (acc[order.status] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>)
+          ).map(([status, count]) => (
+            <span key={status} className="inline-block mr-4">
+              {status}: {count}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {loading ? (
         <p className="text-gray-500">Carregando pedidos...</p>
