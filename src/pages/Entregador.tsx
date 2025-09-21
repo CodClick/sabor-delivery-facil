@@ -22,23 +22,11 @@ const Entregador = () => {
   useEffect(() => {
     console.log("[Entregador] Iniciando consulta de pedidos...");
     
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
-    console.log("[Entregador] Range de datas:", { start, end });
-
-    const startTimestamp = Timestamp.fromDate(start);
-    const endTimestamp = Timestamp.fromDate(end);
-
     const ordersRef = collection(db, "orders");
+    // Consulta simplificada - apenas status delivering
     const ordersQuery = query(
       ordersRef,
-      where("status", "==", "delivering"),
-      where("createdAt", ">=", startTimestamp),
-      where("createdAt", "<=", endTimestamp),
-      orderBy("createdAt", "desc")
+      where("status", "==", "delivering")
     );
 
     console.log("[Entregador] Query criada, configurando listener...");
@@ -51,8 +39,21 @@ const Entregador = () => {
           id: doc.id,
           ...doc.data(),
         })) as Order[];
-        console.log("[Entregador] Pedidos processados:", fetchedOrders);
-        setOrders(fetchedOrders);
+        
+        // Filtrar apenas pedidos de hoje no cliente
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const todayOrders = fetchedOrders.filter(order => {
+          const orderDate = order.createdAt instanceof Date 
+            ? order.createdAt 
+            : new Date(order.createdAt);
+          orderDate.setHours(0, 0, 0, 0);
+          return orderDate.getTime() === today.getTime();
+        });
+        
+        console.log("[Entregador] Pedidos de hoje processados:", todayOrders);
+        setOrders(todayOrders);
         setLoading(false);
       },
       (error) => {
