@@ -180,6 +180,19 @@ const Entregador = () => {
             </span>
           ))}
         </div>
+        <div className="text-xs mt-2 max-h-32 overflow-y-auto">
+          <p className="font-bold">Pedidos "delivering" encontrados:</p>
+          {allOrders
+            .filter(o => o.status === "delivering")
+            .map(order => (
+              <div key={order.id} className="border-l-2 border-blue-300 pl-2 mb-1">
+                <p>ID: {order.id}</p>
+                <p>Cliente: {order.customerName}</p>
+                <p>Data: {typeof order.createdAt === 'string' ? order.createdAt : order.createdAt?.toString()}</p>
+                <p>Status: {order.status}</p>
+              </div>
+            ))}
+        </div>
       </div>
 
       {loading ? (
