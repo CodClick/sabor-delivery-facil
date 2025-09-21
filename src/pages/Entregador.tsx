@@ -17,10 +17,14 @@ const Entregador = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("[Entregador] Iniciando consulta de pedidos...");
+    
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date();
     end.setHours(23, 59, 59, 999);
+
+    console.log("[Entregador] Range de datas:", { start, end });
 
     const startTimestamp = Timestamp.fromDate(start);
     const endTimestamp = Timestamp.fromDate(end);
@@ -34,16 +38,30 @@ const Entregador = () => {
       orderBy("createdAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
-      const fetchedOrders: Order[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Order[];
-      setOrders(fetchedOrders);
-      setLoading(false);
-    });
+    console.log("[Entregador] Query criada, configurando listener...");
 
-    return () => unsubscribe();
+    const unsubscribe = onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        console.log("[Entregador] Snapshot recebido, docs encontrados:", snapshot.size);
+        const fetchedOrders: Order[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Order[];
+        console.log("[Entregador] Pedidos processados:", fetchedOrders);
+        setOrders(fetchedOrders);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("[Entregador] Erro na consulta:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      console.log("[Entregador] Cleanup - desconectando listener");
+      unsubscribe();
+    };
   }, []);
 
   const handleConfirmEntrega = async (order: Order) => {
