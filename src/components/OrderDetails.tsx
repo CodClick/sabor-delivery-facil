@@ -136,6 +136,13 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   // Calcular subtotal do item incluindo variações
   const calculateItemSubtotal = (item: any) => {
     console.log("Calculando subtotal para item:", item);
+
+        // ✅ Correção: pizzas meio a meio usam sempre o price gravado no pedido
+    if (item.isHalfPizza) {
+      const total = (item.price || 0) * (item.quantity || 1);
+      console.log(`Subtotal pizza meio a meio: R$ ${total}`);
+      return total;
+    }
     
     // Se o item tem "a partir de", o preço base é 0
     let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
