@@ -14,6 +14,7 @@ interface ProductVariationDialogProps {
   onAddToCart: (item: MenuItem, selectedVariationGroups: SelectedVariationGroup[]) => void;
   availableVariations: Variation[];
   groupVariations: {[groupId: string]: Variation[]};
+  onOpenPizzaCombination?: () => void;
 }
 
 const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
@@ -22,7 +23,8 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   onClose,
   onAddToCart,
   availableVariations,
-  groupVariations
+  groupVariations,
+  onOpenPizzaCombination
 }) => {
   const [selectedVariationGroups, setSelectedVariationGroups] = useState<SelectedVariationGroup[]>([]);
   const [isValid, setIsValid] = useState<boolean>(false);
@@ -282,6 +284,26 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                 </div>
               );
             })}
+            
+            {/* Opção Pizza Meio a Meio */}
+            {item.tipo === "pizza" && item.permiteCombinacao && onOpenPizzaCombination && (
+              <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <h4 className="font-semibold text-orange-800 mb-2">Quer fazer uma Pizza Meio a Meio?</h4>
+                <p className="text-sm text-orange-700 mb-3">
+                  Combine dois sabores diferentes em uma pizza!
+                </p>
+                <Button 
+                  onClick={() => {
+                    onClose();
+                    onOpenPizzaCombination();
+                  }}
+                  variant="outline"
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-100"
+                >
+                  Escolher Pizza Meio a Meio
+                </Button>
+              </div>
+            )}
             
             {/* Espaço extra no final para garantir acesso aos botões */}
             <div className="h-20"></div>

@@ -53,10 +53,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   }, [item]);
 
   const handleButtonClick = () => {
-    if (item.tipo === "pizza" && item.permiteCombinacao) {
-      // fluxo de pizza meio a meio
-      setIsPizzaDialogOpen(true);
-    } else if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
+    if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
       // fluxo de produto com variações normais
       setIsVariationDialogOpen(true);
     } else {
@@ -128,6 +125,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
         onAddToCart={handleAddItemWithVariations}
         availableVariations={availableVariations}
         groupVariations={groups}
+        onOpenPizzaCombination={() => setIsPizzaDialogOpen(true)}
       />
     </>
   );
