@@ -134,37 +134,35 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   };
 
   // Calcular subtotal do item incluindo variações
-// Calcular subtotal do item incluindo variações
 const calculateItemSubtotal = (item: any) => {
-  // Base Price é 0 se item.priceFrom for true, senão usa o preço do item
-  const basePrice = item.priceFrom ? 0 : (item.price || 0);
+  console.log("Calculando subtotal para item:", item);
 
+  // Se o item tem "a partir de", o preço base é 0
+  let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
   let variationsTotal = 0;
 
-  // Processar variações, se houver
+  // Verifica se existe selectedVariations
   if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
     item.selectedVariations.forEach((group: any) => {
       if (group.variations && Array.isArray(group.variations)) {
         group.variations.forEach((variation: any) => {
-          const additionalPrice = variation.additionalPrice || 0;
+          // Se for pizza meio a meio, o item pode ter um campo 'halfPrice' ou 'price'
+          const variationPrice = variation.price || variation.additionalPrice || 0;
           const quantity = variation.quantity || 1;
-          // Multiplicar pelo item.quantity também, porque cada pizza conta
-          variationsTotal += additionalPrice * quantity * item.quantity;
+
+          // Considera o preço da variação multiplicando pela quantidade do item
+          variationsTotal += variationPrice * quantity * item.quantity;
         });
       }
     });
   }
 
-  // Total final multiplicando o preço base pela quantidade do item
-  return basePrice * item.quantity + variationsTotal;
+  const total = basePrice + variationsTotal;
+  console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
+
+  return total;
 };
 
-    
-    const total = basePrice + variationsTotal;
-    console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
-    
-    return total;
-  };
 
   // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
   const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
