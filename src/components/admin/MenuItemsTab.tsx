@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
@@ -95,7 +94,7 @@ export const MenuItemsTab = ({
   const handleAddItem = () => {
     // Filter valid categories for new item
     const validCategories = categories.filter(category => category.id && category.id.trim() !== '');
-    const newItem: MenuItem = {
+    const newItem: MenuItem & { isHalfPizza?: boolean } = {
       id: `temp-${Date.now()}`,
       name: "",
       description: "",
@@ -105,30 +104,23 @@ export const MenuItemsTab = ({
       popular: false,
       hasVariations: false,
       variationGroups: [],
+      isHalfPizza: false, // nova flag
     };
     setEditItem(newItem);
   };
 
-  const handleEditItem = (item: MenuItem) => {
+  const handleEditItem = (item: MenuItem & { isHalfPizza?: boolean }) => {
     const itemToEdit = {
       ...item,
       hasVariations: !!item.variationGroups?.length,
       variationGroups: item.variationGroups || [],
+      isHalfPizza: item.isHalfPizza ?? false,
     };
     setEditItem(itemToEdit);
   };
 
   const handleDeleteItem = async (item: MenuItem) => {
-    console.log("=== INICIANDO PROCESSO DE EXCLUSÃO ===");
-    console.log("Item selecionado para exclusão:", {
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      popular: item.popular
-    });
-    
     if (!item.id || typeof item.id !== "string" || item.id.trim() === "") {
-      console.error("ID inválido:", item.id);
       toast({
         title: "Erro",
         description: "Item não possui ID válido para exclusão",
@@ -137,60 +129,37 @@ export const MenuItemsTab = ({
       return;
     }
 
-    // Check if item is already being deleted
-    if (deletingItems.has(item.id)) {
-      console.log("Item já está sendo deletado, ignorando duplicata");
-      return;
-    }
+    if (deletingItems.has(item.id)) return;
 
     const confirmMessage = `Tem certeza que deseja excluir o item "${item.name}"?\n\nID: ${item.id}${item.popular ? '\n\nEste item é marcado como popular e será removido da lista "Mais Populares".' : ''}`;
 
     if (window.confirm(confirmMessage)) {
       try {
-        console.log("Confirmação recebida, adicionando à lista de exclusão");
         setDeletingItems(prev => new Set(prev).add(item.id));
-        
-        console.log("Chamando deleteMenuItem...");
         await deleteMenuItem(item.id);
-        
-        console.log("Item deletado com sucesso do Firestore");
-        
         toast({
           title: "Sucesso",
           description: `Item "${item.name}" excluído com sucesso`,
         });
-        
-        console.log("Forçando reload dos dados...");
         await onDataChange();
-        
-        // Trigger update for frontend menu if popular item was deleted
+
         if (item.popular) {
-          console.log("Item popular deletado, notificando frontend...");
-          // Trigger storage event for other tabs
           localStorage.setItem('menuDataChanged', Date.now().toString());
-          // Trigger custom event for same tab
           window.dispatchEvent(new CustomEvent('menuDataChanged'));
         }
-        
-        console.log("Reload dos dados concluído");
-        
-      } catch (error) {
-        console.error("Erro durante o processo de exclusão:", error);
+      } catch (error: any) {
         toast({
           title: "Erro",
           description: `Não foi possível excluir o item: ${error.message}`,
           variant: "destructive",
         });
       } finally {
-        console.log("Removendo item da lista de exclusão");
         setDeletingItems(prev => {
           const newSet = new Set(prev);
           newSet.delete(item.id);
           return newSet;
         });
       }
-    } else {
-      console.log("Exclusão cancelada pelo usuário");
     }
   };
 
@@ -200,24 +169,15 @@ export const MenuItemsTab = ({
     if (window.confirm("Deseja executar a limpeza de itens populares? Isso irá verificar e remover referências órfãs.")) {
       try {
         setIsCleaningUp(true);
-        console.log("Iniciando limpeza de itens populares...");
-        
         const result = await cleanupPopularItems();
-        
         toast({
           title: "Limpeza Concluída",
           description: `${result.cleaned} itens órfãos foram identificados de ${result.total} itens populares totais.`,
         });
-        
-        // Force refresh of data
         await onDataChange();
-        
-        // Notify frontend to refresh
         localStorage.setItem('menuDataChanged', Date.now().toString());
         window.dispatchEvent(new CustomEvent('menuDataChanged'));
-        
-      } catch (error) {
-        console.error("Erro durante limpeza:", error);
+      } catch (error: any) {
         toast({
           title: "Erro na Limpeza",
           description: `Erro ao executar limpeza: ${error.message}`,
@@ -261,22 +221,6 @@ export const MenuItemsTab = ({
         </div>
       </div>
 
-      {duplicateIds.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
-            <h3 className="font-semibold text-yellow-800">Duplicatas Detectadas</h3>
-          </div>
-          <p className="text-yellow-700 mt-1">
-            Foram encontrados {duplicateIds.length} itens com IDs duplicados. 
-            Ao excluir um item duplicado, todas as versões serão removidas.
-          </p>
-          <p className="text-yellow-600 text-sm mt-1">
-            IDs duplicados: {duplicateIds.join(', ')}
-          </p>
-        </div>
-      )}
-
       {menuItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p>Nenhum item encontrado.</p>
@@ -295,7 +239,6 @@ export const MenuItemsTab = ({
                   <span className="ml-2 text-gray-500 text-sm">
                     ({items.length} {items.length === 1 ? "item" : "itens"})
                   </span>
-                  {items.length === 0 && <span className="ml-2 text-gray-500 text-sm">(vazio)</span>}
                 </h3>
                 <Button variant="ghost" size="sm">
                   {collapsedCategories[category.id] ? 
@@ -313,12 +256,6 @@ export const MenuItemsTab = ({
                       const isDeleting = deletingItems.has(item.id);
                       return (
                         <Card key={`${item.id}-${index}`} className={`overflow-hidden ${isDuplicate ? 'border-red-300 bg-red-50' : ''} ${isDeleting ? 'opacity-50' : ''}`}>
-                          {isDuplicate && (
-                            <div className="bg-red-100 text-red-800 text-xs px-2 py-1 flex items-center">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Duplicata detectada
-                            </div>
-                          )}
                           <div className="h-40 bg-gray-200">
                             <img
                               src={item.image}
@@ -358,9 +295,9 @@ export const MenuItemsTab = ({
                                       Com variações
                                     </span>
                                   )}
-                                  {item.priceFrom && (
-                                    <span className="inline-block bg-orange-500 text-white text-xs px-2 py-1 rounded">
-                                      A partir de
+                                  {item.isHalfPizza && (
+                                    <span className="inline-block bg-purple-500 text-white text-xs px-2 py-1 rounded">
+                                      Meia a Meia
                                     </span>
                                   )}
                                 </div>
@@ -411,3 +348,4 @@ export const MenuItemsTab = ({
     </>
   );
 };
+          
