@@ -134,35 +134,31 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   };
 
   // Calcular subtotal do item incluindo variações
-  const calculateItemSubtotal = (item: any) => {
-    console.log("Calculando subtotal para item:", item);
-    
-    // Se o item tem "a partir de", o preço base é 0
-    let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
-    let variationsTotal = 0;
-    
-    if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-      console.log("Variações encontradas:", item.selectedVariations);
-      
-      item.selectedVariations.forEach((group: any) => {
-        console.log("Processando grupo:", group);
-        
-        if (group.variations && Array.isArray(group.variations)) {
-          group.variations.forEach((variation: any) => {
-            console.log("Processando variação:", variation);
-            
-            const additionalPrice = variation.additionalPrice || 0;
-            const quantity = variation.quantity || 1;
-            
-            if (additionalPrice > 0) {
-              const variationCost = additionalPrice * quantity * item.quantity;
-              variationsTotal += variationCost;
-              console.log(`Variação ${variation.name}: R$ ${additionalPrice} x ${quantity} x ${item.quantity} = R$ ${variationCost}`);
-            }
-          });
-        }
-      });
-    }
+// Calcular subtotal do item incluindo variações
+const calculateItemSubtotal = (item: any) => {
+  // Base Price é 0 se item.priceFrom for true, senão usa o preço do item
+  const basePrice = item.priceFrom ? 0 : (item.price || 0);
+
+  let variationsTotal = 0;
+
+  // Processar variações, se houver
+  if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+    item.selectedVariations.forEach((group: any) => {
+      if (group.variations && Array.isArray(group.variations)) {
+        group.variations.forEach((variation: any) => {
+          const additionalPrice = variation.additionalPrice || 0;
+          const quantity = variation.quantity || 1;
+          // Multiplicar pelo item.quantity também, porque cada pizza conta
+          variationsTotal += additionalPrice * quantity * item.quantity;
+        });
+      }
+    });
+  }
+
+  // Total final multiplicando o preço base pela quantidade do item
+  return basePrice * item.quantity + variationsTotal;
+};
+
     
     const total = basePrice + variationsTotal;
     console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
