@@ -17,29 +17,21 @@ const Entregador = () => {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  console.log("[Entregador] Componente carregado");
-
   useEffect(() => {
-    console.log("[Entregador] Iniciando consulta de pedidos...");
-    
     const ordersRef = collection(db, "orders");
     const ordersQuery = query(
       ordersRef,
       where("status", "==", "delivering")
     );
 
-    console.log("[Entregador] Query criada, configurando listener...");
-
     const unsubscribe = onSnapshot(
       ordersQuery,
       (snapshot) => {
-        console.log("[Entregador] Snapshot recebido, docs encontrados:", snapshot.size);
         const fetchedOrders: Order[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Order[];
         
-        // Filtrar apenas pedidos de hoje
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -53,7 +45,6 @@ const Entregador = () => {
           } else if (order.createdAt instanceof Date) {
             date = order.createdAt;
           } else {
-            console.warn("[Entregador] createdAt inválido:", order.createdAt);
             return false;
           }
 
@@ -61,7 +52,6 @@ const Entregador = () => {
           return date.getTime() === today.getTime();
         });
         
-        console.log("[Entregador] Pedidos de hoje processados:", todayOrders);
         setOrders(todayOrders);
         setLoading(false);
       },
@@ -71,10 +61,7 @@ const Entregador = () => {
       }
     );
 
-    return () => {
-      console.log("[Entregador] Cleanup - desconectando listener");
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   // Query de debug para ver todos os pedidos do dia
@@ -100,7 +87,6 @@ const Entregador = () => {
         id: doc.id,
         ...doc.data(),
       })) as Order[];
-      console.log("[Debug] Todos os pedidos do dia:", allOrdersData);
       setAllOrders(allOrdersData);
     });
 
@@ -165,43 +151,18 @@ const Entregador = () => {
     }).format(date);
   };
 
+  // Função para formatar itens em lista simples
+  const formatItems = (items: any[]) => {
+    return items.map((item, index) => (
+      <div key={index} className="text-sm text-gray-700">
+        • {item.quantity}x {item.name}
+      </div>
+    ));
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Pedidos em rota de entrega</h1>
-
-      {/* Debug info */}
-      <div className="bg-yellow-50 border border-yellow-200 p-4 mb-6 rounded">
-        <h3 className="font-bold text-sm mb-2">Debug Info:</h3>
-        <p className="text-sm">Pedidos "delivering": {orders.length}</p>
-        <p className="text-sm">Total de pedidos hoje: {allOrders.length}</p>
-        <p className="text-sm">Status disponíveis: {Array.from(new Set(allOrders.map(o => o.status))).join(", ")}</p>
-        <div className="text-xs mt-2">
-          <p>Pedidos por status:</p>
-          {Object.entries(
-            allOrders.reduce((acc, order) => {
-              acc[order.status] = (acc[order.status] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>)
-          ).map(([status, count]) => (
-            <span key={status} className="inline-block mr-4">
-              {status}: {count}
-            </span>
-          ))}
-        </div>
-        <div className="text-xs mt-2 max-h-32 overflow-y-auto">
-          <p className="font-bold">Pedidos "delivering" encontrados:</p>
-          {allOrders
-            .filter(o => o.status === "delivering")
-            .map(order => (
-              <div key={order.id} className="border-l-2 border-blue-300 pl-2 mb-1">
-                <p>ID: {order.id}</p>
-                <p>Cliente: {order.customerName}</p>
-                <p>Data: {typeof order.createdAt === 'string' ? order.createdAt : order.createdAt?.toString()}</p>
-                <p>Status: {order.status}</p>
-              </div>
-            ))}
-        </div>
-      </div>
 
       {loading ? (
         <p className="text-gray-500">Carregando pedidos...</p>
@@ -213,15 +174,21 @@ const Entregador = () => {
             <Card key={order.id} className="overflow-hidden">
               <CardHeader className="bg-gray-50 py-4">
                 <div>
-                  <p className="text-sm text-gray-500">Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt)}</p>
+                  <p className="text-sm text-gray-500">
+                    Pedido #{order.id.substring(0, 6)} - {formatFullDate(order.createdAt)}
+                  </p>
                   <p className="text-sm font-medium text-gray-700">
                     Cliente: {order.customerName}
                   </p>
                   <p className="text-sm text-gray-500">Fone: {order.customerPhone}</p>
+                  <p className="text-sm text-gray-500">Endereço: {order.address}</p>
                 </div>
               </CardHeader>
               <CardContent className="py-4 space-y-2">
-                <p className="text-sm font-medium">Itens: {order.items.length}</p>
+                <div>
+                  <p className="text-sm font-medium mb-1">Itens:</p>
+                  <div className="pl-2">{formatItems(order.items)}</div>
+                </div>
                 <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
                 <Button onClick={() => handleConfirmEntrega(order)} className="w-full mt-2">
                   Confirmar entrega
