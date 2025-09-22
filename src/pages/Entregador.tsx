@@ -151,13 +151,35 @@ const Entregador = () => {
     }).format(date);
   };
 
-  // Função para formatar itens em lista simples
+  // Função para formatar itens com complementos
   const formatItems = (items: any[]) => {
-    return items.map((item, index) => (
-      <div key={index} className="text-sm text-gray-700">
-        • {item.quantity}x {item.name}
-      </div>
-    ));
+    return items.map((item, index) => {
+      // Montar lista de variações
+      let variationsText = "";
+
+      if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+        const variations: string[] = [];
+
+        item.selectedVariations.forEach((group: any) => {
+          if (group.variations && Array.isArray(group.variations)) {
+            group.variations.forEach((variation: any) => {
+              const qty = variation.quantity && variation.quantity > 1 ? `${variation.quantity}x ` : "";
+              variations.push(`${qty}${variation.name}`);
+            });
+          }
+        });
+
+        if (variations.length > 0) {
+          variationsText = " + " + variations.join(" + ");
+        }
+      }
+
+      return (
+        <div key={index} className="text-sm text-gray-700">
+          • {item.quantity}x {item.name}{variationsText}
+        </div>
+      );
+    });
   };
 
   return (
