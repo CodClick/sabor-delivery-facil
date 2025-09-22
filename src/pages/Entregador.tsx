@@ -23,7 +23,6 @@ const Entregador = () => {
     console.log("[Entregador] Iniciando consulta de pedidos...");
     
     const ordersRef = collection(db, "orders");
-    // Consulta simplificada - apenas status delivering
     const ordersQuery = query(
       ordersRef,
       where("status", "==", "delivering")
@@ -40,16 +39,26 @@ const Entregador = () => {
           ...doc.data(),
         })) as Order[];
         
-        // Filtrar apenas pedidos de hoje no cliente
+        // Filtrar apenas pedidos de hoje
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
         const todayOrders = fetchedOrders.filter(order => {
-          const orderDate = order.createdAt instanceof Date 
-            ? order.createdAt 
-            : new Date(order.createdAt);
-          orderDate.setHours(0, 0, 0, 0);
-          return orderDate.getTime() === today.getTime();
+          let date: Date;
+
+          if (order.createdAt instanceof Timestamp) {
+            date = order.createdAt.toDate();
+          } else if (typeof order.createdAt === "string") {
+            date = new Date(order.createdAt);
+          } else if (order.createdAt instanceof Date) {
+            date = order.createdAt;
+          } else {
+            console.warn("[Entregador] createdAt inválido:", order.createdAt);
+            return false;
+          }
+
+          date.setHours(0, 0, 0, 0);
+          return date.getTime() === today.getTime();
         });
         
         console.log("[Entregador] Pedidos de hoje processados:", todayOrders);
@@ -99,7 +108,6 @@ const Entregador = () => {
   }, []);
 
   const handleConfirmEntrega = async (order: Order) => {
-    // Corrigido: verificar se o pagamento é "cash" em vez de "dinheiro"
     const novoStatus = order.paymentMethod === "cash" ? "received" : "delivered";
 
     try {
