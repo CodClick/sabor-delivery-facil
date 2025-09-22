@@ -52,10 +52,10 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
               {/* depois substituímos por lista de sabores do cardápio */}
               <option value="Calabresa">Calabresa</option>
               <option value="Mussarela">Mussarela</option>
-              <option value="Calabresa">Quatro Queijos</option>
-              <option value="Mussarela">Frango com Catupiry</option>
-              <option value="Calabresa">Baiacatu</option>
-              <option value="Mussarela">Alho e Óleo</option>              
+              <option value="Quatro Queijos">Quatro Queijos</option>
+              <option value="Frango com Catupiry">Frango com Catupiry</option>
+              <option value="Baiacatu">Baiacatu</option>
+              <option value="Alho e Óleo">Alho e Óleo</option>              
             </select>
           </div>
 
@@ -69,10 +69,10 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
               <option value="">Selecione</option>
               <option value="Calabresa">Calabresa</option>
               <option value="Mussarela">Mussarela</option>
-              <option value="Calabresa">Quatro Queijos</option>
-              <option value="Mussarela">Frango com Catupiry</option>
-              <option value="Calabresa">Baiacatu</option>
-              <option value="Mussarela">Alho e Óleo</option>            
+              <option value="Quatro Queijos">Quatro Queijos</option>
+              <option value="Frango com Catupiry">Frango com Catupiry</option>
+              <option value="Baiacatu">Baiacatu</option>
+              <option value="Alho e Óleo">Alho e Óleo</option>            
             </select>
           </div>
 
