@@ -70,10 +70,10 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
               );
 
               if (brotoVariation?.additionalPrice !== undefined) {
-                option.precoBroto = pizza.price + brotoVariation.additionalPrice;
+                option.precoBroto = brotoVariation.additionalPrice;
               }
               if (grandeVariation?.additionalPrice !== undefined) {
-                option.precoGrande = pizza.price + grandeVariation.additionalPrice;
+                option.precoGrande = grandeVariation.additionalPrice;
               }
             }
           }
