@@ -5,7 +5,13 @@ import { getAllVariations } from "@/services/variationService";
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => void;
+  addItem: (
+    item: MenuItem & {
+      selectedVariations?: SelectedVariationGroup[];
+      isHalfPizza?: boolean;
+      halfPizzaPrice?: number;
+    }
+  ) => void;
   addToCart: (item: MenuItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -36,31 +42,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Erro ao carregar variações:", error);
       }
     };
-    
+
     loadVariations();
   }, []);
 
   // Função para obter o preço adicional da variação
   const getVariationPrice = (variationId: string): number => {
-    const variation = variations.find(v => v.id === variationId);
+    const variation = variations.find((v) => v.id === variationId);
     return variation?.additionalPrice || 0;
   };
 
   // Função para obter o nome da variação
   const getVariationName = (variationId: string): string => {
-    const variation = variations.find(v => v.id === variationId);
-    return variation?.name || '';
+    const variation = variations.find((v) => v.id === variationId);
+    return variation?.name || "";
   };
 
   // Função para calcular o valor total das variações de um item
   const calculateVariationsTotal = (item: CartItem): number => {
     let variationsTotal = 0;
-    
+
     if (item.selectedVariations && item.selectedVariations.length > 0) {
-      item.selectedVariations.forEach(group => {
+      item.selectedVariations.forEach((group) => {
         if (group.variations && group.variations.length > 0) {
-          group.variations.forEach(variation => {
-            const additionalPrice = variation.additionalPrice || getVariationPrice(variation.variationId);
+          group.variations.forEach((variation) => {
+            const additionalPrice =
+              variation.additionalPrice ||
+              getVariationPrice(variation.variationId);
             if (additionalPrice > 0) {
               variationsTotal += additionalPrice * (variation.quantity || 1);
             }
@@ -68,7 +76,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
     }
-    
+
     return variationsTotal;
   };
 
@@ -76,18 +84,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Calculate cart total and item count including variations
     const { total, count } = cartItems.reduce(
       (acc, item) => {
-        // Se o item tem preço "a partir de", não soma o preço base, apenas as variações
-        const basePrice = item.priceFrom ? 0 : (item.price || 0);
-        const variationsTotal = calculateVariationsTotal(item);
-        const itemTotal = (basePrice + variationsTotal) * item.quantity;
-        
+        let itemTotal = 0;
+
+        if (item.isHalfPizza && item.halfPizzaPrice !== undefined) {
+          // Preço de meia pizza já vem calculado no item
+          itemTotal = item.halfPizzaPrice * item.quantity;
+        } else {
+          // Se o item tem preço "a partir de", não soma o preço base, apenas as variações
+          const basePrice = item.priceFrom ? 0 : item.price || 0;
+          const variationsTotal = calculateVariationsTotal(item);
+          itemTotal = (basePrice + variationsTotal) * item.quantity;
+        }
+
         acc.total += itemTotal;
         acc.count += item.quantity;
         return acc;
       },
       { total: 0, count: 0 }
     );
-    
+
     setCartTotal(total);
     setItemCount(count);
 
@@ -105,113 +120,125 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cartItems, variations]);
 
   // Função para gerar ID único para itens com variações
-  const generateCartItemId = (item: MenuItem, selectedVariations?: SelectedVariationGroup[]): string => {
+  const generateCartItemId = (
+    item: MenuItem,
+    selectedVariations?: SelectedVariationGroup[],
+    isHalfPizza?: boolean
+  ): string => {
+    if (isHalfPizza) {
+      return `${item.id}_halfPizza_${Date.now()}`;
+    }
+
     if (!selectedVariations || selectedVariations.length === 0) {
       return item.id;
     }
 
     // Criar um ID composto do ID do item + IDs das variações selecionadas
     const variationsKey = selectedVariations
-      .map(group => {
+      .map((group) => {
         const groupVariations = group.variations
-          .filter(v => v.quantity > 0)
+          .filter((v) => v.quantity > 0)
           .sort((a, b) => a.variationId.localeCompare(b.variationId))
-          .map(v => `${v.variationId}-${v.quantity}`)
-          .join('.');
-        
+          .map((v) => `${v.variationId}-${v.quantity}`)
+          .join(".");
         return `${group.groupId}:${groupVariations}`;
       })
       .sort()
-      .join('_');
-    
+      .join("_");
+
     return `${item.id}_${variationsKey}`;
   };
 
   // Função para enriquecer variações com dados completos
-  const enrichSelectedVariations = (selectedVariations?: SelectedVariationGroup[]): SelectedVariationGroup[] => {
-    console.log("=== ENRICHING VARIATIONS ===");
-    console.log("Input selectedVariations:", selectedVariations);
-    
+  const enrichSelectedVariations = (
+    selectedVariations?: SelectedVariationGroup[]
+  ): SelectedVariationGroup[] => {
     if (!selectedVariations || selectedVariations.length === 0) {
-      console.log("Nenhuma variação para enriquecer");
       return [];
     }
 
-    const enriched = selectedVariations.map(group => {
-      console.log("Processando grupo:", group);
-      
-      const enrichedGroup = {
+    return selectedVariations.map((group) => {
+      return {
         ...group,
-        variations: group.variations.map(variation => {
-          const name = variation.name || getVariationName(variation.variationId);
-          const additionalPrice = variation.additionalPrice !== undefined ? variation.additionalPrice : getVariationPrice(variation.variationId);
-          
-          console.log(`Variação ${variation.variationId}: nome="${name}", preço=${additionalPrice}`);
-          
+        variations: group.variations.map((variation) => {
+          const name =
+            variation.name || getVariationName(variation.variationId);
+          const additionalPrice =
+            variation.additionalPrice !== undefined
+              ? variation.additionalPrice
+              : getVariationPrice(variation.variationId);
+
           return {
             ...variation,
             name,
-            additionalPrice
+            additionalPrice,
           };
-        })
+        }),
       };
-      
-      console.log("Grupo enriquecido:", enrichedGroup);
-      return enrichedGroup;
     });
-
-    console.log("Variações enriquecidas:", enriched);
-    return enriched;
   };
 
-  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => {
-    console.log("=== ADD ITEM TO CART ===");
-    console.log("Item recebido:", menuItem);
-    console.log("Variações recebidas:", menuItem.selectedVariations);
-    
-    const { selectedVariations, ...item } = menuItem;
-    
+  const addItem = (
+    menuItem: MenuItem & {
+      selectedVariations?: SelectedVariationGroup[];
+      isHalfPizza?: boolean;
+      halfPizzaPrice?: number;
+    }
+  ) => {
+    const { selectedVariations, isHalfPizza, halfPizzaPrice, ...item } =
+      menuItem;
+
     // Enriquecer as variações com dados completos
     const enrichedVariations = enrichSelectedVariations(selectedVariations);
-    
-    console.log("Variações após enriquecimento:", enrichedVariations);
-    
-    const cartItemId = generateCartItemId(item, enrichedVariations);
-    console.log("ID gerado para o item do carrinho:", cartItemId);
-    
-    setCartItems(prevItems => {
+
+    const cartItemId = generateCartItemId(
+      item,
+      enrichedVariations,
+      isHalfPizza
+    );
+
+    setCartItems((prevItems) => {
+      // Para pizza meio a meio sempre cria novo item (não acumula quantidade no mesmo ID)
+      if (isHalfPizza) {
+        const newCartItem = {
+          ...item,
+          quantity: 1,
+          isHalfPizza,
+          halfPizzaPrice,
+          selectedVariations: enrichedVariations,
+          id: cartItemId,
+        };
+        return [...prevItems, newCartItem];
+      }
+
       // Procura pelo item usando o ID composto (para variações específicas)
       const existingItemIndex = prevItems.findIndex(
-        i => generateCartItemId(i, i.selectedVariations) === cartItemId
+        (i) => generateCartItemId(i, i.selectedVariations) === cartItemId
       );
-      
+
       if (existingItemIndex >= 0) {
-        console.log("Item já existe no carrinho, incrementando quantidade");
         // Se já existe no carrinho, incrementa a quantidade
-        return prevItems.map((item, index) => 
-          index === existingItemIndex 
-            ? { ...item, quantity: item.quantity + 1 } 
+        return prevItems.map((item, index) =>
+          index === existingItemIndex
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        console.log("Adicionando novo item ao carrinho");
         // Se não existe, adiciona novo item
-        const newCartItem = { 
-          ...item, 
+        const newCartItem = {
+          ...item,
           quantity: 1,
-          selectedVariations: enrichedVariations 
+          selectedVariations: enrichedVariations,
+          id: cartItemId,
         };
-        
-        console.log("Novo item criado:", JSON.stringify(newCartItem, null, 2));
-        
         return [...prevItems, newCartItem];
       }
     });
-    
+
     toast({
       title: "Item adicionado",
       description: `${item.name} foi adicionado ao carrinho`,
-      duration: 2000
+      duration: 2000,
     });
   };
 
@@ -219,24 +246,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addToCart = (item: MenuItem) => addItem(item);
 
   const removeFromCart = (id: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
   const increaseQuantity = (id: string) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
+    setCartItems((prevItems) =>
+      prevItems.map((item) =>
         item.id === id ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
   };
 
   const decreaseQuantity = (id: string) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      ).filter(item => !(item.id === id && item.quantity === 1))
+    setCartItems((prevItems) =>
+      prevItems
+        .map((item) =>
+          item.id === id && item.quantity > 1
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        )
+        .filter((item) => !(item.id === id && item.quantity === 1))
     );
   };
 
@@ -257,7 +286,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartTotal,
         itemCount,
         isCartOpen,
-        setIsCartOpen
+        setIsCartOpen,
       }}
     >
       {children}
