@@ -1,11 +1,16 @@
-
 import React from "react";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle, Upload, Image as ImageIcon } from "lucide-react";
@@ -13,7 +18,6 @@ import { saveMenuItem } from "@/services/menuItemService";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VariationGroupsSection } from "./VariationGroupsSection";
-import { formatCurrency } from "@/lib/utils";
 
 interface EditMenuItemModalProps {
   editItem: MenuItem;
@@ -38,10 +42,7 @@ export const EditMenuItemModal = ({
   const { uploadImage, isUploading } = useImageUpload();
 
   const handleSaveItem = async () => {
-    console.log("Tentando salvar item:", editItem);
-    
     if (!editItem.name || !editItem.description || editItem.price <= 0) {
-      console.log("Validação falhou - campos obrigatórios");
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
@@ -51,7 +52,6 @@ export const EditMenuItemModal = ({
     }
 
     if (!editItem.category) {
-      console.log("Validação falhou - categoria não selecionada");
       toast({
         title: "Categoria obrigatória",
         description: "Selecione uma categoria para o item",
@@ -60,14 +60,13 @@ export const EditMenuItemModal = ({
       return;
     }
 
-    // If item has variations, ensure all variation groups have required fields
     if (editItem.hasVariations && editItem.variationGroups) {
       for (const group of editItem.variationGroups) {
         if (!group.name || group.variations.length === 0) {
-          console.log("Validação falhou - grupo de variação incompleto:", group);
           toast({
             title: "Grupos de variação incompletos",
-            description: "Todos os grupos de variação devem ter nome e pelo menos uma variação selecionada",
+            description:
+              "Todos os grupos de variação devem ter nome e pelo menos uma variação selecionada",
             variant: "destructive",
           });
           return;
@@ -76,59 +75,49 @@ export const EditMenuItemModal = ({
     }
 
     try {
-      console.log("Iniciando salvamento do item...");
-      
-      // Update hasVariations based on whether there are any variation groups
       const itemToSave = {
         ...editItem,
-        hasVariations: !!(editItem.variationGroups && editItem.variationGroups.length > 0)
+        hasVariations:
+          !!(editItem.variationGroups && editItem.variationGroups.length > 0),
       };
 
-      console.log("Item preparado para salvar:", itemToSave);
-
-      const savedId = await saveMenuItem(itemToSave);
-      console.log("Item salvo com sucesso, ID:", savedId);
-      
+      await saveMenuItem(itemToSave);
       setEditItem(null);
       toast({
         title: "Sucesso",
         description: "Item salvo com sucesso",
       });
       onSuccess();
-    } catch (error) {
-      console.error("Erro detalhado ao salvar item:", error);
+    } catch (error: any) {
       toast({
         title: "Erro",
-        description: `Não foi possível salvar o item: ${error.message || 'Erro desconhecido'}`,
+        description: `Não foi possível salvar o item: ${
+          error.message || "Erro desconhecido"
+        }`,
         variant: "destructive",
       });
     }
   };
 
-  // Enhanced filtering with more strict validation
-  const validCategories = categories.filter(category => {
-    const isValid = category && 
-                   category.id && 
-                   typeof category.id === 'string' && 
-                   category.id.trim() !== '' && 
-                   category.name && 
-                   typeof category.name === 'string' && 
-                   category.name.trim() !== '';
-    if (!isValid) {
-      console.warn("Invalid category found and filtered out:", category);
-    }
+  const validCategories = categories.filter((category) => {
+    const isValid =
+      category &&
+      category.id &&
+      typeof category.id === "string" &&
+      category.id.trim() !== "" &&
+      category.name &&
+      typeof category.name === "string" &&
+      category.name.trim() !== "";
     return isValid;
   });
 
-  console.log("Valid categories for select:", validCategories);
-  console.log("Current editItem category:", editItem.category);
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check if file is an image
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast({
         title: "Arquivo inválido",
         description: "Por favor, selecione apenas arquivos de imagem",
@@ -137,7 +126,6 @@ export const EditMenuItemModal = ({
       return;
     }
 
-    // Check file size (max 1MB)
     if (file.size > 1024 * 1024) {
       toast({
         title: "Arquivo muito grande",
@@ -149,7 +137,7 @@ export const EditMenuItemModal = ({
 
     const imageUrl = await uploadImage(file);
     if (imageUrl) {
-      setEditItem({...editItem, image: imageUrl});
+      setEditItem({ ...editItem, image: imageUrl });
     }
   };
 
@@ -158,39 +146,42 @@ export const EditMenuItemModal = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
-            {editItem.id && menuItems.some(item => item.id === editItem.id) ? "Editar Item" : "Novo Item"}
+            {editItem.id && menuItems.some((item) => item.id === editItem.id)
+              ? "Editar Item"
+              : "Novo Item"}
           </h2>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setEditItem(null)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setEditItem(null)}>
             <XCircle className="h-5 w-5" />
           </Button>
         </div>
+
         <div className="space-y-4">
           <div>
             <Label htmlFor="name">Nome *</Label>
             <Input
               id="name"
               value={editItem.name}
-              onChange={(e) => setEditItem({...editItem, name: e.target.value})}
+              onChange={(e) =>
+                setEditItem({ ...editItem, name: e.target.value })
+              }
               placeholder="Nome do item"
               required
             />
           </div>
-          
+
           <div>
             <Label htmlFor="description">Descrição *</Label>
             <Textarea
               id="description"
               value={editItem.description}
-              onChange={(e) => setEditItem({...editItem, description: e.target.value})}
+              onChange={(e) =>
+                setEditItem({ ...editItem, description: e.target.value })
+              }
               placeholder="Descrição do item"
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="price">Preço (R$) *</Label>
@@ -200,12 +191,17 @@ export const EditMenuItemModal = ({
                 step="0.01"
                 min="0.01"
                 value={editItem.price}
-                onChange={(e) => setEditItem({...editItem, price: parseFloat(e.target.value) || 0})}
+                onChange={(e) =>
+                  setEditItem({
+                    ...editItem,
+                    price: parseFloat(e.target.value) || 0,
+                  })
+                }
                 placeholder="0.00"
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="category">Categoria *</Label>
               {validCategories.length === 0 ? (
@@ -213,49 +209,101 @@ export const EditMenuItemModal = ({
                   Nenhuma categoria válida encontrada. Crie categorias primeiro.
                 </div>
               ) : (
-                <Select 
-                  value={editItem.category && validCategories.some(cat => cat.id === editItem.category) ? editItem.category : ""}
-                  onValueChange={(value) => {
-                    console.log("Category selected:", value);
-                    if (value && value.trim() !== '') {
-                      setEditItem({...editItem, category: value});
-                    }
-                  }}
+                <Select
+                  value={
+                    editItem.category &&
+                    validCategories.some((cat) => cat.id === editItem.category)
+                      ? editItem.category
+                      : ""
+                  }
+                  onValueChange={(value) =>
+                    setEditItem({ ...editItem, category: value })
+                  }
                   required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    {validCategories.map((category) => {
-                      console.log("Rendering category option:", category.id, category.name);
-                      // Double check the category ID is valid before rendering
-                      if (!category.id || category.id.trim() === '') {
-                        console.error("Attempted to render category with invalid ID:", category);
-                        return null;
-                      }
-                      return (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      );
-                    })}
+                    {validCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
             </div>
           </div>
-          
+
+          {/* Tipo do item */}
+          <div>
+            <Label htmlFor="tipo">Tipo do Item</Label>
+            <Select
+              value={editItem.tipo || "padrao"}
+              onValueChange={(value) =>
+                setEditItem({ ...editItem, tipo: value as "padrao" | "pizza" })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="padrao">Padrão</SelectItem>
+                <SelectItem value="pizza">Pizza</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Configurações de pizza */}
+          {editItem.tipo === "pizza" && (
+            <div className="space-y-3 border p-3 rounded-md bg-slate-50">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="permiteCombinacao"
+                  checked={editItem.permiteCombinacao || false}
+                  onCheckedChange={(checked) =>
+                    setEditItem({
+                      ...editItem,
+                      permiteCombinacao: checked === true,
+                    })
+                  }
+                />
+                <Label htmlFor="permiteCombinacao">Permitir meio a meio</Label>
+              </div>
+
+              {editItem.permiteCombinacao && (
+                <div>
+                  <Label htmlFor="maxSabores">Número máximo de sabores</Label>
+                  <Input
+                    id="maxSabores"
+                    type="number"
+                    min="2"
+                    value={editItem.maxSabores || 2}
+                    onChange={(e) =>
+                      setEditItem({
+                        ...editItem,
+                        maxSabores: parseInt(e.target.value) || 2,
+                      })
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <Label htmlFor="image">Imagem do Item</Label>
             <div className="space-y-3">
               <Input
                 id="image"
                 value={editItem.image}
-                onChange={(e) => setEditItem({...editItem, image: e.target.value})}
+                onChange={(e) =>
+                  setEditItem({ ...editItem, image: e.target.value })
+                }
                 placeholder="URL da imagem ou faça upload de uma imagem"
               />
-              
+
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <input
@@ -266,10 +314,12 @@ export const EditMenuItemModal = ({
                     id="image-upload"
                     disabled={isUploading}
                   />
-                  <Button 
+                  <Button
                     type="button"
-                    variant="outline" 
-                    onClick={() => document.getElementById('image-upload')?.click()}
+                    variant="outline"
+                    onClick={() =>
+                      document.getElementById("image-upload")?.click()
+                    }
                     disabled={isUploading}
                     className="w-full"
                   >
@@ -286,58 +336,59 @@ export const EditMenuItemModal = ({
                     )}
                   </Button>
                 </div>
-                
+
                 {editItem.image && (
-                  <Button 
+                  <Button
                     type="button"
-                    variant="ghost" 
+                    variant="ghost"
                     size="sm"
-                    onClick={() => window.open(editItem.image, '_blank')}
+                    onClick={() => window.open(editItem.image, "_blank")}
                     className="px-3"
                   >
                     <ImageIcon className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              
+
               {editItem.image && (
                 <div className="mt-2">
-                  <img 
-                    src={editItem.image} 
-                    alt="Preview" 
+                  <img
+                    src={editItem.image}
+                    alt="Preview"
                     className="max-w-full max-h-32 object-cover rounded-md border"
                     onError={(e) => {
-                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.style.display = "none";
                     }}
                   />
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
-            <Checkbox 
+            <Checkbox
               id="popular"
               checked={editItem.popular || false}
-              onCheckedChange={(checked) => 
-                setEditItem({...editItem, popular: checked === true})
+              onCheckedChange={(checked) =>
+                setEditItem({ ...editItem, popular: checked === true })
               }
             />
             <Label htmlFor="popular">Item popular (destacado no cardápio)</Label>
           </div>
 
           <div className="flex items-center space-x-2">
-            <Checkbox 
+            <Checkbox
               id="priceFrom"
               checked={editItem.priceFrom || false}
-              onCheckedChange={(checked) => 
-                setEditItem({...editItem, priceFrom: checked === true})
+              onCheckedChange={(checked) =>
+                setEditItem({ ...editItem, priceFrom: checked === true })
               }
             />
-            <Label htmlFor="priceFrom">Preço "a partir de" (valor base não será somado no carrinho)</Label>
+            <Label htmlFor="priceFrom">
+              Preço "a partir de" (valor base não será somado no carrinho)
+            </Label>
           </div>
 
-          {/* Variation groups section with enhanced display */}
           <VariationGroupsSectionWithPrices
             editItem={editItem}
             setEditItem={setEditItem}
@@ -345,7 +396,7 @@ export const EditMenuItemModal = ({
             variationGroups={variationGroups}
             onDataChange={onSuccess}
           />
-          
+
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setEditItem(null)}>
               Cancelar
@@ -374,16 +425,6 @@ const VariationGroupsSectionWithPrices = ({
   variationGroups: VariationGroup[];
   onDataChange?: () => void;
 }) => {
-  const getVariationName = (variationId: string): string => {
-    const variation = variations.find(v => v.id === variationId);
-    return variation ? variation.name : "Variação não encontrada";
-  };
-
-  const getVariationPrice = (variationId: string): number => {
-    const variation = variations.find(v => v.id === variationId);
-    return variation?.additionalPrice || 0;
-  };
-
   return (
     <VariationGroupsSection
       editItem={editItem}
@@ -394,3 +435,4 @@ const VariationGroupsSectionWithPrices = ({
     />
   );
 };
+                  
