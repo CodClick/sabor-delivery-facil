@@ -134,35 +134,41 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   };
 
   // Calcular subtotal do item incluindo variações
-const calculateItemSubtotal = (item: any) => {
-  console.log("Calculando subtotal para item:", item);
-
-  // Se o item tem "a partir de", o preço base é 0
-  let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
-  let variationsTotal = 0;
-
-  // Verifica se existe selectedVariations
-  if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-    item.selectedVariations.forEach((group: any) => {
-      if (group.variations && Array.isArray(group.variations)) {
-        group.variations.forEach((variation: any) => {
-          // Se for pizza meio a meio, o item pode ter um campo 'halfPrice' ou 'price'
-          const variationPrice = variation.price || variation.additionalPrice || 0;
-          const quantity = variation.quantity || 1;
-
-          // Considera o preço da variação multiplicando pela quantidade do item
-          variationsTotal += variationPrice * quantity * item.quantity;
-        });
-      }
-    });
-  }
-
-  const total = basePrice + variationsTotal;
-  console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
-
-  return total;
-};
-
+  const calculateItemSubtotal = (item: any) => {
+    console.log("Calculando subtotal para item:", item);
+    
+    // Se o item tem "a partir de", o preço base é 0
+    let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
+    let variationsTotal = 0;
+    
+    if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+      console.log("Variações encontradas:", item.selectedVariations);
+      
+      item.selectedVariations.forEach((group: any) => {
+        console.log("Processando grupo:", group);
+        
+        if (group.variations && Array.isArray(group.variations)) {
+          group.variations.forEach((variation: any) => {
+            console.log("Processando variação:", variation);
+            
+            const additionalPrice = variation.additionalPrice || 0;
+            const quantity = variation.quantity || 1;
+            
+            if (additionalPrice > 0) {
+              const variationCost = additionalPrice * quantity * item.quantity;
+              variationsTotal += variationCost;
+              console.log(`Variação ${variation.name}: R$ ${additionalPrice} x ${quantity} x ${item.quantity} = R$ ${variationCost}`);
+            }
+          });
+        }
+      });
+    }
+    
+    const total = basePrice + variationsTotal;
+    console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
+    
+    return total;
+  };
 
   // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
   const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
