@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from "react";
-import { MenuItem, Variation, SelectedVariationGroup, VariationGroup } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariationGroup } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import ProductVariationDialog from "./ProductVariationDialog";
+import PizzaCombinationDialog from "./PizzaCombinationDialog"; // novo
 import { getAllVariations } from "@/services/variationService";
-import { getVariationGroupById } from "@/services/variationGroupService";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -16,33 +15,30 @@ interface MenuItemCardProps {
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   const { addToCart, addItem } = useCart();
   const [isVariationDialogOpen, setIsVariationDialogOpen] = useState(false);
+  const [isPizzaDialogOpen, setIsPizzaDialogOpen] = useState(false); // novo
   const [availableVariations, setAvailableVariations] = useState<Variation[]>([]);
-  const [groups, setGroups] = useState<{[groupId: string]: Variation[]}>({});
+  const [groups, setGroups] = useState<{ [groupId: string]: Variation[] }>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load variations when the component mounts
     const loadVariations = async () => {
       try {
         setLoading(true);
-        
-        // Get all variations for filtering
         const variations = await getAllVariations();
         setAvailableVariations(variations);
-        
-        // If the item has variation groups, fetch the variations for each group
+
         if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
-          const groupVariations: {[groupId: string]: Variation[]} = {};
-          
+          const groupVariations: { [groupId: string]: Variation[] } = {};
+
           for (const group of item.variationGroups) {
-            // Filter variations that are available and in this group
             groupVariations[group.id] = variations.filter(
-              variation => variation.available && 
-              group.variations.includes(variation.id) &&
-              variation.categoryIds.includes(item.category)
+              (variation) =>
+                variation.available &&
+                group.variations.includes(variation.id) &&
+                variation.categoryIds.includes(item.category)
             );
           }
-          
+
           setGroups(groupVariations);
         }
       } catch (error) {
@@ -57,20 +53,25 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   }, [item]);
 
   const handleButtonClick = () => {
-    if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
+    if (item.tipo === "pizza" && item.permiteCombinacao) {
+      // fluxo de pizza meio a meio
+      setIsPizzaDialogOpen(true);
+    } else if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
+      // fluxo de produto com variações normais
       setIsVariationDialogOpen(true);
     } else {
+      // produto simples
       addToCart(item);
     }
   };
 
   const handleAddItemWithVariations = (
-    item: MenuItem, 
+    item: MenuItem,
     selectedVariationGroups: SelectedVariationGroup[]
   ) => {
     addItem({
       ...item,
-      selectedVariations: selectedVariationGroups
+      selectedVariations: selectedVariationGroups,
     });
   };
 
@@ -84,9 +85,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
             className="w-full h-full object-cover transition-transform hover:scale-105"
             onError={(e) => {
               console.log("Erro ao carregar imagem:", item.image);
-              // Fallback to a placeholder image if the food image fails to load
-              const target = e.target as HTMLImageElement;
-              target.src = "/placeholder.svg";
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
             }}
           />
         </div>
@@ -96,9 +95,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
         </div>
         <div className="flex justify-between items-center mt-2">
           <div className="flex flex-col">
-            {item.priceFrom && (
-              <span className="text-xs text-gray-500 mb-1">a partir de</span>
-            )}
+            {item.priceFrom && <span className="text-xs text-gray-500 mb-1">a partir de</span>}
             <span className="text-lg font-bold text-brand">{formatCurrency(item.price)}</span>
           </div>
           <Button
@@ -113,6 +110,17 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
         </div>
       </div>
 
+      {/* Fluxo pizza meio a meio */}
+      {item.tipo === "pizza" && item.permiteCombinacao && (
+        <PizzaCombinationDialog
+          item={item}
+          isOpen={isPizzaDialogOpen}
+          onClose={() => setIsPizzaDialogOpen(false)}
+          onAddToCart={addItem}
+        />
+      )}
+
+      {/* Fluxo variações normais */}
       <ProductVariationDialog
         item={item}
         isOpen={isVariationDialogOpen}
