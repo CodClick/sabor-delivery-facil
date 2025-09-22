@@ -90,6 +90,11 @@ const ShoppingCart: React.FC = () => {
 
   // Função para calcular o valor total das variações de um item
   const calculateVariationsTotal = (item: any): number => {
+    // Para pizzas meio a meio, não calcular variações extras pois o preço já está correto
+    if (item.isHalfPizza) {
+      return 0;
+    }
+    
     let variationsTotal = 0;
     
     if (item.selectedVariations && item.selectedVariations.length > 0) {
@@ -110,6 +115,11 @@ const ShoppingCart: React.FC = () => {
 
   // Função para calcular o total do item (base + variações) x quantidade
   const calculateItemTotal = (item: any): number => {
+    // Para pizzas meio a meio, usar apenas o preço calculado
+    if (item.isHalfPizza) {
+      return item.price * item.quantity;
+    }
+    
     // Se o item tem "a partir de", o preço base é 0
     const basePrice = item.priceFrom ? 0 : (item.price || 0);
     const variationsTotal = calculateVariationsTotal(item);
@@ -202,16 +212,27 @@ const ShoppingCart: React.FC = () => {
                       </div>
                       
                       {/* Preço base do item */}
-                      <div className="text-sm text-gray-600">
-                        {item.priceFrom ? (
-                          <span>Item: <span className="text-xs text-gray-500">a partir de</span> {formatCurrency(0)}</span>
-                        ) : (
-                          <span>Item: {formatCurrency(basePrice)}</span>
-                        )}
-                      </div>
+                      {!item.isHalfPizza && (
+                        <div className="text-sm text-gray-600">
+                          {item.priceFrom ? (
+                            <span>Item: <span className="text-xs text-gray-500">a partir de</span> {formatCurrency(0)}</span>
+                          ) : (
+                            <span>Item: {formatCurrency(basePrice)}</span>
+                          )}
+                        </div>
+                      )}
                       
-                      {/* Variações selecionadas */}
-                      {item.selectedVariations && item.selectedVariations.length > 0 && (
+                      {/* Para pizzas meio a meio, mostrar informações da combinação */}
+                      {item.isHalfPizza && item.combination && (
+                        <div className="text-sm text-gray-600">
+                          <p>Pizza {item.combination.tamanho} - Meio a meio</p>
+                          <p className="text-xs">1/2 {item.combination.sabor1.name} + 1/2 {item.combination.sabor2.name}</p>
+                          <p className="text-brand font-medium">{formatCurrency(item.price)}</p>
+                        </div>
+                      )}
+                      
+                      {/* Variações selecionadas (apenas para itens que não são pizza meio a meio) */}
+                      {!item.isHalfPizza && item.selectedVariations && item.selectedVariations.length > 0 && (
                         <div className="mt-2 text-sm">
                           {item.selectedVariations.map((group, index) => (
                             <div key={group.groupId || index} className="mb-1">
@@ -247,9 +268,11 @@ const ShoppingCart: React.FC = () => {
                       )}
                       
                       {/* Subtotal unitário */}
-                      <div className="text-sm font-medium text-brand-600 mt-1">
-                        Subtotal: {formatCurrency(basePrice + variationsTotal)}
-                      </div>
+                      {!item.isHalfPizza && (
+                        <div className="text-sm font-medium text-brand-600 mt-1">
+                          Subtotal: {formatCurrency(basePrice + variationsTotal)}
+                        </div>
+                      )}
                       
                       <div className="flex items-center mt-2">
                         <button

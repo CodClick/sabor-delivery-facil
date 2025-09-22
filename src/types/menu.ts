@@ -18,6 +18,12 @@ export interface MenuItem {
 export interface CartItem extends MenuItem {
   quantity: number;
   selectedVariations?: SelectedVariationGroup[];
+  isHalfPizza?: boolean; // Indicates if this is a half pizza combination
+  combination?: {
+    sabor1: { id: string; name: string };
+    sabor2: { id: string; name: string };
+    tamanho: "broto" | "grande";
+  };
 }
 
 export interface SelectedVariationGroup {

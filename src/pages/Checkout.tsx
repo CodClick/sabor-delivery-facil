@@ -351,40 +351,49 @@ const Checkout = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-semibold text-lg">{item.name}</p>
-                      <p className="text-sm text-gray-600">
-                        {item.quantity}x {item.priceFrom ? (
-                          <span>
-                            <span className="text-xs text-gray-500">a partir de</span> R$ 0,00
-                          </span>
-                        ) : (
-                          `R$ ${item.price.toFixed(2)}`
-                        )}
-                      </p>
+                      {item.isHalfPizza && item.combination ? (
+                        <div className="text-sm text-gray-600">
+                          <p>{item.quantity}x Pizza {item.combination.tamanho} - Meio a meio</p>
+                          <p className="text-xs">1/2 {item.combination.sabor1.name} + 1/2 {item.combination.sabor2.name}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          {item.quantity}x {item.priceFrom ? (
+                            <span>
+                              <span className="text-xs text-gray-500">a partir de</span> R$ 0,00
+                            </span>
+                          ) : (
+                            `R$ ${item.price.toFixed(2)}`
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right font-semibold text-lg">
                       R$ {(
-                        // Se o item tem "a partir de", o preço base é 0
-                        ((item.priceFrom ? 0 : item.price) +
-                          (item.selectedVariations
-                            ? item.selectedVariations.reduce((acc, group) => {
-                                return (
-                                  acc +
-                                  group.variations.reduce(
-                                    (gacc, v) =>
-                                      gacc +
-                                      ((v.additionalPrice || 0) *
-                                        (v.quantity || 1)),
-                                    0
-                                  )
-                                );
-                              }, 0)
-                            : 0)) * item.quantity
+                        item.isHalfPizza 
+                          ? item.price * item.quantity
+                          : // Se o item tem "a partir de", o preço base é 0
+                            ((item.priceFrom ? 0 : item.price) +
+                              (item.selectedVariations
+                                ? item.selectedVariations.reduce((acc, group) => {
+                                    return (
+                                      acc +
+                                      group.variations.reduce(
+                                        (gacc, v) =>
+                                          gacc +
+                                          ((v.additionalPrice || 0) *
+                                            (v.quantity || 1)),
+                                        0
+                                      )
+                                    );
+                                  }, 0)
+                                : 0)) * item.quantity
                       ).toFixed(2)}
                     </div>
                   </div>
 
-                  {/* Exibir grupos de variações e suas quantidades/subtotais */}
-                  {item.selectedVariations && item.selectedVariations.length > 0 && (
+                  {/* Exibir grupos de variações e suas quantidades/subtotais (apenas para itens que não são pizza meio a meio) */}
+                  {!item.isHalfPizza && item.selectedVariations && item.selectedVariations.length > 0 && (
                     <div className="mt-2 ml-1 text-sm">
                       {item.selectedVariations.map((group, groupIndex) => (
                         <div key={groupIndex} className="mb-2">
