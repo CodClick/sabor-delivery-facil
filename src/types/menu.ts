@@ -9,6 +9,10 @@ export interface MenuItem {
   hasVariations?: boolean;
   variationGroups?: VariationGroup[]; // Now accepts only VariationGroup objects
   priceFrom?: boolean; // New property to indicate "a partir de" pricing
+  tipo?: "padrao" | "pizza"; // Type of item - standard or pizza
+  permiteCombinacao?: boolean; // Allow half-and-half combinations for pizzas
+  maxSabores?: number; // Maximum number of flavors for combinations
+  isHalfPizza?: boolean; // Indicates if this is a half pizza combination
 }
 
 export interface CartItem extends MenuItem {
