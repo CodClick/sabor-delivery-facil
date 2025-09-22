@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,12 @@ import { printOrder } from "@/utils/printUtils";
 
 interface OrderDetailsProps {
   order: Order;
-  onUpdateStatus: (orderId: string, status: Order["status"], cancellationReason?: string, paymentStatus?: "a_receber" | "recebido") => void;
+  onUpdateStatus: (
+    orderId: string,
+    status: Order["status"],
+    cancellationReason?: string,
+    paymentStatus?: "a_receber" | "recebido"
+  ) => void;
 }
 
 const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) => {
@@ -90,12 +94,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   // Formatar data para exibição
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     }).format(date);
   };
 
@@ -133,48 +137,30 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Calcular subtotal do item incluindo variações
+  // Calcular subtotal do item incluindo variações (fallback para pedidos antigos)
   const calculateItemSubtotal = (item: any) => {
-    console.log("Calculando subtotal para item:", item);
-
-        // ✅ Correção: pizzas meio a meio usam sempre o price gravado no pedido
     if (item.isHalfPizza) {
-      const total = (item.price || 0) * (item.quantity || 1);
-      console.log(`Subtotal pizza meio a meio: R$ ${total}`);
-      return total;
+      return (item.price || 0) * (item.quantity || 1);
     }
     
-    // Se o item tem "a partir de", o preço base é 0
     let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
     let variationsTotal = 0;
     
     if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-      console.log("Variações encontradas:", item.selectedVariations);
-      
       item.selectedVariations.forEach((group: any) => {
-        console.log("Processando grupo:", group);
-        
         if (group.variations && Array.isArray(group.variations)) {
           group.variations.forEach((variation: any) => {
-            console.log("Processando variação:", variation);
-            
             const additionalPrice = variation.additionalPrice || 0;
             const quantity = variation.quantity || 1;
-            
             if (additionalPrice > 0) {
-              const variationCost = additionalPrice * quantity * item.quantity;
-              variationsTotal += variationCost;
-              console.log(`Variação ${variation.name}: R$ ${additionalPrice} x ${quantity} x ${item.quantity} = R$ ${variationCost}`);
+              variationsTotal += additionalPrice * quantity * item.quantity;
             }
           });
         }
       });
     }
     
-    const total = basePrice + variationsTotal;
-    console.log(`Subtotal final: Base R$ ${basePrice} + Variações R$ ${variationsTotal} = R$ ${total}`);
-    
-    return total;
+    return basePrice + variationsTotal;
   };
 
   // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
@@ -182,12 +168,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     try {
       const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       });
-      console.log("Webhook de atualização de status enviado. Status:", response.status);
       if (!response.ok) {
         console.error("Falha ao enviar webhook de status:", await response.text());
       }
@@ -198,13 +181,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
 
   // Função wrapper para atualizar o status principal do pedido
   const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
-    console.log("Atualizando status principal para:", status);
-    
-    // Se o status for "confirmed" (aceito), imprimir o pedido
     if (status === "confirmed") {
       printOrder(order);
     }
-    
     const updatedOrder: Order & { cancellationReason?: string } = { ...order, status };
     if (status === "cancelled" && cancellationReasonValue) {
       updatedOrder.cancellationReason = cancellationReasonValue;
@@ -215,10 +194,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
 
   // Função SEPARADA para atualizar APENAS o status de pagamento
   const handleUpdatePaymentStatus = (orderId: string, paymentStatus: "a_receber" | "recebido") => {
-    console.log("Atualizando APENAS status de pagamento para:", paymentStatus);
     const updatedOrder: Order = { ...order, paymentStatus };
     sendOrderStatusWebhook(updatedOrder);
-    // Chama onUpdateStatus mantendo o status atual, mas passando o paymentStatus
     onUpdateStatus(orderId, order.status, undefined, paymentStatus);
   };
 
@@ -236,7 +213,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
 
   // Finalizar cancelamento após inserir o motivo
   const handleSubmitReason = () => {
-    // Pode adicionar validação se quiser motivo obrigatório
     handleUpdateStatus(order.id, "cancelled", cancellationReason);
     setIsReasonDialogOpen(false);
     setCancellationReason("");
@@ -256,10 +232,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         <>
           <AlertDialog key={status} open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                className="flex items-center gap-1"
-              >
+              <Button variant="destructive" className="flex items-center gap-1">
                 {icon}
                 {label}
               </Button>
@@ -300,17 +273,17 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                 />
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={handleCloseReasonDialog}
-                  type="button"
-                >Cancelar</Button>
+                <Button variant="outline" onClick={handleCloseReasonDialog} type="button">
+                  Cancelar
+                </Button>
                 <Button
                   variant="destructive"
                   onClick={handleSubmitReason}
                   type="button"
                   disabled={!cancellationReason.trim()}
-                >Confirmar Cancelamento</Button>
+                >
+                  Confirmar Cancelamento
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -393,7 +366,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         )}
       </div>
 
-      {/* Status de Pagamento - Novo grupo separado */}
+      {/* Status de Pagamento */}
       <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
         <h3 className="text-md font-medium mb-3 text-blue-800">Status de Pagamento</h3>
         <div className="flex items-center justify-between">
@@ -416,7 +389,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         </div>
       </div>
 
-      {/* Motivo do cancelamento, se existir */}
+      {/* Motivo do cancelamento */}
       {order.status === "cancelled" && (order.cancellationReason || cancellationReason) && (
         <div className="bg-red-50 border border-red-200 p-3 rounded-md">
           <div className="text-sm font-semibold text-red-700">Motivo do cancelamento:</div>
@@ -439,118 +412,90 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {order.items.map((item, index) => {
-              // Debug logs para cada item
-              console.log(`\n=== ITEM ${index + 1} ===`);
-              console.log("Item completo:", JSON.stringify(item, null, 2));
-              console.log("Tem selectedVariations?", !!item.selectedVariations);
-              console.log("selectedVariations é array?", Array.isArray(item.selectedVariations));
-              console.log("Quantidade de grupos:", item.selectedVariations?.length || 0);
-              
-              return (
-                <React.Fragment key={index}>
-                  <TableRow>
-                    {/* ITEM COLUMN: Name + Variations as stacked block */}
-                    <TableCell className="font-medium align-top w-[280px] min-w-[220px]">
-                      <div className="font-semibold">
-                        {item.name}
-                        {item.priceFrom && (
-                          <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                            a partir de
-                          </span>
-                        )}
-                      </div>
-                      {/* Exibir variações se existirem */}
-                      {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
-                        <div className="mt-1">
-                          {item.selectedVariations.map((group, groupIndex) => (
-                            <div key={groupIndex} className="pl-2 text-xs text-gray-700 border-l-2 border-gray-200 mb-1">
-                              {group.groupName && (
-                                <div className="font-medium text-[12px] text-gray-600 mb-0.5">{group.groupName}:</div>
-                              )}
-                              {group.variations && Array.isArray(group.variations) && group.variations.length > 0 ? (
-                                group.variations.map((variation, varIndex) => {
-                                  const additionalPrice = variation.additionalPrice || 0;
-                                  const quantity = variation.quantity || 1;
-                                  const variationTotal = additionalPrice * quantity;
-                                  return (
-                                    <div key={varIndex} className="flex justify-between items-center text-gray-700">
-                                      <span>
-                                        • {variation.name || `Variação ${varIndex + 1}`}
-                                        {quantity > 1 && (
-                                          <span className="ml-0.5 text-[11px]">({quantity}x)</span>
-                                        )}
+            {order.items.map((item, index) => (
+              <React.Fragment key={index}>
+                <TableRow>
+                  {/* ITEM */}
+                  <TableCell className="font-medium align-top w-[280px] min-w-[220px]">
+                    <div className="font-semibold">
+                      {item.name}
+                      {item.priceFrom && (
+                        <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          a partir de
+                        </span>
+                      )}
+                    </div>
+                    {/* Variações */}
+                    {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
+                      <div className="mt-1">
+                        {item.selectedVariations.map((group, groupIndex) => (
+                          <div key={groupIndex} className="pl-2 text-xs text-gray-700 border-l-2 border-gray-200 mb-1">
+                            {group.groupName && (
+                              <div className="font-medium text-[12px] text-gray-600 mb-0.5">{group.groupName}:</div>
+                            )}
+                            {group.variations && Array.isArray(group.variations) && group.variations.length > 0 ? (
+                              group.variations.map((variation, varIndex) => {
+                                const additionalPrice = variation.additionalPrice || 0;
+                                const quantity = variation.quantity || 1;
+                                const variationTotal = additionalPrice * quantity;
+                                return (
+                                  <div key={varIndex} className="flex justify-between">
+                                    <span>
+                                      {quantity > 1 ? `${quantity}x ` : ""}
+                                      {variation.name}
+                                    </span>
+                                    {variationTotal > 0 && (
+                                      <span className="text-gray-500 ml-2">
+                                        +R$ {variationTotal.toFixed(2)}
                                       </span>
-                                      {additionalPrice > 0 && (
-                                        <span className="text-green-600 font-extrabold tabular-nums text-[13px] ml-2 whitespace-nowrap">
-                                          +R$ {variationTotal.toFixed(2)}
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              ) : (
-                                <div className="text-gray-400 italic">Nenhuma variação</div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-400 mt-1">
-                          (Sem variações selecionadas)
-                        </div>
-                      )}
-                    </TableCell>
-                    {/* PREÇO BASE */}
-                    <TableCell className="align-top w-28 text-right font-normal tabular-nums">
-                      {item.priceFrom ? (
-                        <span className="text-gray-500">R$ 0,00</span>
-                      ) : (
-                        `R$ ${(item.price || 0).toFixed(2)}`
-                      )}
-                    </TableCell>
-                    {/* QTD */}
-                    <TableCell className="align-top w-12 text-center tabular-nums">
-                      {item.quantity}
-                    </TableCell>
-                    {/* SUBTOTAL */}
-                    <TableCell className="align-top w-28 text-right font-semibold tabular-nums">
-                      R$ {calculateItemSubtotal(item).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                </React.Fragment>
-              );
-            })}
+                                    )}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-gray-500 italic">Nenhuma variação</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 italic mt-1">Sem variações</div>
+                    )}
+                  </TableCell>
+
+                  {/* PREÇO BASE */}
+                  <TableCell className="align-top w-[100px]">
+                    R$ {(item.price || 0).toFixed(2)}
+                  </TableCell>
+
+                  {/* QUANTIDADE */}
+                  <TableCell className="align-top w-[80px]">
+                    {item.quantity}
+                  </TableCell>
+
+                  {/* SUBTOTAL */}
+                  <TableCell className="align-top w-[120px] font-medium">
+                    R$ {(item.subtotal ?? calculateItemSubtotal(item)).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
+            ))}
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={3} className="text-right font-medium">Total</TableCell>
+              <TableCell colSpan={3} className="text-right font-semibold">
+                Total
+              </TableCell>
               <TableCell className="font-bold">R$ {order.total.toFixed(2)}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>
       </div>
 
-      {/* Botões de atualização de status */}
-      {nextStatusButtons.length > 0 && (
-        <div>
-          <h3 className="text-md font-medium mb-2">Atualizar Status do Pedido</h3>
-          <div className="flex flex-wrap gap-2">
-            {nextStatusButtons}
-            {/* Botão Finalizado - apenas para desconto em folha */}
-            {order.paymentMethod === "payroll_discount" && order.status === "paid" && (
-              <Button
-                onClick={() => handleUpdateStatus(order.id, "delivered")}
-                variant="default"
-                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Check className="h-5 w-5" />
-                Finalizado
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Botões de ação */}
+      <div className="flex flex-wrap gap-2">
+        {nextStatusButtons}
+      </div>
     </div>
   );
 };
