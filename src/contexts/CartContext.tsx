@@ -65,23 +65,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // recalcular totais
-  useEffect(() => {
-    const { total, count } = cartItems.reduce(
-      (acc, item) => {
+useEffect(() => {
+  const { total, count } = cartItems.reduce(
+    (acc, item) => {
+      let itemTotal = 0;
+
+      if (item.isHalfPizza) {
+        // Para pizza meio a meio, já usamos o price final
+        itemTotal = (item.price || 0) * item.quantity;
+      } else {
         const basePrice = item.priceFrom ? 0 : (item.price || 0);
         const variationsTotal = calculateVariationsTotal(item);
-        const itemTotal = (basePrice + variationsTotal) * item.quantity;
+        itemTotal = (basePrice + variationsTotal) * item.quantity;
+      }
 
-        acc.total += itemTotal;
-        acc.count += item.quantity;
-        return acc;
-      },
-      { total: 0, count: 0 }
-    );
+      acc.total += itemTotal;
+      acc.count += item.quantity;
+      return acc;
+    },
+    { total: 0, count: 0 }
+  );
 
-    setCartTotal(total);
-    setItemCount(count);
-  }, [cartItems, variations]);
+  setCartTotal(total);
+  setItemCount(count);
+}, [cartItems, variations]);
+
 
   const enrichSelectedVariations = (selectedVariations?: SelectedVariationGroup[]): SelectedVariationGroup[] => {
     if (!selectedVariations?.length) return [];
