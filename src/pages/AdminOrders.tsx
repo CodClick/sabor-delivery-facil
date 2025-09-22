@@ -100,43 +100,19 @@ const AdminOrders = () => {
       const unsubscribe = onSnapshot(
         ordersQuery,
         (snapshot) => {
-          snapshot.docChanges().forEach((change) => {
-  if (change.type === "modified") {
-    const updatedData = change.doc.data();
-    const updatedId = change.doc.id;
+          // Atualiza sempre a lista completa
+          const newOrders: Order[] = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt?.toDate?.().toISOString() || data.createdAt,
+            } as Order;
+          });
 
-    setOrders((prevOrders) =>
-  prevOrders.map((order) => {
-    if (order.id === updatedId) {
-      return {
-        ...order,
-        ...updatedData,
-        createdAt: updatedData.createdAt?.toDate?.().toISOString() || order.createdAt,
-        items: updatedData.items ?? order.items,
-        total: updatedData.total ?? order.total,
-        customerName: updatedData.customerName ?? order.customerName,
-        customerPhone: updatedData.customerPhone ?? order.customerPhone
-      };
-    }
-    return order;
-  })
-);
-  }
+          setOrders(newOrders);
 
-  if (change.type === "added") {
-    const data = change.doc.data();
-    const createdAt = data.createdAt?.toDate() || new Date();
-    const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
-
-    if (isRecent && data.status === "pending") {
-      toast({
-        title: "Novo pedido recebido!",
-        description: `Cliente: ${data.customerName}`,
-      });
-    }
-  }
-});
-
+          // Mostrar toast para novos pedidos recentes
           snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
               const data = change.doc.data();
@@ -184,7 +160,6 @@ const AdminOrders = () => {
     try {
       console.log("AdminOrders - Atualizando pedido:", { orderId, newStatus, paymentStatus });
       
-      // Preparar objeto de atualização
       const updateData: any = {};
       
       if (newStatus) {
@@ -198,12 +173,10 @@ const AdminOrders = () => {
       const updatedOrder = await updateOrder(orderId, updateData);
 
       if (updatedOrder) {
-        // Atualizar a lista de pedidos
         setOrders(prev =>
           prev.map(order => order.id === orderId ? updatedOrder : order)
         );
 
-        // Atualizar o pedido selecionado se for o mesmo
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updatedOrder);
         }
@@ -288,7 +261,6 @@ const AdminOrders = () => {
     loadOrders(activeStatus, dateRange);
   };
 
-  // Calculate summary statistics
   const totalOrders = orders.length;
   const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
 
@@ -381,7 +353,6 @@ const AdminOrders = () => {
         ))}
       </div>
 
-      {/* Summary Footer */}
       <div className="mt-8 p-4 bg-gray-100 rounded-lg border-t-4 border-blue-500">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="text-center">
