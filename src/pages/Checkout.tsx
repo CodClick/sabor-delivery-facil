@@ -40,8 +40,6 @@ const Checkout = () => {
   useEffect(() => {
     const loadUserData = async () => {
       if (currentUser) {
-        setCustomerName(currentUser.displayName || "");
-        
         // Carregar dados do perfil do usuário do Supabase
         try {
           const { data: profile } = await supabase
@@ -54,25 +52,28 @@ const Checkout = () => {
             setCustomerName(profile.name || currentUser.displayName || "");
             setCustomerPhone(profile.phone || currentUser.phoneNumber || "");
             
-            // Se tem telefone, tentar buscar dados de endereço salvos
-            if (profile.phone || currentUser.phoneNumber) {
-              const phone = profile.phone || currentUser.phoneNumber;
-              setCustomerPhone(phone);
-              handlePhoneChange(phone);
+            // Buscar dados de endereço salvos automaticamente
+            const phone = profile.phone || currentUser.phoneNumber;
+            if (phone) {
+              await loadSavedCustomerData(phone);
             }
           } else {
             // Se não tem perfil no Supabase, usar dados do Firebase Auth
+            setCustomerName(currentUser.displayName || "");
+            setCustomerPhone(currentUser.phoneNumber || "");
+            
             if (currentUser.phoneNumber) {
-              setCustomerPhone(currentUser.phoneNumber);
-              handlePhoneChange(currentUser.phoneNumber);
+              await loadSavedCustomerData(currentUser.phoneNumber);
             }
           }
         } catch (error) {
           console.error("Erro ao carregar dados do usuário:", error);
           // Fallback para dados do Firebase Auth
+          setCustomerName(currentUser.displayName || "");
+          setCustomerPhone(currentUser.phoneNumber || "");
+          
           if (currentUser.phoneNumber) {
-            setCustomerPhone(currentUser.phoneNumber);
-            handlePhoneChange(currentUser.phoneNumber);
+            await loadSavedCustomerData(currentUser.phoneNumber);
           }
         }
       }
@@ -80,6 +81,31 @@ const Checkout = () => {
 
     loadUserData();
   }, [currentUser]);
+
+  // Função para carregar dados salvos do cliente
+  const loadSavedCustomerData = async (phone: string) => {
+    try {
+      const customerData = await getCustomerByPhone(phone);
+      if (customerData) {
+        // Preencher os campos com os dados salvos apenas se estiverem vazios
+        if (!customerName) setCustomerName(customerData.name || "");
+        if (!cep) setCep(customerData.cep || "");
+        if (!street) setStreet(customerData.street || "");
+        if (!number) setNumber(customerData.number || "");
+        if (!complement) setComplement(customerData.complement || "");
+        if (!neighborhood) setNeighborhood(customerData.neighborhood || "");
+        if (!city) setCity(customerData.city || "");
+        if (!state) setState(customerData.state || "");
+        
+        toast({
+          title: "Dados carregados!",
+          description: "Seus dados foram preenchidos automaticamente.",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados do cliente:", error);
+    }
+  };
 
   const handlePhoneChange = async (value: string) => {
     setCustomerPhone(value);
@@ -251,12 +277,8 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
   return (
-        <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
-      </div>
-        </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
@@ -265,8 +287,6 @@ const handleSubmit = async (e: React.FormEvent) => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-
-              </div>
                 <Label htmlFor="customerPhone">Telefone/WhatsApp</Label>
                 <Input
                   id="customerPhone"
@@ -277,6 +297,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                   required
                 />
                 {phoneLoading && <p className="text-sm text-gray-500 mt-1">Buscando dados...</p>}
+              </div>
+              
               <div>
                 <Label htmlFor="customerName">Nome completo</Label>
                 <Input
