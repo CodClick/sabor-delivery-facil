@@ -21,7 +21,7 @@ export const useUserRole = () => {
           .select("role")
           .eq("firebase_id", currentUser.uid)
           .single();
-
+        console.log("Resposta Supabase:", { data, error });
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
           setRole("user"); // Fallback para role de usuário comum
