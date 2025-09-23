@@ -2,14 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-const { data, error } = await supabase
-  .from("usuarios")
-  .select("*")
-  .limit(1);
-
-console.log("Testando tabela usuarios:", { data, error });
-
-
 export const useUserRole = () => {
   const { currentUser } = useAuth();
   const [role, setRole] = useState<string | null>(null);
@@ -47,5 +39,15 @@ export const useUserRole = () => {
     getUserRole();
   }, [currentUser]);
 
+
+const { data, error } = await supabase
+  .from("usuarios")
+  .select("*")
+  .limit(1);
+
+console.log("Testando tabela usuarios:", { data, error });
+
+
+  
   return { role, loading, isAdmin: role === "admin" };
 };
