@@ -16,14 +16,11 @@ export const useUserRole = () => {
       }
 
       try {
-const { data, error } = await supabase
-  .from("usuarios")
-  .select("*")
-  .eq("firebase_id", "ZXmSQVdFKVc0Ie3q1QIQExV3qgz2")
-  .single();
-
-console.log("Teste query específica:", { data, error });
-
+        // 🔎 teste simples para confirmar se a tabela 'usuarios' está acessível
+        const { data: testData, error: testError } = await supabase
+          .from("usuarios")
+          .select("*");
+        console.log("Teste tabela 'usuarios':", { testData, testError });
 
         // 🔎 query real para buscar o role do usuário
         const { data, error } = await supabase
