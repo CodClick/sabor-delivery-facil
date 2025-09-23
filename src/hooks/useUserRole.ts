@@ -17,7 +17,7 @@ export const useUserRole = () => {
 
       try {
         const { data, error } = await supabase
-          .from("usuarios")
+          .from("users")
           .select("role")
           .eq("user_id", currentUser.uid)
           .single();
