@@ -17,9 +17,9 @@ export const useUserRole = () => {
 
       try {
         const { data, error } = await supabase
-          .from("users")
+          .from("usuarios")
           .select("role")
-          .eq("firebase_id", currentUser.uid)
+          .eq("user_id", currentUser.uid)
           .single();
 
         if (error) {
