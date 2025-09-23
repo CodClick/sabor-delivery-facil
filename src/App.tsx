@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -44,20 +45,32 @@ const AppRoutes = () => (
       <Route path="/register" element={<Register />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/pdv" element={<PDV />} />
       <Route path="/admin-dashboard" element={
-        <PrivateRoute>
+        <AdminRoute>
           <AdminDashboard />
-        </PrivateRoute>
+        </AdminRoute>
       } />
       <Route path="/admin" element={
-        <PrivateRoute>
+        <AdminRoute>
           <Admin />
-        </PrivateRoute>
+        </AdminRoute>
       } />
       <Route path="/orders" element={<Orders />} />
-      <Route path="/admin-orders" element={<AdminOrders />} />
-      <Route path="/entregador" element={<Entregador />} />
+      <Route path="/admin-orders" element={
+        <AdminRoute>
+          <AdminOrders />
+        </AdminRoute>
+      } />
+      <Route path="/entregador" element={
+        <AdminRoute>
+          <Entregador />
+        </AdminRoute>
+      } />
+      <Route path="/pdv" element={
+        <AdminRoute>
+          <PDV />
+        </AdminRoute>
+      } />
       
       <Route path="/api/*" element={<Api />} />
       <Route path="*" element={<NotFound />} />
