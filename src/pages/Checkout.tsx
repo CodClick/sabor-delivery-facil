@@ -265,16 +265,8 @@ const handleSubmit = async (e: React.FormEvent) => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="customerName">Nome completo</Label>
-                <Input
-                  id="customerName"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  required
-                />
+
               </div>
-              
-              <div>
                 <Label htmlFor="customerPhone">Telefone/WhatsApp</Label>
                 <Input
                   id="customerPhone"
@@ -285,6 +277,14 @@ const handleSubmit = async (e: React.FormEvent) => {
                   required
                 />
                 {phoneLoading && <p className="text-sm text-gray-500 mt-1">Buscando dados...</p>}
+              <div>
+                <Label htmlFor="customerName">Nome completo</Label>
+                <Input
+                  id="customerName"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  required
+                />
               </div>
 
               <Separator />
