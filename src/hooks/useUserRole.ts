@@ -38,16 +38,6 @@ export const useUserRole = () => {
 
     getUserRole();
   }, [currentUser]);
-
-
-const { data, error } = await supabase
-  .from("usuarios")
-  .select("*")
-  .limit(1);
-
-console.log("Testando tabela usuarios:", { data, error });
-
-
   
   return { role, loading, isAdmin: role === "admin" };
 };
