@@ -6,6 +6,9 @@ export interface OrderItem {
   quantity: number;
   selectedVariations?: SelectedVariationGroup[];
   priceFrom?: boolean;
+  subtotal?: number;
+  isHalfPizza?: boolean;
+  combination?: any;
 }
 
 export interface SelectedVariationGroup {
@@ -51,6 +54,9 @@ export interface CreateOrderRequest {
     quantity: number;
     selectedVariations?: SelectedVariationGroup[];
     priceFrom?: boolean;
+    subtotal?: number;
+    isHalfPizza?: boolean;
+    combination?: any;
   }[];
 }
 

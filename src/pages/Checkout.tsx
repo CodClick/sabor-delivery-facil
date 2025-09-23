@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
+import { supabase } from "@/integrations/supabase/client";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -37,17 +38,47 @@ const Checkout = () => {
 
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
-    if (currentUser) {
-      setCustomerName(currentUser.displayName || "");
-      // Se o usuário tem telefone no perfil, usar esse telefone
-      if (currentUser.phoneNumber) {
-        setCustomerPhone(currentUser.phoneNumber);
-        // Tentar buscar dados salvos com esse telefone
-        handlePhoneChange(currentUser.phoneNumber);
+    const loadUserData = async () => {
+      if (currentUser) {
+        setCustomerName(currentUser.displayName || "");
+        
+        // Carregar dados do perfil do usuário do Supabase
+        try {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('firebase_id', currentUser.uid)
+            .single();
+            
+          if (profile) {
+            setCustomerName(profile.name || currentUser.displayName || "");
+            setCustomerPhone(profile.phone || currentUser.phoneNumber || "");
+            
+            // Se tem telefone, tentar buscar dados de endereço salvos
+            if (profile.phone || currentUser.phoneNumber) {
+              const phone = profile.phone || currentUser.phoneNumber;
+              setCustomerPhone(phone);
+              handlePhoneChange(phone);
+            }
+          } else {
+            // Se não tem perfil no Supabase, usar dados do Firebase Auth
+            if (currentUser.phoneNumber) {
+              setCustomerPhone(currentUser.phoneNumber);
+              handlePhoneChange(currentUser.phoneNumber);
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao carregar dados do usuário:", error);
+          // Fallback para dados do Firebase Auth
+          if (currentUser.phoneNumber) {
+            setCustomerPhone(currentUser.phoneNumber);
+            handlePhoneChange(currentUser.phoneNumber);
+          }
+        }
       }
-      // Se não tiver telefone mas tem email, tentar buscar por telefone salvo anteriormente
-      // Aqui você pode implementar uma busca por email se necessário
-    }
+    };
+
+    loadUserData();
   }, [currentUser]);
 
   const handlePhoneChange = async (value: string) => {
