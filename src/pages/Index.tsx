@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
@@ -7,7 +6,6 @@ import RestaurantHeader from "@/components/RestaurantHeader";
 import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, LogIn, LogOut } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,16 +34,26 @@ const Index = () => {
     loadCategories();
   }, []);
 
-  // Filtrar itens por categoria
+  // Filtrar e ordenar itens por categoria
   const filteredItems = activeCategory === "all" 
     ? menuItems 
-    : menuItems.filter(item => item.category === activeCategory);
+    : menuItems
+        .filter(item => item.category === activeCategory)
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+        );
 
-  // Agrupar itens filtrados por categoria para exibição
+  // Agrupar e ordenar itens por categoria para exibição
   const groupedItems = categories.reduce((acc, category) => {
     if (category.id === "all") return acc;
     
-    const categoryItems = filteredItems.filter(item => item.category === category.id);
+    let categoryItems = filteredItems.filter(item => item.category === category.id);
+
+    // Ordenar alfabeticamente
+    categoryItems = categoryItems.sort((a, b) =>
+      a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+    );
+
     if (categoryItems.length > 0) {
       acc.push({
         category,
@@ -120,8 +128,6 @@ const Index = () => {
           />
         )}
       </div>
-
-      
     </div>
   );
 };
