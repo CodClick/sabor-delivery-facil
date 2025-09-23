@@ -55,7 +55,7 @@ const Checkout = () => {
     
     // Buscar dados do cliente quando o telefone tiver 10 ou 11 dígitos
     const cleanPhone = value.replace(/\D/g, '');
-    if (cleanPhone.length >= 10) {
+    if (cleanPhone.length >= 11) {
       setPhoneLoading(true);
       try {
         const customerData = await getCustomerByPhone(value);
