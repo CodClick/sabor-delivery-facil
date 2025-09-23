@@ -109,79 +109,100 @@ const Checkout = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;
-      
-      console.log("=== CHECKOUT SUBMIT ===");
-      console.log("Itens do carrinho:", cartItems);
-      cartItems.forEach((item, index) => {
-        console.log(`[CHECKOUT] Item ${index + 1}:`, JSON.stringify(item, null, 2));
-        if (item.selectedVariations && item.selectedVariations.length > 0) {
-          console.log(`[CHECKOUT] Variações do item ${index + 1}:`, item.selectedVariations);
-          item.selectedVariations.forEach((group, groupIndex) => {
-            console.log(`[CHECKOUT] Grupo ${groupIndex + 1} (${group.groupName}):`, group.variations);
-          });
-        } else {
-          console.log(`[CHECKOUT] Item ${index + 1} SEM variações`);
-        }
-      });
+  try {
+    const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;
 
-      const orderData = {
-        customerName,
-        customerPhone,
-        address: fullAddress,
-        paymentMethod,
-        observations,
-        items: cartItems.map(item => ({
-          menuItemId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          selectedVariations: item.selectedVariations || [],
-          priceFrom: item.priceFrom || false
-        }))
-      };
+    // Função auxiliar para calcular subtotal de cada item
+    const calculateItemSubtotal = (item: any) => {
+      if (item.isHalfPizza) {
+        return (item.price || 0) * (item.quantity || 1);
+      }
 
-      console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
+      const basePrice = (item.priceFrom ? 0 : (item.price || 0));
+      let variationsTotal = 0;
 
-      const order = await createOrder(orderData);
-      
-      // Salvar dados do cliente após criar o pedido
-      await saveCustomerData({
-        name: customerName,
-        phone: customerPhone,
-        cep,
-        street,
-        number,
-        complement,
-        neighborhood,
-        city,
-        state,
-      });
-      
-      clearCart();
-      
-      toast({
-        title: "Pedido realizado com sucesso!",
-        description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
-      });
-      
-      navigate("/");
-    } catch (error) {
-      console.error("Erro ao criar pedido:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível processar seu pedido. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+        item.selectedVariations.forEach((group: any) => {
+          if (group.variations && Array.isArray(group.variations)) {
+            group.variations.forEach((variation: any) => {
+              const additionalPrice = variation.additionalPrice || 0;
+              const quantity = variation.quantity || 1;
+              variationsTotal += additionalPrice * quantity;
+            });
+          }
+        });
+      }
+
+      return (basePrice + variationsTotal) * item.quantity;
+    };
+
+    // Montar itens já com subtotal
+    const itemsWithSubtotal = cartItems.map(item => ({
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      selectedVariations: item.selectedVariations || [],
+      priceFrom: item.priceFrom || false,
+      isHalfPizza: item.isHalfPizza || false,
+      combination: item.combination || null,
+      subtotal: calculateItemSubtotal(item), // 🔥 agora salva
+    }));
+
+    // Calcular total do pedido
+    const total = itemsWithSubtotal.reduce((acc, item) => acc + item.subtotal, 0);
+
+    const orderData = {
+      customerName,
+      customerPhone,
+      address: fullAddress,
+      paymentMethod,
+      observations,
+      items: itemsWithSubtotal,
+      total, // 🔥 agora salva o total também
+    };
+
+    console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
+
+    const order = await createOrder(orderData);
+
+    // Salvar dados do cliente após criar o pedido
+    await saveCustomerData({
+      name: customerName,
+      phone: customerPhone,
+      cep,
+      street,
+      number,
+      complement,
+      neighborhood,
+      city,
+      state,
+    });
+
+    clearCart();
+
+    toast({
+      title: "Pedido realizado com sucesso!",
+      description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
+    });
+
+    navigate("/");
+  } catch (error) {
+    console.error("Erro ao criar pedido:", error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível processar seu pedido. Tente novamente.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   if (cartItems.length === 0) {
     return (
