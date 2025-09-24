@@ -391,6 +391,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <RadioGroupItem value="cash" id="cash" />
                     <Label htmlFor="cash">Dinheiro</Label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="pix" id="pix" />
+                    <Label htmlFor="pix">PIX</Label>
+                  </div>                 
                 </RadioGroup>
               </div>
 
