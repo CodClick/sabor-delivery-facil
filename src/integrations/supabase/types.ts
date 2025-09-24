@@ -1246,7 +1246,7 @@ export type Database = {
         Returns: Json
       }
       get_user_role: {
-        Args: { user_uid: string }
+        Args: { user_uid: string } | { user_uid: string }
         Returns: string
       }
     }
