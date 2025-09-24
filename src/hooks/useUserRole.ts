@@ -16,25 +16,22 @@ export const useUserRole = () => {
       }
 
       try {
-        // 🔎 teste simples para confirmar se a tabela 'usuarios' está acessível
-        const { data: testData, error: testError } = await supabase
-          .from("usuarios")
-          .select("*");
-        console.log("Teste tabela 'usuarios':", { testData, testError });
-
-        // 🔎 query real para buscar o role do usuário
+        // Buscar role do usuário na tabela "users"
         const { data, error } = await supabase
-          .from("usuarios")
-          .select("role")
+          .from("users")
+          .select("*")
           .eq("firebase_id", currentUser.uid)
-          .single();
-        console.log("Resposta Supabase:", { data, error });
+          .maybeSingle();
+        
+        console.log("Resposta Supabase users:", { data, error });
 
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
           setRole("user"); // Fallback para role de usuário comum
         } else {
-          setRole(data?.role || "user");
+          // Tipagem manual para contornar problema de tipos do Supabase
+          const userData = data as any;
+          setRole(userData?.role || "user");
         }
       } catch (error) {
         console.error("Erro ao verificar role:", error);
