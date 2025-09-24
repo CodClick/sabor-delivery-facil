@@ -1110,15 +1110,19 @@ export type Database = {
           last_sign_in: string | null
           name: string | null
           phone: string | null
+          role: string | null
+          user_id: string
         }
         Insert: {
           created_at: string
           email?: string | null
           firebase_id?: string | null
-          id: string
+          id?: string
           last_sign_in?: string | null
           name?: string | null
           phone?: string | null
+          role?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -1128,6 +1132,8 @@ export type Database = {
           last_sign_in?: string | null
           name?: string | null
           phone?: string | null
+          role?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1163,6 +1169,7 @@ export type Database = {
           created_at: string | null
           email: string
           empresa: string | null
+          firebase_id: string | null
           id: string
           role: string | null
           user_id: string
@@ -1172,6 +1179,7 @@ export type Database = {
           created_at?: string | null
           email: string
           empresa?: string | null
+          firebase_id?: string | null
           id?: string
           role?: string | null
           user_id: string
@@ -1181,6 +1189,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           empresa?: string | null
+          firebase_id?: string | null
           id?: string
           role?: string | null
           user_id?: string
@@ -1235,6 +1244,10 @@ export type Database = {
       get_dados_agente: {
         Args: { p_user_id: string }
         Returns: Json
+      }
+      get_user_role: {
+        Args: { user_uid: string }
+        Returns: string
       }
     }
     Enums: {

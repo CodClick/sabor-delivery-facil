@@ -40,6 +40,7 @@ export async function saveUserToSupabase(user: UserProfile) {
     
     const userData = {
       id: uuid, // Usar UUID compatível com Supabase
+      user_id: user.id, // ID do Firebase para auth.uid()
       firebase_id: user.id, // Armazenar o ID original do Firebase
       email: user.email,
       created_at: user.created_at || new Date().toISOString(),

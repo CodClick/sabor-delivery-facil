@@ -27,7 +27,7 @@ export const useUserRole = () => {
           console.error("Erro ao buscar role do usuário:", error);
           setRole("user"); // Fallback para role de usuário comum
         } else {
-          setRole(data || "user");
+          setRole(typeof data === 'string' ? data : "user");
         }
       } catch (error) {
         console.error("Erro ao verificar role:", error);
