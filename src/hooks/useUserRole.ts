@@ -19,8 +19,8 @@ export const useUserRole = () => {
         const { data, error } = await supabase
           .from("users")
           .select("role")
-          .eq("firebase_id", currentUser.uid) // 🔥 agora bate com o que você salvou
-          .single();
+          .eq("firebase_id", currentUser.uid)
+          .maybeSingle(); // 🔥 evita o 406
 
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
