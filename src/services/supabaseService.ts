@@ -1,101 +1,82 @@
 // src/services/supabaseService.ts
 import { supabase } from "@/integrations/supabase/client";
+import { User as FirebaseUser } from "firebase/auth";
 
-export interface SupabaseUser {
-  id?: string;
-  user_id: string; // agora sempre será o uid do Firebase
-  email?: string | null;
+interface SupabaseUser {
+  id: string;       // UID do Firebase
+  email: string;
   name?: string | null;
   phone?: string | null;
-  role?: string | null;
-  last_sign_in?: string | null;
+  last_sign_in_at?: string;
 }
 
-/**
- * Salva ou atualiza o usuário no Supabase usando o UID do Firebase
- */
-export const saveUserToSupabase = async (firebaseUser: any): Promise<SupabaseUser | null> => {
-  try {
-    if (!firebaseUser?.uid) {
-      console.error("[saveUserToSupabase] Firebase user inválido:", firebaseUser);
-      return null;
-    }
+// 🔹 Salva ou atualiza usuário no Supabase
+export const saveUserToSupabase = async (user: FirebaseUser | SupabaseUser) => {
+  if (!user) return;
 
-    const userData: SupabaseUser = {
-      user_id: firebaseUser.uid, // 🔥 UID do Firebase
-      email: firebaseUser.email || null,
-      name: firebaseUser.displayName || null,
-      phone: firebaseUser.phoneNumber || null,
-      last_sign_in: new Date().toISOString(),
-    };
+  const userData = {
+    id: "uid" in user ? user.uid : user.id,
+    email: user.email || "",
+    name: "displayName" in user ? user.displayName : user.name || null,
+    phone: "phoneNumber" in user ? user.phoneNumber : user.phone || null,
+    last_sign_in_at: new Date().toISOString(),
+  };
 
-    const { data, error } = await supabase
-      .from("users")
-      .upsert(userData, { onConflict: "user_id" })
-      .select()
-      .maybeSingle();
+  console.log("[supabaseService] Salvando usuário no Supabase:", userData);
 
-    if (error) {
-      console.error("[saveUserToSupabase] Erro ao salvar usuário:", error);
-      return null;
-    }
+  const { error } = await supabase
+    .from("users")
+    .upsert(userData, { onConflict: "id" }); // usa o `user_id` como chave
 
-    return data;
-  } catch (err) {
-    console.error("[saveUserToSupabase] Exceção inesperada:", err);
-    return null;
+  if (error) {
+    console.error("[supabaseService] Erro ao salvar usuário:", error);
   }
 };
 
-/**
- * Atualiza o campo last_sign_in no Supabase para o usuário do Firebase
- */
-export const updateUserLastSignIn = async (firebaseUser: any): Promise<void> => {
-  try {
-    if (!firebaseUser?.uid) {
-      console.error("[updateUserLastSignIn] Firebase user inválido:", firebaseUser);
-      return;
-    }
+// 🔹 Atualiza último login do usuário
+export const updateUserLastSignIn = async (user: FirebaseUser | string) => {
+  const userId = typeof user === "string" ? user : user.uid;
 
-    const { error } = await supabase
-      .from("users")
-      .update({ last_sign_in: new Date().toISOString() })
-      .eq("user_id", firebaseUser.uid);
+  console.log("[supabaseService] Atualizando último login para:", userId);
 
-    if (error) {
-      console.error("[updateUserLastSignIn] Erro ao atualizar last_sign_in:", error);
-    } else {
-      console.log("[updateUserLastSignIn] Último login atualizado para:", firebaseUser.uid);
-    }
-  } catch (err) {
-    console.error("[updateUserLastSignIn] Exceção inesperada:", err);
+  const { error } = await supabase
+    .from("users")
+    .update({ last_sign_in_at: new Date().toISOString() })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("[supabaseService] Erro ao atualizar último login:", error);
   }
 };
 
-/**
- * Busca usuário no Supabase pelo UID do Firebase
- */
-export const getUserFromSupabase = async (firebaseUser: any): Promise<SupabaseUser | null> => {
-  try {
-    if (!firebaseUser?.uid) {
-      console.error("[getUserFromSupabase] Firebase user inválido:", firebaseUser);
-      return null;
-    }
+// 🔹 Busca usuário por ID (uid do Firebase)
+export const getUserById = async (userId: string): Promise<SupabaseUser | null> => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
 
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("user_id", firebaseUser.uid)
-      .maybeSingle();
-
-    if (error) {
-      console.error("[getUserFromSupabase] Erro ao buscar usuário:", error);
-      return null;
-    }
-
-    return data;
-  } catch (err) {
-    console.error("[getUserFromSupabase] Exceção inesperada:", err);
+  if (error) {
+    console.error("[supabaseService] Erro ao buscar usuário:", error);
     return null;
   }
+
+  return data;
+};
+
+// 🔹 Busca role de um usuário (admin, user, etc.)
+export const getUserRole = async (userId: string): Promise<string | null> => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("[supabaseService] Erro ao buscar role do usuário:", error);
+    return null;
+  }
+
+  return data?.role || null;
 };
