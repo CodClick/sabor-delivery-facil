@@ -23,7 +23,6 @@ const { data, error } = await supabase
   // Remove or change the accept header if you are manually setting it
   .set('Accept', 'application/vnd.pgrst.object+json')
   .single(); // If you expect a single object, use .single()
-  .eq('firebase_id', firebaseId);
         
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
