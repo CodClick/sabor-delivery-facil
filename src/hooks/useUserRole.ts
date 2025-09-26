@@ -17,12 +17,11 @@ export const useUserRole = () => {
 
       try {
         // Buscar role do usuário na tabela "users" usando RPC para evitar problemas de tipos
-        const { data, error } = await supabase.rpc('get_user_role', {
-          user_uid: currentUser.uid
-        });
+       const { data, error } = await supabase
+  .from('users')
+  .select('*')
+  .eq('firebase_id', 'k5Aq2RQmQIg3vP6F0IyPEMws2o92');
         
-        console.log("Resposta Supabase users:", { data, error });
-
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
           setRole("user"); // Fallback para role de usuário comum
