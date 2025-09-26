@@ -20,23 +20,20 @@ export const useUserRole = () => {
 
       try {
         const { data, error } = await supabase
-          .from("users")
-          .select("firebase_id, role")
-          .eq("firebase_id", currentUser.uid)
-          .maybeSingle(); // evita 406
+const { data, error } = await supabase
+  .from("users")
+  .select("role")
+  .eq("firebase_id", firebaseId);
 
-        console.log("📦 Resultado da query Supabase:", data, error);
-
-        if (error) {
-          console.error("❌ Erro ao buscar role do usuário:", error);
-          setRole("user");
-        } else {
-          setRole(data?.role || "user");
-        }
-      } catch (err) {
-        console.error("💥 Erro inesperado ao verificar role:", err);
-        setRole("user");
-      } finally {
+if (error) {
+  console.error("Erro Supabase:", error);
+  setRole("user");
+} else if (data && data.length > 0) {
+  setRole(data[0].role || "user");
+} else {
+  setRole("user");
+}
+finally {
         setLoading(false);
       }
     };
