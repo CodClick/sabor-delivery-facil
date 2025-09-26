@@ -16,10 +16,13 @@ export const useUserRole = () => {
       }
 
       try {
-        // Buscar role do usuário na tabela "users" usando RPC para evitar problemas de tipos
 const { data, error } = await supabase
   .from('users')
   .select('*')
+  .eq('firebase_id', firebaseId)
+  // Remove or change the accept header if you are manually setting it
+  .set('Accept', 'application/vnd.pgrst.object+json')
+  .single(); // If you expect a single object, use .single()
   .eq('firebase_id', firebaseId);
         
         if (error) {
