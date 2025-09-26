@@ -34,8 +34,17 @@ export const useUserRole = () => {
         console.log("Resposta do n8n:", data);
 
         // Extrai role do primeiro item do array retornado
-        const userData = Array.isArray(data) && data.length > 0 ? data[0] : null;
-        setRole(userData?.role || "user");
+// novo - aceita objeto ou array
+let userData: any = null;
+
+if (Array.isArray(data) && data.length > 0) {
+  userData = data[0];
+} else if (data && typeof data === "object") {
+  userData = data;
+}
+
+setRole(userData?.role || "user");
+
       } catch (error) {
         console.error("Erro ao buscar role via webhook:", error);
         setRole("user"); // fallback
