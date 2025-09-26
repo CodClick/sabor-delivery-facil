@@ -10,26 +10,31 @@ export const useUserRole = () => {
   useEffect(() => {
     const getUserRole = async () => {
       if (!currentUser) {
+        console.log("⚠️ Nenhum usuário logado");
         setRole(null);
         setLoading(false);
         return;
       }
 
+      console.log("🔥 currentUser.uid do Firebase:", currentUser.uid);
+
       try {
         const { data, error } = await supabase
           .from("users")
-          .select("role")
+          .select("firebase_id, role")
           .eq("firebase_id", currentUser.uid)
-          .maybeSingle(); // 🔥 evita o 406
+          .maybeSingle(); // evita 406
+
+        console.log("📦 Resultado da query Supabase:", data, error);
 
         if (error) {
-          console.error("Erro ao buscar role do usuário:", error);
-          setRole("user"); // fallback
+          console.error("❌ Erro ao buscar role do usuário:", error);
+          setRole("user");
         } else {
           setRole(data?.role || "user");
         }
       } catch (err) {
-        console.error("Erro inesperado ao verificar role:", err);
+        console.error("💥 Erro inesperado ao verificar role:", err);
         setRole("user");
       } finally {
         setLoading(false);
