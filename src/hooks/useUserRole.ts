@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useUserRole = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useAuth(); // Firebase currentUser
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,28 +16,37 @@ export const useUserRole = () => {
       }
 
       try {
-        const firebaseId = currentUser.uid;
-        console.log("🔥 currentUser.uid do Firebase:", firebaseId);
+        // Obter o usuário do Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.getUser();
 
-const { data, error } = await supabase
-  .from("users")
-  .select("id, firebase_id, role")
-  .eq("firebase_id", firebaseId);
+        if (authError || !authData?.user) {
+          console.error("Erro ao obter usuário autenticado do Supabase:", authError);
+          setRole("user");
+          setLoading(false);
+          return;
+        }
 
-console.log("📦 Resultado Supabase:", data, error);
+        const userId = authData.user.id; // este é o user_id na tabela users
+        console.log("🔑 user_id do Supabase:", userId);
 
+        const { data, error } = await supabase
+          .from("users")
+          .select("role")
+          .eq("user_id", userId)
+          .maybeSingle();
 
         if (error) {
-          console.error("💥 Erro ao buscar role do usuário:", error);
+          console.error("Erro ao buscar role do usuário:", error);
           setRole("user");
-        } else if (data && data.length > 0) {
-          setRole(data[0].role || "user");
+        } else if (!data) {
+          console.warn("⚠️ Nenhuma role encontrada para o usuário:", userId);
+          setRole("user");
         } else {
-          console.warn("⚠️ Nenhuma role encontrada para o usuário:", firebaseId);
-          setRole("user");
+          console.log("📦 Role encontrada:", data.role);
+          setRole(data.role);
         }
-      } catch (err) {
-        console.error("💥 Erro inesperado ao verificar role:", err);
+      } catch (error) {
+        console.error("Erro inesperado ao verificar role:", error);
         setRole("user");
       } finally {
         setLoading(false);
