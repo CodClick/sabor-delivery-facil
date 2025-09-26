@@ -16,22 +16,20 @@ export const useUserRole = () => {
       }
 
       try {
-const { data, error } = await supabase
-  .from('users')
-  .select('*')
-  .eq('firebase_id', firebaseId)
-  // Remove or change the accept header if you are manually setting it
-  .set('Accept', 'application/vnd.pgrst.object+json')
-  .single(); // If you expect a single object, use .single()
-        
+        const { data, error } = await supabase
+          .from("users")
+          .select("role")
+          .eq("firebase_id", currentUser.uid) // 🔥 agora bate com o que você salvou
+          .single();
+
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
-          setRole("user"); // Fallback para role de usuário comum
+          setRole("user"); // fallback
         } else {
-          setRole(typeof data === 'string' ? data : "user");
+          setRole(data?.role || "user");
         }
-      } catch (error) {
-        console.error("Erro ao verificar role:", error);
+      } catch (err) {
+        console.error("Erro inesperado ao verificar role:", err);
         setRole("user");
       } finally {
         setLoading(false);
