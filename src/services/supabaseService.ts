@@ -7,7 +7,7 @@ interface SupabaseUser {
   email: string;
   name?: string | null;
   phone?: string | null;
-  last_sign_in_at?: string;
+  last_sign_in_at?: timestamptz;
 }
 
 // 🔹 Salva ou atualiza usuário no Supabase
