@@ -1,103 +1,101 @@
+// src/services/supabaseService.ts
 import { supabase } from "@/integrations/supabase/client";
 
-export interface UserProfile {
+export interface SupabaseUser {
   id?: string;
+  user_id: string; // agora sempre será o uid do Firebase
   email?: string | null;
   name?: string | null;
   phone?: string | null;
   role?: string | null;
-  user_id?: string; // 🔑 chave oficial ligada ao Supabase Auth
+  last_sign_in?: string | null;
 }
 
 /**
- * Garante que o usuário exista na tabela "users"
+ * Salva ou atualiza o usuário no Supabase usando o UID do Firebase
  */
-export const saveUserToSupabase = async (user: any) => {
+export const saveUserToSupabase = async (firebaseUser: any): Promise<SupabaseUser | null> => {
   try {
-    // pega id do auth.users
-    const { data: authData } = await supabase.auth.getUser();
-    const supabaseUserId = authData?.user?.id;
-
-    if (!supabaseUserId) {
-      console.error("Não foi possível obter supabaseUserId");
+    if (!firebaseUser?.uid) {
+      console.error("[saveUserToSupabase] Firebase user inválido:", firebaseUser);
       return null;
     }
 
-    // upsert (insere se não existir, atualiza se já existir)
+    const userData: SupabaseUser = {
+      user_id: firebaseUser.uid, // 🔥 UID do Firebase
+      email: firebaseUser.email || null,
+      name: firebaseUser.displayName || null,
+      phone: firebaseUser.phoneNumber || null,
+      last_sign_in: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from("users")
-      .upsert(
-        {
-          user_id: supabaseUserId,
-          email: user.email || null,
-          name: user.displayName || null,
-          phone: user.phoneNumber || null,
-          last_sign_in: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      )
+      .upsert(userData, { onConflict: "user_id" })
       .select()
       .maybeSingle();
 
     if (error) {
-      console.error("Erro ao salvar usuário no Supabase:", error);
+      console.error("[saveUserToSupabase] Erro ao salvar usuário:", error);
       return null;
     }
 
-    return data as UserProfile;
+    return data;
   } catch (err) {
-    console.error("Erro em saveUserToSupabase:", err);
-    return null;
-  }
-};
-
-export const getUserProfile = async (): Promise<UserProfile | null> => {
-  try {
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData?.user) {
-      console.error("Erro ao obter usuário autenticado:", authError);
-      return null;
-    }
-
-    const supabaseUser = authData.user;
-
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("user_id", supabaseUser.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Erro ao buscar perfil do usuário:", error);
-      return null;
-    }
-
-    return data as UserProfile;
-  } catch (err) {
-    console.error("Erro em getUserProfile:", err);
+    console.error("[saveUserToSupabase] Exceção inesperada:", err);
     return null;
   }
 };
 
 /**
- * Atualiza a data do último login
+ * Atualiza o campo last_sign_in no Supabase para o usuário do Firebase
  */
-export const updateUserLastSignIn = async () => {
+export const updateUserLastSignIn = async (firebaseUser: any): Promise<void> => {
   try {
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return;
-
-    const supabaseUser = authData.user;
+    if (!firebaseUser?.uid) {
+      console.error("[updateUserLastSignIn] Firebase user inválido:", firebaseUser);
+      return;
+    }
 
     const { error } = await supabase
       .from("users")
       .update({ last_sign_in: new Date().toISOString() })
-      .eq("user_id", supabaseUser.id);
+      .eq("user_id", firebaseUser.uid);
 
     if (error) {
-      console.error("Erro ao atualizar último login:", error);
+      console.error("[updateUserLastSignIn] Erro ao atualizar last_sign_in:", error);
+    } else {
+      console.log("[updateUserLastSignIn] Último login atualizado para:", firebaseUser.uid);
     }
   } catch (err) {
-    console.error("Erro em updateUserLastSignIn:", err);
+    console.error("[updateUserLastSignIn] Exceção inesperada:", err);
+  }
+};
+
+/**
+ * Busca usuário no Supabase pelo UID do Firebase
+ */
+export const getUserFromSupabase = async (firebaseUser: any): Promise<SupabaseUser | null> => {
+  try {
+    if (!firebaseUser?.uid) {
+      console.error("[getUserFromSupabase] Firebase user inválido:", firebaseUser);
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("user_id", firebaseUser.uid)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[getUserFromSupabase] Erro ao buscar usuário:", error);
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("[getUserFromSupabase] Exceção inesperada:", err);
+    return null;
   }
 };
