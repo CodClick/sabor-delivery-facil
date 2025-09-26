@@ -1,74 +1,89 @@
-// src/contexts/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { 
-  saveUserToSupabase, 
-  updateUserLastSignIn, 
-  getUserById, 
-  getUserRole 
-} from "@/services/supabaseService";
+//authContext.ts
+
+import React, { createContext } from "react";
+import { User, UserCredential } from "firebase/auth";
+import { useAuthState } from "@/hooks/useAuthState";
+import { signUp as authSignUp, signIn as authSignIn, logOut as authLogOut } from "@/services/authService";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
+  currentUser: User | null;
   loading: boolean;
-  role: string | null;
+  signUp: (email: string, password: string, name?: string, phone?: string) => Promise<UserCredential>;
+  signIn: (email: string, password: string) => Promise<UserCredential>;
+  logOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  currentUser: null,
-  loading: true,
-  role: null,
-});
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<string | null>(null);
+  const { currentUser, loading } = useAuthState();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
+  const signUp = async (email: string, password: string, name?: string, phone?: string) => {
+    try {
+      const result = await authSignUp(email, password, name, phone);
+      toast({
+        title: "Conta criada com sucesso",
+        description: "Bem-vindo ao nosso aplicativo!",
+      });
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar conta",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
-      if (user) {
-        console.log("[AuthContext] Usuário autenticado no Firebase:", user.uid);
+  const signIn = async (email: string, password: string) => {
+    try {
+      const result = await authSignIn(email, password);
+      toast({
+        title: "Login realizado",
+        description: "Você entrou com sucesso.",
+      });
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao fazer login",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
-        try {
-          // 🔹 Salvar ou atualizar usuário no Supabase
-          await saveUserToSupabase(user);
-          await updateUserLastSignIn(user);
+  const logOut = async () => {
+    try {
+      await authLogOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao fazer logout",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
-          // 🔹 Buscar dados do usuário
-          const supabaseUser = await getUserById(user.uid);
-          console.log("[AuthContext] Dados do usuário no Supabase:", supabaseUser);
-
-          // 🔹 Buscar role
-          const userRole = await getUserRole(user.uid);
-          console.log("[AuthContext] Role encontrada:", userRole);
-
-          setRole(userRole);
-        } catch (error) {
-          console.error("[AuthContext] Erro ao sincronizar usuário com Supabase:", error);
-        }
-
-        setCurrentUser(user);
-      } else {
-        console.log("[AuthContext] Nenhum usuário autenticado");
-        setCurrentUser(null);
-        setRole(null);
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const value = {
+    currentUser,
+    loading,
+    signUp,
+    signIn,
+    logOut,
+  };
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, role }}>
+    <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);
