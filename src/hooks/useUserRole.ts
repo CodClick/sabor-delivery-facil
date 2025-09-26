@@ -19,10 +19,13 @@ export const useUserRole = () => {
         const firebaseId = currentUser.uid;
         console.log("🔥 currentUser.uid do Firebase:", firebaseId);
 
-        const { data, error } = await supabase
-          .from("users")
-          .select("role")
-          .eq("firebase_id", firebaseId);
+const { data, error } = await supabase
+  .from("users")
+  .select("id, firebase_id, role")
+  .eq("firebase_id", firebaseId);
+
+console.log("📦 Resultado Supabase:", data, error);
+
 
         if (error) {
           console.error("💥 Erro ao buscar role do usuário:", error);
