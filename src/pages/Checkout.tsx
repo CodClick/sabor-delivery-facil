@@ -1,3 +1,4 @@
+//checkout.tsx
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,49 +41,28 @@ const Checkout = () => {
   useEffect(() => {
     const loadUserData = async () => {
       if (currentUser) {
+        // Carregar dados do perfil do usuário do Supabase
         try {
-          // ---------- MUDANÇA PRINCIPAL: usar user_id do Supabase ----------
-          // Pega o usuário autenticado no Supabase (contendo o UUID do auth.users)
-          const { data: authData, error: authError } = await supabase.auth.getUser();
-          if (authError || !authData?.user) {
-            console.warn("Não foi possível obter supabase auth user:", authError);
-            // fallback para dados do Firebase Auth
-            setCustomerName(currentUser.displayName || "");
-            setCustomerPhone(currentUser.phoneNumber || "");
-            if (currentUser.phoneNumber) {
-              await loadSavedCustomerData(currentUser.phoneNumber);
-            }
-            return;
-          }
-
-          const supabaseUserId = authData.user.id;
-
-          // Buscar o perfil na tabela "users" usando user_id (UUID)
-          const { data: profile, error } = await supabase
-            .from("users")
-            .select("*")
-            .eq("user_id", supabaseUserId)
-            .maybeSingle();
-
-          if (error) {
-            console.error("Erro ao buscar perfil no Supabase:", error);
-          }
-
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('firebase_id', currentUser.uid)
+            .single();
+            
           if (profile) {
-            // Preenche com dados do profile (ou fallback do Firebase)
             setCustomerName(profile.name || currentUser.displayName || "");
             setCustomerPhone(profile.phone || currentUser.phoneNumber || "");
-
-            // Se tem telefone, tentar carregar endereço salvo
+            
+            // Buscar dados de endereço salvos automaticamente
             const phone = profile.phone || currentUser.phoneNumber;
             if (phone) {
               await loadSavedCustomerData(phone);
             }
           } else {
-            // fallback se não achar o perfil no Supabase
+            // Se não tem perfil no Supabase, usar dados do Firebase Auth
             setCustomerName(currentUser.displayName || "");
             setCustomerPhone(currentUser.phoneNumber || "");
-
+            
             if (currentUser.phoneNumber) {
               await loadSavedCustomerData(currentUser.phoneNumber);
             }
@@ -101,7 +81,6 @@ const Checkout = () => {
     };
 
     loadUserData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   // Função para carregar dados salvos do cliente
@@ -188,99 +167,99 @@ const Checkout = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;
+  try {
+    const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;
 
-      // Função auxiliar para calcular subtotal de cada item
-      const calculateItemSubtotal = (item: any) => {
-        if (item.isHalfPizza) {
-          return (item.price || 0) * (item.quantity || 1);
-        }
+    // Função auxiliar para calcular subtotal de cada item
+    const calculateItemSubtotal = (item: any) => {
+      if (item.isHalfPizza) {
+        return (item.price || 0) * (item.quantity || 1);
+      }
 
-        const basePrice = (item.priceFrom ? 0 : (item.price || 0));
-        let variationsTotal = 0;
+      const basePrice = (item.priceFrom ? 0 : (item.price || 0));
+      let variationsTotal = 0;
 
-        if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-          item.selectedVariations.forEach((group: any) => {
-            if (group.variations && Array.isArray(group.variations)) {
-              group.variations.forEach((variation: any) => {
-                const additionalPrice = variation.additionalPrice || 0;
-                const quantity = variation.quantity || 1;
-                variationsTotal += additionalPrice * quantity;
-              });
-            }
-          });
-        }
+      if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+        item.selectedVariations.forEach((group: any) => {
+          if (group.variations && Array.isArray(group.variations)) {
+            group.variations.forEach((variation: any) => {
+              const additionalPrice = variation.additionalPrice || 0;
+              const quantity = variation.quantity || 1;
+              variationsTotal += additionalPrice * quantity;
+            });
+          }
+        });
+      }
 
-        return (basePrice + variationsTotal) * item.quantity;
-      };
+      return (basePrice + variationsTotal) * item.quantity;
+    };
 
-      // Montar itens já com subtotal
-      const itemsWithSubtotal = cartItems.map(item => ({
-        menuItemId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        selectedVariations: item.selectedVariations || [],
-        priceFrom: item.priceFrom || false,
-        isHalfPizza: item.isHalfPizza || false,
-        combination: item.combination || null,
-        subtotal: calculateItemSubtotal(item), // 🔥 agora salva
-      }));
+    // Montar itens já com subtotal
+    const itemsWithSubtotal = cartItems.map(item => ({
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      selectedVariations: item.selectedVariations || [],
+      priceFrom: item.priceFrom || false,
+      isHalfPizza: item.isHalfPizza || false,
+      combination: item.combination || null,
+      subtotal: calculateItemSubtotal(item), // 🔥 agora salva
+    }));
 
-      // Calcular total do pedido
-      const total = itemsWithSubtotal.reduce((acc, item) => acc + item.subtotal, 0);
+    // Calcular total do pedido
+    const total = itemsWithSubtotal.reduce((acc, item) => acc + item.subtotal, 0);
 
-      const orderData = {
-        customerName,
-        customerPhone,
-        address: fullAddress,
-        paymentMethod,
-        observations,
-        items: itemsWithSubtotal,
-        total, // 🔥 agora salva o total também
-      };
+    const orderData = {
+      customerName,
+      customerPhone,
+      address: fullAddress,
+      paymentMethod,
+      observations,
+      items: itemsWithSubtotal,
+      total, // 🔥 agora salva o total também
+    };
 
-      console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
+    console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
 
-      const order = await createOrder(orderData);
+    const order = await createOrder(orderData);
 
-      // Salvar dados do cliente após criar o pedido
-      await saveCustomerData({
-        name: customerName,
-        phone: customerPhone,
-        cep,
-        street,
-        number,
-        complement,
-        neighborhood,
-        city,
-        state,
-      });
+    // Salvar dados do cliente após criar o pedido
+    await saveCustomerData({
+      name: customerName,
+      phone: customerPhone,
+      cep,
+      street,
+      number,
+      complement,
+      neighborhood,
+      city,
+      state,
+    });
 
-      clearCart();
+    clearCart();
 
-      toast({
-        title: "Pedido realizado com sucesso!",
-        description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
-      });
+    toast({
+      title: "Pedido realizado com sucesso!",
+      description: `Seu pedido #${order.id.substring(0, 6)} foi enviado para o restaurante.`,
+    });
 
-      navigate("/");
-    } catch (error) {
-      console.error("Erro ao criar pedido:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível processar seu pedido. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    navigate("/");
+  } catch (error) {
+    console.error("Erro ao criar pedido:", error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível processar seu pedido. Tente novamente.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
 
   if (cartItems.length === 0) {
