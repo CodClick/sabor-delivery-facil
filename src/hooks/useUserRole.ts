@@ -20,8 +20,7 @@ export const useUserRole = () => {
 const { data, error } = await supabase
   .from('users')
   .select('*')
-  .eq('firebase_id', firebaseId)
-  .single(); // This might be the issue
+  .eq('firebase_id', firebaseId);
         
         if (error) {
           console.error("Erro ao buscar role do usuário:", error);
