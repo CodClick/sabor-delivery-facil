@@ -1,5 +1,3 @@
-//authContext.ts
-
 import React, { createContext } from "react";
 import { User, UserCredential } from "firebase/auth";
 import { useAuthState } from "@/hooks/useAuthState";
