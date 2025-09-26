@@ -9,6 +9,48 @@ export interface UserProfile {
   user_id?: string; // 🔑 chave oficial ligada ao Supabase Auth
 }
 
+/**
+ * Garante que o usuário exista na tabela "users"
+ */
+export const saveUserToSupabase = async (user: any) => {
+  try {
+    // pega id do auth.users
+    const { data: authData } = await supabase.auth.getUser();
+    const supabaseUserId = authData?.user?.id;
+
+    if (!supabaseUserId) {
+      console.error("Não foi possível obter supabaseUserId");
+      return null;
+    }
+
+    // upsert (insere se não existir, atualiza se já existir)
+    const { data, error } = await supabase
+      .from("users")
+      .upsert(
+        {
+          user_id: supabaseUserId,
+          email: user.email || null,
+          name: user.displayName || null,
+          phone: user.phoneNumber || null,
+          last_sign_in: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      )
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao salvar usuário no Supabase:", error);
+      return null;
+    }
+
+    return data as UserProfile;
+  } catch (err) {
+    console.error("Erro em saveUserToSupabase:", err);
+    return null;
+  }
+};
+
 export const getUserProfile = async (): Promise<UserProfile | null> => {
   try {
     const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -37,7 +79,10 @@ export const getUserProfile = async (): Promise<UserProfile | null> => {
   }
 };
 
-export const updateLastLogin = async () => {
+/**
+ * Atualiza a data do último login
+ */
+export const updateUserLastSignIn = async () => {
   try {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return;
@@ -53,6 +98,6 @@ export const updateLastLogin = async () => {
       console.error("Erro ao atualizar último login:", error);
     }
   } catch (err) {
-    console.error("Erro em updateLastLogin:", err);
+    console.error("Erro em updateUserLastSignIn:", err);
   }
 };
