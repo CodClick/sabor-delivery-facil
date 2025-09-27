@@ -31,7 +31,7 @@ const AdminDashboard = () => {
       </div>
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Bem-vindo, Administrador!</h2>
-        <p className="text-gray-600">
+        <p class="just">
           Use este painel para gerenciar todos os aspectos do seu restaurante. 
           Você pode visualizar e atualizar pedidos, gerenciar o cardápio completo e acessar o sistema de PDV.
         </p>
