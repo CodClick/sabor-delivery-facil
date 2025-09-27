@@ -18,7 +18,7 @@ const AdminDashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Painel de Administração</h1>
+        <h1 className="text-3xl font-bold">Painel de Administração</h1><br><br>
         <div className="flex gap-2">
           <Button onClick={() => navigate("/")} variant="outline" className="flex items-center gap-2">
             <ArrowLeft size={16} />
