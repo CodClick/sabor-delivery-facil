@@ -18,7 +18,7 @@ const AdminDashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Painel de Administração</h1><br><br>
+        <h1 className="text-3xl font-bold">Painel de Administração</h1></div>
         <div className="flex gap-2">
           <Button onClick={() => navigate("/")} variant="outline" className="flex items-center gap-2">
             <ArrowLeft size={16} />
@@ -28,9 +28,14 @@ const AdminDashboard = () => {
             <LogOut size={16} />
             Sair
           </Button>
-        </div>
       </div>
-
+      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+        <h2 className="text-lg font-semibold mb-2">Bem-vindo, Administrador!</h2>
+        <p className="text-gray-600">
+          Use este painel para gerenciar todos os aspectos do seu restaurante. 
+          Você pode visualizar e atualizar pedidos, gerenciar o cardápio completo e acessar o sistema de PDV.
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
