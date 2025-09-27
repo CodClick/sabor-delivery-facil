@@ -28,7 +28,7 @@ export async function signIn(email: string, password: string): Promise<UserCrede
   const result = await signInWithEmailAndPassword(auth, email, password);
   
   if (result.user) {
-  await updateUserLastSignIn(result.user.uid);
+  // await updateUserLastSignIn(result.user.uid);
   }
   
   return result;
