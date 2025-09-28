@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail } from "lucide-react";
 
-import { supabase } from "@/integrations/supabase/client";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -23,27 +24,22 @@ const ForgotPassword = () => {
       setSuccessMessage("");
       setLoading(true);
 
-      // 🚀 CHAMADA REAL PARA O SUPABASE PARA SOLICITAR A RECUPERAÇÃO DE SENHA
-      // Usamos a função `resetPasswordForEmail` do Supabase Auth.
-      const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`, // Importante! Redireciona para a sua página de redefinição
-      });
+      // 🚀 Chamada para o Firebase para solicitar recuperação de senha
+      await sendPasswordResetEmail(auth, email);
 
-      if (supabaseError) {
-        throw supabaseError;
-      }
-
-      // Mensagem de sucesso segura: não revela se o e-mail existe
-      setSuccessMessage("Se as informações estiverem corretas, você receberá um e-mail com as instruções para redefinir sua senha. Verifique sua caixa de entrada e também a pasta de spam!");
+      // Mensagem de sucesso segura
+      setSuccessMessage(
+        "Se as informações estiverem corretas, você receberá um e-mail com as instruções para redefinir sua senha. Verifique sua caixa de entrada e também a pasta de spam!"
+      );
       toast({
         title: "E-mail enviado!",
         description: "Verifique sua caixa de entrada para redefinir sua senha.",
       });
-
     } catch (err: any) {
       console.error("Erro ao solicitar recuperação de senha:", err);
-      // Mensagem de erro genérica por segurança
-      setError("Não foi possível processar sua solicitação no momento. Tente novamente mais tarde.");
+      setError(
+        "Não foi possível processar sua solicitação no momento. Tente novamente mais tarde."
+      );
       toast({
         title: "Erro",
         description: "Não foi possível enviar o e-mail de recuperação.",
@@ -58,9 +54,12 @@ const ForgotPassword = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow-md">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900">Esqueceu sua senha?</h2>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Esqueceu sua senha?
+          </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Não se preocupe! Informe seu e-mail abaixo e nós te ajudaremos a recuperá-la.
+            Não se preocupe! Informe seu e-mail abaixo e nós te ajudaremos a
+            recuperá-la.
           </p>
         </div>
 
@@ -79,7 +78,10 @@ const ForgotPassword = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email
               </label>
               <div className="mt-1 relative">
@@ -109,7 +111,10 @@ const ForgotPassword = () => {
         </form>
 
         <div className="text-center mt-4">
-          <Link to="/login" className="font-medium text-brand hover:text-brand-600">
+          <Link
+            to="/login"
+            className="font-medium text-brand hover:text-brand-600"
+          >
             Lembrou da senha? Voltar para o Login
           </Link>
         </div>
