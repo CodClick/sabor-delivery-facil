@@ -40,7 +40,7 @@ export async function signUp(
 
     // Envia para o webhook do n8n
     try {
-      await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/user_role", {
+      await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
