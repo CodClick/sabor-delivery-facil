@@ -37,7 +37,7 @@ export async function signUp(
 
     try {
       const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/user_role",
+        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/signup",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -45,7 +45,7 @@ export async function signUp(
         }
       );
 
-      console.log("✅ Resposta do n8n:", response.status, response.statusText);
+      console.log("✅ Resposta do n8n signup:", response.status, response.statusText);
 
       if (!response.ok) {
         const text = await response.text();
