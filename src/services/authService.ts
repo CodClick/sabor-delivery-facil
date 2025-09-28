@@ -43,7 +43,7 @@ export async function signUp(
 
     try {
       const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/user_role",
+        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/signup",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
