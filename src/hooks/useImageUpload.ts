@@ -16,7 +16,7 @@ export const useImageUpload = () => {
       
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
-        .from('pratos-df-pizzaria')
+        .from('imagens_cardapio')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
