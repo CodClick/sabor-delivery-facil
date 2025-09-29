@@ -121,6 +121,17 @@ export const EditVariationGroupModal = ({
                 placeholder="Ex: Sabores, Recheios, Complementos"
               />
             </div>
+
+          <div className="space-y-4 pb-4">
+            <div>
+              <Label htmlFor="group-name">Título do Grupo</Label>
+              <Input
+                id="group-title"
+                value={editVariationGroup.title}
+                onChange={(e) => setEditVariationGroup({...editVariationGroup, title: e.target.value})}
+                placeholder="Nome Interno"
+              />
+            </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
