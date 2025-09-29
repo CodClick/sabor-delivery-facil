@@ -123,6 +123,7 @@ export const saveVariationGroup = async (
     // Clean the data before saving - remove any empty/invalid properties
     const cleanVariationGroup = {
       name: variationGroup.name.trim(),
+      internalName: variationGroup.internalName?.trim() || "", // 🔥 ADICIONADO
       minRequired: variationGroup.minRequired,
       maxAllowed: variationGroup.maxAllowed,
       variations: variationGroup.variations.filter(id => id && id.trim() !== ''),
