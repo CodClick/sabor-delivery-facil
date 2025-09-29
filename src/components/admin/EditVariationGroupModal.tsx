@@ -121,6 +121,25 @@ export const EditVariationGroupModal = ({
                 placeholder="Ex: Sabores, Recheios, Complementos"
               />
             </div>
+
+<div>
+  <Label htmlFor="internal-name">Nome Interno</Label>
+  <Input
+    id="internal-name"
+    value={editVariationGroup.internalName || ""}
+    onChange={(e) =>
+      setEditVariationGroup({
+        ...editVariationGroup,
+        internalName: e.target.value,
+      })
+    }
+    placeholder="Ex: pizza_sabores, adicionais_doces"
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Esse nome é usado apenas internamente no painel administrativo
+  </p>
+</div>
+
             
             <div className="grid grid-cols-2 gap-4">
               <div>
