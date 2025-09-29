@@ -124,7 +124,7 @@ export const EditVariationGroupModal = ({
 
           <div className="space-y-4 pb-4">
             <div>
-              <Label htmlFor="group-name">Título do Grupo</Label>
+              <Label htmlFor="group-title">Título do Grupo</Label>
               <Input
                 id="group-title"
                 value={editVariationGroup.title}
