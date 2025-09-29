@@ -20,10 +20,6 @@ const AdminDashboard = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Painel de Administração</h1></div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate("/")} variant="outline" className="flex items-center gap-2">
-            <ArrowLeft size={16} />
-            Voltar ao Cardápio
-          </Button>
           <Button onClick={logOut} variant="outline" className="flex items-center gap-2">
             <LogOut size={16} />
             Sair
