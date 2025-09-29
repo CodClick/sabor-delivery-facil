@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,7 +33,6 @@ const Admin = () => {
       navigate("/login");
       return;
     }
-
     loadData();
   }, [currentUser, navigate]);
 
@@ -42,9 +40,7 @@ const Admin = () => {
     try {
       setLoading(true);
       console.log("=== ADMIN: CARREGANDO DADOS ===");
-      console.log("Admin: Loading menu data...");
       
-      // Load data with local fallbacks
       const [items, cats, vars, groups] = await Promise.all([
         getAllMenuItems().catch(() => {
           console.log("Using local menu items as fallback");
@@ -63,57 +59,47 @@ const Admin = () => {
           return [];
         })
       ]);
-      
-      // Ensure all categories have valid IDs
-      const validCategories = cats.filter(cat => {
+
+      // Ordenação alfabética
+      const sortedItems = items.sort((a, b) => a.name.localeCompare(b.name));
+      const sortedCategories = cats.sort((a, b) => a.name.localeCompare(b.name));
+
+      // Validação de dados
+      const validCategories = sortedCategories.filter(cat => {
         const isValid = cat && cat.id && typeof cat.id === 'string' && cat.id.trim() !== '';
-        if (!isValid) {
-          console.warn("Filtering out invalid category:", cat);
-        }
+        if (!isValid) console.warn("Filtering out invalid category:", cat);
         return isValid;
       });
 
-      // Ensure all variations have valid IDs
       const validVariations = vars.filter(variation => {
         const isValid = variation && variation.id && typeof variation.id === 'string' && variation.id.trim() !== '';
-        if (!isValid) {
-          console.warn("Filtering out invalid variation:", variation);
-        }
+        if (!isValid) console.warn("Filtering out invalid variation:", variation);
         return isValid;
       });
 
-      // Variation groups are already filtered in the service, but double-check
       const validVariationGroups = groups.filter(group => {
         const isValid = group && group.id && typeof group.id === 'string' && group.id.trim() !== '' && group.name && group.name.trim() !== '';
-        if (!isValid) {
-          console.warn("Filtering out invalid variation group in Admin:", group);
-        }
+        if (!isValid) console.warn("Filtering out invalid variation group in Admin:", group);
         return isValid;
       });
-      
-      console.log("Admin: Loaded items:", items.length, items);
-      console.log("Admin: Loaded valid categories:", validCategories.length, validCategories);
-      console.log("Admin: Loaded valid variations:", validVariations.length, validVariations);
-      console.log("Admin: Loaded valid variation groups (FINAL):", validVariationGroups.length, validVariationGroups);
-      
-      setMenuItems(items);
+
+      setMenuItems(sortedItems);
       setCategories(validCategories);
       setVariations(validVariations);
       setVariationGroups(validVariationGroups);
-      
+
       console.log("=== DADOS CARREGADOS E ESTADO ATUALIZADO ===");
     } catch (error) {
       console.error("Admin: Error loading data, using local fallback:", error);
-      // Complete fallback to local data with validation
       const validLocalCategories = localCategories.filter(cat => 
         cat && cat.id && typeof cat.id === 'string' && cat.id.trim() !== ''
       );
-      
-      setMenuItems(localMenuItems);
-      setCategories(validLocalCategories);
+
+      setMenuItems(localMenuItems.sort((a, b) => a.name.localeCompare(b.name)));
+      setCategories(validLocalCategories.sort((a, b) => a.name.localeCompare(b.name)));
       setVariations([]);
       setVariationGroups([]);
-      
+
       toast({
         title: "Aviso",
         description: "Carregando dados locais. Algumas funcionalidades podem estar limitadas.",
@@ -124,15 +110,10 @@ const Admin = () => {
     }
   };
 
-  // Seed data methods
   const handleSeedData = async () => {
     if (window.confirm("Isso irá importar os dados iniciais do menu. Continuar?")) {
       try {
         setLoading(true);
-        
-        console.log("Importing initial data...");
-        console.log("Categories to import:", localCategories.length);
-        console.log("Menu items to import:", localMenuItems.length);
         
         for (const category of localCategories) {
           await import("@/services/categoryService").then(module => 
@@ -168,13 +149,11 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
-        {/* Header responsivo */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
           <h1 className="text-xl sm:text-2xl font-bold leading-tight">
             Gerenciamento do Cardápio
           </h1>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-
             <Button 
               onClick={() => navigate("/admin-dashboard")} 
               variant="outline"
@@ -187,7 +166,6 @@ const Admin = () => {
 
         {loading && <div className="text-center py-4 text-sm">Carregando dados...</div>}
 
-        {/* Alerta para coleções vazias - mobile friendly */}
         {!loading && (menuItems.length === 0 || categories.length === 0) && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex items-start gap-2 mb-2">
@@ -206,33 +184,12 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Tabs responsivas */}
         <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto p-1">
-            <TabsTrigger 
-              value="menu" 
-              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
-            >
-              Itens
-            </TabsTrigger>
-            <TabsTrigger 
-              value="categories" 
-              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
-            >
-              Categorias
-            </TabsTrigger>
-            <TabsTrigger 
-              value="variations" 
-              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
-            >
-              Variações
-            </TabsTrigger>
-            <TabsTrigger 
-              value="groups" 
-              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
-            >
-              Grupos
-            </TabsTrigger>
+            <TabsTrigger value="menu" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Itens</TabsTrigger>
+            <TabsTrigger value="categories" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Categorias</TabsTrigger>
+            <TabsTrigger value="variations" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Variações</TabsTrigger>
+            <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Grupos</TabsTrigger>
           </TabsList>
 
           <div className="w-full overflow-x-hidden">
