@@ -57,8 +57,9 @@ export interface Variation {
 export interface VariationGroup {
   id: string;
   name: string;
+  internalName?: string; // 🔥 agora sim
   minRequired: number;
   maxAllowed: number;
-  variations: string[]; // Array of variation IDs
-  customMessage?: string; // Custom message for this variation group
+  variations: string[];
+  customMessage?: string;
 }
