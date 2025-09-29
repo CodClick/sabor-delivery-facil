@@ -195,31 +195,33 @@ export const MenuItemsTab = ({
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4>
-        <h2 className="text-xl font-bold">
-          Itens do Cardápio ({menuItems.length} itens)
-          {duplicateIds.length > 0 && (
-            <span className="ml-2 text-red-500 text-sm">
-              ({duplicateIds.length} {duplicateIds.length === 1 ? 'duplicata detectada' : 'duplicatas detectadas'})
-            </span>
-          )}
-        </h2>
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleCleanupPopularItems}
-            variant="outline"
-            disabled={isCleaningUp}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
-            {isCleaningUp ? 'Limpando...' : 'Limpar Populares'}
-          </Button>
-          <Button onClick={handleAddItem}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Item
-          </Button>
-        </div>
-      </div>
+<div className="mb-4">
+  <h2 className="text-xl font-bold mb-2">
+    Itens do Cardápio ({menuItems.length} itens)
+    {duplicateIds.length > 0 && (
+      <span className="ml-2 text-red-500 text-sm">
+        ({duplicateIds.length} {duplicateIds.length === 1 ? 'duplicata detectada' : 'duplicatas detectadas'})
+      </span>
+    )}
+  </h2>
+
+  <div className="flex gap-2">
+    <Button 
+      onClick={handleCleanupPopularItems}
+      variant="outline"
+      disabled={isCleaningUp}
+      className="flex items-center gap-2"
+    >
+      <RefreshCw className={`h-4 w-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
+      {isCleaningUp ? 'Limpando...' : 'Limpar Populares'}
+    </Button>
+    <Button onClick={handleAddItem}>
+      <Plus className="h-4 w-4 mr-1" />
+      Novo Item
+    </Button>
+  </div>
+</div>
+      
 
       {menuItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
