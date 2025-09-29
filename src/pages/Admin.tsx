@@ -180,7 +180,7 @@ const Admin = () => {
               variant="outline"
               className="w-full sm:w-auto text-sm"
             >
-              Página de Administração 
+              Painel de Administração 
             </Button>
           </div>
         </div>
