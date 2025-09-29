@@ -196,6 +196,7 @@ export const MenuItemsTab = ({
   return (
     <>
       <div className="flex justify-between items-center mb-4">
+        <div>
         <h2 className="text-xl font-bold">
           Itens do Cardápio ({menuItems.length} itens)
           {duplicateIds.length > 0 && (
@@ -204,6 +205,7 @@ export const MenuItemsTab = ({
             </span>
           )}
         </h2>
+        </div>
         <div className="flex gap-2">
           <Button 
             onClick={handleCleanupPopularItems}
