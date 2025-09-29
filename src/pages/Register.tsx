@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Lock, User, Phone } from "lucide-react";
+import { Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react"; // 👈 importei os ícones
 import { 
   Form,
   FormControl,
@@ -40,6 +40,8 @@ type FormValues = z.infer<typeof formSchema>;
 const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 estado senha
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false); // 👈 estado confirmar senha
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -168,10 +170,21 @@ const Register = () => {
                       <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
                       <Input 
                         placeholder="••••••••" 
-                        className="pl-10" 
-                        type="password"
+                        className="pl-10 pr-10" 
+                        type={showPassword ? "text" : "password"}
                         {...field} 
                       />
+                      <button
+                        type="button"
+                        className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -190,10 +203,21 @@ const Register = () => {
                       <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
                       <Input 
                         placeholder="••••••••" 
-                        className="pl-10" 
-                        type="password"
+                        className="pl-10 pr-10" 
+                        type={showPasswordConfirm ? "text" : "password"}
                         {...field} 
                       />
+                      <button
+                        type="button"
+                        className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                      >
+                        {showPasswordConfirm ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </FormControl>
                   <FormMessage />
