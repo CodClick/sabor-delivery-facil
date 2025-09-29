@@ -122,6 +122,22 @@ export const AddVariationGroupModal = ({
                 placeholder="Ex: Sabores, Recheios, Complementos"
               />
             </div>
+
+            <div>
+  <Label htmlFor="internal-name">Nome Interno (opcional)</Label>
+  <Input
+    id="internal-name"
+    value={tempVariationGroup.internalName || ""}
+    onChange={(e) => setTempVariationGroup({
+      ...tempVariationGroup,
+      internalName: e.target.value
+    })}
+    placeholder="Ex: sabores_pizza, adicionais_bebida"
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Este campo é apenas para uso interno e não aparece no cardápio público.
+  </p>
+</div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
