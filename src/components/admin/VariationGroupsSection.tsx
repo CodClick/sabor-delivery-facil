@@ -107,15 +107,17 @@ export const VariationGroupsSection = ({
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um grupo existente" />
             </SelectTrigger>
-            <SelectContent>
-              {variationGroups
-                .filter(group => !editItem.variationGroups?.some(g => g.id === group.id))
-                .map(group => (
-                <SelectItem key={group.id} value={group.id}>
-                  {group.name} ({group.minRequired}-{group.maxAllowed})
-                </SelectItem>
-              ))}
-            </SelectContent>
+<SelectContent>
+  {variationGroups
+    .filter(group => !editItem.variationGroups?.some(g => g.id === group.id))
+    .map(group => (
+      <SelectItem key={group.id} value={group.id}>
+        {group.name} ({group.minRequired}-{group.maxAllowed}) 
+        {group.internalName ? ` — ${group.internalName}` : ""}
+      </SelectItem>
+    ))}
+</SelectContent>
+
           </Select>
         </div>
       </div>
