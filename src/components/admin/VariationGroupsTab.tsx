@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { VariationGroup, Variation } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,10 +27,10 @@ export const VariationGroupsTab = ({
   const cleanVariationGroups = React.useMemo(() => {
     console.log("=== LIMPANDO DUPLICATAS NA INTERFACE ===");
     console.log("Grupos recebidos:", variationGroups.length);
-    
+
     const uniqueGroups = new Map<string, VariationGroup>();
     const duplicateIds = new Set<string>();
-    
+
     variationGroups.forEach(group => {
       if (uniqueGroups.has(group.id)) {
         duplicateIds.add(group.id);
@@ -40,11 +39,11 @@ export const VariationGroupsTab = ({
         uniqueGroups.set(group.id, group);
       }
     });
-    
+
     const cleanGroups = Array.from(uniqueGroups.values());
     console.log("Grupos após limpeza:", cleanGroups.length);
     console.log("IDs duplicados removidos:", Array.from(duplicateIds));
-    
+
     return {
       groups: cleanGroups,
       duplicateIds: duplicateIds
@@ -58,17 +57,18 @@ export const VariationGroupsTab = ({
       minRequired: 1,
       maxAllowed: 1,
       variations: [],
-      customMessage: ""
+      customMessage: "",
+      internalName: "" // garantindo campo vazio no novo grupo
     });
   };
 
   const handleEditExistingVariationGroup = (group: VariationGroup) => {
-    setEditVariationGroup({...group});
+    setEditVariationGroup({ ...group });
   };
 
   const handleDeleteExistingVariationGroup = async (group: VariationGroup) => {
     console.log("Tentando deletar grupo:", group.name, "ID:", group.id);
-    
+
     if (!group.id) {
       console.error("Grupo não possui ID válido:", group);
       toast({
@@ -87,24 +87,20 @@ export const VariationGroupsTab = ({
     if (window.confirm(confirmMessage)) {
       try {
         console.log("Confirmação recebida, deletando grupo:", group.id);
-        
         await deleteVariationGroup(group.id);
-        
         console.log("Grupo deletado com sucesso");
-        
+
         toast({
           title: "Sucesso",
           description: isDuplicate 
             ? "Grupo de variação e suas duplicatas excluídos com sucesso"
             : "Grupo de variação excluído com sucesso",
         });
-        
+
         console.log("Recarregando dados...");
         onDataChange();
-        
-      } catch (error) {
+      } catch (error: any) {
         console.error("Erro ao excluir grupo de variação:", error);
-        
         toast({
           title: "Erro",
           description: `Não foi possível excluir o grupo: ${error.message}`,
@@ -135,7 +131,7 @@ export const VariationGroupsTab = ({
           Novo Grupo de Variações
         </Button>
       </div>
-      
+
       {cleanVariationGroups.duplicateIds.size > 0 && (
         <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
@@ -148,7 +144,7 @@ export const VariationGroupsTab = ({
           </p>
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {cleanVariationGroups.groups.map(group => (
           <Card key={group.id} className="overflow-hidden">
@@ -164,7 +160,7 @@ export const VariationGroupsTab = ({
                       : `De ${group.minRequired} até ${group.maxAllowed} seleções`
                     }
                   </p>
-                  
+
                   {group.customMessage && (
                     <p className="text-xs text-gray-500 mt-2">
                       Mensagem: {group.customMessage}
@@ -183,11 +179,18 @@ export const VariationGroupsTab = ({
                       )}
                     </div>
                   </div>
-                  
+
                   <p className="text-xs text-gray-400 mt-2">
                     ID: {group.id}
                   </p>
+
+                  {group.internalName && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Nome interno: {group.internalName}
+                    </p>
+                  )}
                 </div>
+
                 <div className="flex gap-2">
                   <Button 
                     size="sm" 
@@ -208,7 +211,7 @@ export const VariationGroupsTab = ({
             </CardContent>
           </Card>
         ))}
-        
+
         {cleanVariationGroups.groups.length === 0 && !loading && (
           <div className="col-span-full text-center py-8 text-gray-500">
             Nenhum grupo de variação encontrado. Adicione grupos para organizar as variações.
