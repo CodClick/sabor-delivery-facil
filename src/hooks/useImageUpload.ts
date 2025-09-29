@@ -16,7 +16,7 @@ export const useImageUpload = () => {
       
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
-        .from('images_cardapio')
+        .from('pratos-df-pizzaria')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -34,7 +34,7 @@ export const useImageUpload = () => {
 
       // Get the public URL for the uploaded file
       const { data: urlData } = supabase.storage
-        .from('images_cardapio')
+        .from('pratos-df-pizzaria')
         .getPublicUrl(data.path);
 
       toast({
