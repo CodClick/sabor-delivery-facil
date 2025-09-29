@@ -176,11 +176,11 @@ const Admin = () => {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
 
             <Button 
-              onClick={() => navigate("/")} 
+              onClick={() => navigate("/admin-dashboard")} 
               variant="outline"
               className="w-full sm:w-auto text-sm"
             >
-              Ver Cardápio
+              Página de Administração 
             </Button>
           </div>
         </div>
