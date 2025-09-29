@@ -122,7 +122,7 @@ export const EditVariationGroupModal = ({
               />
             </div>
 
-          <div className="space-y-4 pb-4">
+            <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="group-title">Título do Grupo</Label>
               <Input
