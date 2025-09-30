@@ -32,52 +32,58 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPizzaOptions = async () => {
-      try {
-        setLoading(true);
-        const [menuItems, variations] = await Promise.all([
-          getAllMenuItems(),
-          getAllVariations()
-        ]);
+    if (isOpen) {
+      // Pré-seleciona o primeiro sabor como a pizza clicada
+      setSabor1(item.id);
 
-        // Filtrar apenas pizzas que permitem combinação
-        const pizzas = menuItems.filter(item => 
-          item.tipo === "pizza" && item.permiteCombinacao
-        );
+      const loadPizzaOptions = async () => {
+        try {
+          setLoading(true);
+          const [menuItems, variations] = await Promise.all([
+            getAllMenuItems(),
+            getAllVariations()
+          ]);
 
-        const pizzaOptionsWithPrices: PizzaOption[] = pizzas.map(pizza => {
-          let precoGrande = pizza.price;
+          const pizzas = menuItems.filter(p => p.tipo === "pizza" && p.permiteCombinacao);
 
-          if (pizza.hasVariations && pizza.variationGroups) {
-            for (const group of pizza.variationGroups) {
-              const groupVariations = variations.filter(v => group.variations.includes(v.id));
-              const grandeVariation = groupVariations.find(v => v.name.toLowerCase().includes("grande"));
-              if (grandeVariation?.additionalPrice !== undefined) {
-                precoGrande = grandeVariation.additionalPrice;
+          const pizzaOptionsWithPrices: PizzaOption[] = pizzas.map(pizza => {
+            let precoGrande = pizza.price;
+
+            if (pizza.hasVariations && pizza.variationGroups) {
+              for (const group of pizza.variationGroups) {
+                const groupVariations = variations.filter(v => group.variations.includes(v.id));
+                const grandeVariation = groupVariations.find(v => v.name.toLowerCase().includes("grande"));
+                if (grandeVariation?.additionalPrice !== undefined) {
+                  precoGrande = grandeVariation.additionalPrice;
+                }
               }
             }
-          }
 
-          return {
-            id: pizza.id,
-            name: pizza.name,
-            precoGrande
-          };
-        });
+            return {
+              id: pizza.id,
+              name: pizza.name,
+              precoGrande
+            };
+          });
 
-        // Ordenar alfabeticamente
-        pizzaOptionsWithPrices.sort((a, b) => a.name.localeCompare(b.name));
+          // Ordenar alfabeticamente
+          pizzaOptionsWithPrices.sort((a, b) => a.name.localeCompare(b.name));
 
-        setPizzaOptions(pizzaOptionsWithPrices);
-      } catch (error) {
-        console.error("Erro ao carregar opções de pizza:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+          setPizzaOptions(pizzaOptionsWithPrices);
+        } catch (error) {
+          console.error("Erro ao carregar opções de pizza:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    if (isOpen) loadPizzaOptions();
-  }, [isOpen]);
+      loadPizzaOptions();
+    } else {
+      // Limpar seleção ao fechar
+      setSabor1(null);
+      setSabor2(null);
+    }
+  }, [isOpen, item.id]);
 
   const calculatePrice = (): number => {
     if (!sabor1 || !sabor2) return item.price;
@@ -87,7 +93,6 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
 
     if (!pizza1 || !pizza2) return item.price;
 
-    // Retornar o maior preço entre os dois sabores
     return Math.max(pizza1.precoGrande || 0, pizza2.precoGrande || 0);
   };
 
