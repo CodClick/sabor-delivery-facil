@@ -1,57 +1,55 @@
-// src/utils/trackingEvents.js
+// Assumindo que seu arquivo de configuração está em ../config/trackingConfig
+// import { TRACKING_IDS } from '../config/trackingConfig';
 
-// Evento: Ver um produto ou categoria
-export const trackViewContent = (data) => {
-  console.log("TRACKING: ViewContent", data);
-  window.fbq?.('track', 'ViewContent', {
-    content_name: data.name, // Nome do produto/categoria
-    content_ids: [data.id],   // ID do produto
-    content_type: 'product',
-  });
-  window.gtag?.('event', 'view_item', {
-    items: [{
-        item_id: data.id,
-        item_name: data.name,
-        price: data.price,
-    }]
-  });
-};
+// (Outras funções de rastreamento aqui, como trackViewContent, etc.)
 
-// Evento: Adicionar ao Carrinho
+/**
+ * Rastreia o evento de Adicionar ao Carrinho de forma completa.
+ * @param {object} data - Contém as informações do produto.
+ * @param {string} data.id - ID (SKU) do produto.
+ * @param {string} data.name - Nome do produto.
+ * @param {number} data.price - Preço final do item (com variações).
+ * @param {number} data.quantity - Quantidade sendo adicionada.
+ * @param {string} [data.category] - Categoria do produto (opcional, mas recomendado).
+ * @param {Array<object>} [data.variations] - Variações selecionadas (opcional).
+ */
 export const trackAddToCart = (data) => {
-  console.log("TRACKING: AddToCart", data);
-  window.fbq?.('track', 'AddToCart', {
-    content_name: data.name,
+  if (!window.fbq && !window.gtag) {
+    console.warn("Tracking scripts not loaded.");
+    return;
+  }
+
+  console.log("TRACKING (Full Data): AddToCart", data);
+
+  // --- Parâmetros para o Pixel da Meta (Facebook) ---
+  const metaPayload = {
     content_ids: [data.id],
+    content_name: data.name,
     content_type: 'product',
-    value: data.price,
     currency: 'BRL',
-  });
-  window.gtag?.('event', 'add_to_cart', {
+    value: data.price.toFixed(2), // Garante duas casas decimais
+  };
+
+  window.fbq?.('track', 'AddToCart', metaPayload);
+
+  // --- Parâmetros para o Google Analytics 4 (GA4) ---
+  // O GA4 usa um array 'items' para detalhar o produto.
+  const googlePayload = {
     currency: 'BRL',
-    value: data.price,
-    items: [{
+    value: data.price, // O valor total do evento (preço * quantidade)
+    items: [
+      {
         item_id: data.id,
         item_name: data.name,
         price: data.price,
-        quantity: data.quantity
-    }]
-  });
-};
+        quantity: data.quantity,
+        // (Opcional, mas muito bom) Adiciona a categoria do item
+        item_category: data.category, 
+        // (Opcional) Usado para detalhar variações como "Tamanho: Grande"
+        item_variant: data.variations?.map(v => v.name).join(', '),
+      }
+    ]
+  };
 
-// Evento: Finalizar Compra (o mais importante!)
-export const trackPurchase = (data) => {
-  console.log("TRACKING: Purchase", data);
-  window.fbq?.('track', 'Purchase', {
-    value: data.total,
-    currency: 'BRL',
-    content_ids: data.product_ids, // Array com IDs dos produtos
-    content_type: 'product',
-  });
-  window.gtag?.('event', 'purchase', {
-    transaction_id: data.orderId, // ID único do pedido
-    value: data.total,
-    currency: 'BRL',
-    items: data.items // Array com objetos de itens
-  });
+  window.gtag?.('event', 'add_to_cart', googlePayload);
 };
