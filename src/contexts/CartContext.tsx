@@ -143,15 +143,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       duration: 2000,
     });
     
-    // --- INÍCIO DO CÓDIGO DE RASTREAMENTO ---
-    // 2. LÓGICA DE RASTREAMENTO ADICIONADA AQUI
+// --- INÍCIO DO CÓDIGO DE RASTREAMENTO (ATUALIZADO) ---
     try {
-      // Para o rastreamento, precisamos do preço final do item individual
       const itemParaCalculo: CartItem = { ...menuItem, quantity: 1, selectedVariations: enrichedVariations };
       let finalPrice = 0;
 
       if (itemParaCalculo.isHalfPizza) {
-        // Pizzas meio a meio já vêm com o preço final correto
         finalPrice = itemParaCalculo.price || 0;
       } else {
         const basePrice = itemParaCalculo.priceFrom ? 0 : (itemParaCalculo.price || 0);
@@ -159,12 +156,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         finalPrice = basePrice + variationsTotal;
       }
 
-      trackAddToCart({
+      // Montando o objeto de dados completo para a nova função
+      const trackingData = {
         id: item.id,
         name: item.name,
         price: finalPrice,
-        quantity: 1, // O evento AddToCart rastreia a ação de adicionar, geralmente com quantidade 1
-      });
+        quantity: 1,
+        category: item.categoryName, // Supondo que você tenha o nome da categoria no objeto 'item'
+        // Mapeando as variações para um formato mais simples para o rastreamento
+        variations: enrichedVariations?.flatMap(group => 
+          group.variations.map(v => ({ name: v.name, price: v.additionalPrice }))
+        ),
+      };
+
+      trackAddToCart(trackingData); // <--- Chamada atualizada!
+
     } catch (error) {
         console.error("Falha ao rastrear evento AddToCart:", error);
     }
