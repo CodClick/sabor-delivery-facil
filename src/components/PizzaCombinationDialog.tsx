@@ -17,7 +17,6 @@ interface PizzaCombinationDialogProps {
 interface PizzaOption {
   id: string;
   name: string;
-  precoBroto?: number;
   precoGrande?: number;
 }
 
@@ -30,7 +29,6 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
   const [sabor1, setSabor1] = useState<string | null>(null);
   const [sabor2, setSabor2] = useState<string | null>(null);
   const [pizzaOptions, setPizzaOptions] = useState<PizzaOption[]>([]);
-  const [tamanho, setTamanho] = useState<"broto" | "grande">("grande");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,45 +45,28 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
           item.tipo === "pizza" && item.permiteCombinacao
         );
 
-        const pizzaOptionsWithPrices: PizzaOption[] = [];
+        const pizzaOptionsWithPrices: PizzaOption[] = pizzas.map(pizza => {
+          let precoGrande = pizza.price;
 
-        for (const pizza of pizzas) {
-          const option: PizzaOption = {
-            id: pizza.id,
-            name: pizza.name,
-          };
-
-          // Buscar preços nas variações "Broto" e "Grande"
           if (pizza.hasVariations && pizza.variationGroups) {
             for (const group of pizza.variationGroups) {
-              const groupVariations = variations.filter(v => 
-                group.variations.includes(v.id)
-              );
-
-              const brotoVariation = groupVariations.find(v => 
-                v.name.toLowerCase().includes('broto')
-              );
-              const grandeVariation = groupVariations.find(v => 
-                v.name.toLowerCase().includes('grande')
-              );
-
-              if (brotoVariation?.additionalPrice !== undefined) {
-                option.precoBroto = brotoVariation.additionalPrice;
-              }
+              const groupVariations = variations.filter(v => group.variations.includes(v.id));
+              const grandeVariation = groupVariations.find(v => v.name.toLowerCase().includes("grande"));
               if (grandeVariation?.additionalPrice !== undefined) {
-                option.precoGrande = grandeVariation.additionalPrice;
+                precoGrande = grandeVariation.additionalPrice;
               }
             }
           }
 
-          // Se não tem variações, usar o preço base
-          if (!option.precoBroto && !option.precoGrande) {
-            option.precoBroto = pizza.price;
-            option.precoGrande = pizza.price;
-          }
+          return {
+            id: pizza.id,
+            name: pizza.name,
+            precoGrande
+          };
+        });
 
-          pizzaOptionsWithPrices.push(option);
-        }
+        // Ordenar alfabeticamente
+        pizzaOptionsWithPrices.sort((a, b) => a.name.localeCompare(b.name));
 
         setPizzaOptions(pizzaOptionsWithPrices);
       } catch (error) {
@@ -95,9 +76,7 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
       }
     };
 
-    if (isOpen) {
-      loadPizzaOptions();
-    }
+    if (isOpen) loadPizzaOptions();
   }, [isOpen]);
 
   const calculatePrice = (): number => {
@@ -108,11 +87,8 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
 
     if (!pizza1 || !pizza2) return item.price;
 
-    const preco1 = tamanho === "broto" ? pizza1.precoBroto : pizza1.precoGrande;
-    const preco2 = tamanho === "broto" ? pizza2.precoBroto : pizza2.precoGrande;
-
     // Retornar o maior preço entre os dois sabores
-    return Math.max(preco1 || 0, preco2 || 0);
+    return Math.max(pizza1.precoGrande || 0, pizza2.precoGrande || 0);
   };
 
   const handleConfirm = () => {
@@ -127,23 +103,21 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
 
     const combinedItem = {
       ...item,
-      name: `Pizza Meio a Meio ${tamanho === "broto" ? "(Broto)" : "(Grande)"} - 1/2 ${pizza1.name} + 1/2 ${pizza2.name}`,
+      name: `Pizza Meio a Meio (Grande) - 1/2 ${pizza1.name} + 1/2 ${pizza2.name}`,
       price: finalPrice,
       isHalfPizza: true,
       combination: {
         sabor1: { id: sabor1, name: pizza1.name },
         sabor2: { id: sabor2, name: pizza2.name },
-        tamanho
+        tamanho: "grande"
       },
     };
 
     onAddToCart(combinedItem);
     onClose();
-    
-    // Reset form
+
     setSabor1(null);
     setSabor2(null);
-    setTamanho("grande");
   };
 
   return (
@@ -154,20 +128,6 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Seleção de tamanho */}
-          <div>
-            <label className="block font-medium mb-2">Tamanho:</label>
-            <Select value={tamanho} onValueChange={(value: "broto" | "grande") => setTamanho(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="broto">Broto</SelectItem>
-                <SelectItem value="grande">Grande</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Seleção do primeiro sabor */}
           <div>
             <label className="block font-medium mb-2">Escolha o 1º sabor:</label>
@@ -176,14 +136,11 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
                 <SelectValue placeholder={loading ? "Carregando..." : "Selecione o sabor"} />
               </SelectTrigger>
               <SelectContent>
-                {pizzaOptions.map((pizza) => {
-                  const preco = tamanho === "broto" ? pizza.precoBroto : pizza.precoGrande;
-                  return (
-                    <SelectItem key={pizza.id} value={pizza.id}>
-                      {pizza.name} {preco && `- ${formatCurrency(preco)}`}
-                    </SelectItem>
-                  );
-                })}
+                {pizzaOptions.map(pizza => (
+                  <SelectItem key={pizza.id} value={pizza.id}>
+                    {pizza.name} {pizza.precoGrande && `- ${formatCurrency(pizza.precoGrande)}`}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -196,14 +153,11 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
                 <SelectValue placeholder={loading ? "Carregando..." : "Selecione o sabor"} />
               </SelectTrigger>
               <SelectContent>
-                {pizzaOptions.map((pizza) => {
-                  const preco = tamanho === "broto" ? pizza.precoBroto : pizza.precoGrande;
-                  return (
-                    <SelectItem key={pizza.id} value={pizza.id}>
-                      {pizza.name} {preco && `- ${formatCurrency(preco)}`}
-                    </SelectItem>
-                  );
-                })}
+                {pizzaOptions.map(pizza => (
+                  <SelectItem key={pizza.id} value={pizza.id}>
+                    {pizza.name} {pizza.precoGrande && `- ${formatCurrency(pizza.precoGrande)}`}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
