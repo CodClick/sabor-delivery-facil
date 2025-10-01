@@ -1,121 +1,238 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
+import { toast } from "@/components/ui/use-toast";
+import { getAllVariations } from "@/services/variationService";
+import { trackAddToCart } from "@/utils/trackingEvents"; // <--- 1. IMPORTAÇÃO ADICIONADA
 
-type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-};
-
-type Coupon = {
-  code: string;
-  discountType: "percent" | "fixed";
-  discountValue: number;
-};
-
-type CartContextType = {
-  cartItems: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string) => void;
-  clearCart: () => void;
-  total: number;
-  discount: number;
-  finalTotal: number;
-  applyCoupon: (code: string) => void;
-  coupon: Coupon | null;
-};
+interface CartContextType {
+  cartItems: CartItem[];
+  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => void;
+  addToCart: (item: MenuItem) => void;
+  removeFromCart: (id: string) => void;
+  increaseQuantity: (id: string) => void;
+  decreaseQuantity: (id: string) => void;
+  clearCart: () => void;
+  cartTotal: number;
+  itemCount: number;
+  isCartOpen: boolean;
+  setIsCartOpen: (isOpen: boolean) => void;
+}
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-type CartProviderProps = {
-  children: ReactNode;
-};
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartTotal, setCartTotal] = useState(0);
+  const [itemCount, setItemCount] = useState(0);
+  const [variations, setVariations] = useState<any[]>([]);
 
-export const CartProvider = ({ children }: CartProviderProps) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [coupon, setCoupon] = useState<Coupon | null>(null);
+  // carregar variações
+  useEffect(() => {
+    const loadVariations = async () => {
+      try {
+        const allVariations = await getAllVariations();
+        setVariations(allVariations);
+      } catch (error) {
+        console.error("Erro ao carregar variações:", error);
+      }
+    };
+    loadVariations();
+  }, []);
 
-  // 🔹 Exemplo de cupons válidos (pode vir de API ou banco depois)
-  const availableCoupons: Coupon[] = [
-    { code: "DESC10", discountType: "percent", discountValue: 10 },
-    { code: "VALE50", discountType: "fixed", discountValue: 50 },
-  ];
+  const getVariationPrice = (variationId: string): number => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.additionalPrice || 0;
+  };
 
-  const addToCart = (item: CartItem) => {
-    setCartItems((prev) => {
-      const existingItem = prev.find((i) => i.id === item.id);
-      if (existingItem) {
-        return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
-        );
+  const getVariationName = (variationId: string): string => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation?.name || "";
+  };
+
+  const calculateVariationsTotal = (item: CartItem): number => {
+    let variationsTotal = 0;
+    if (item.selectedVariations?.length) {
+      item.selectedVariations.forEach(group => {
+        group.variations?.forEach(variation => {
+          const additionalPrice = variation.additionalPrice ?? getVariationPrice(variation.variationId);
+          if (additionalPrice > 0) {
+            variationsTotal += additionalPrice * (variation.quantity || 1);
+          }
+        });
+      });
+    }
+    return variationsTotal;
+  };
+
+  // recalcular totais
+  useEffect(() => {
+    const { total, count } = cartItems.reduce(
+      (acc, item) => {
+        let itemTotal = 0;
+
+        if (item.isHalfPizza) {
+          // Para pizza meio a meio, já usamos o price final
+          itemTotal = (item.price || 0) * item.quantity;
+        } else {
+          const basePrice = item.priceFrom ? 0 : (item.price || 0);
+          const variationsTotal = calculateVariationsTotal(item);
+          itemTotal = (basePrice + variationsTotal) * item.quantity;
+        }
+
+        acc.total += itemTotal;
+        acc.count += item.quantity;
+        return acc;
+      },
+      { total: 0, count: 0 }
+    );
+
+    setCartTotal(total);
+    setItemCount(count);
+  }, [cartItems, variations]);
+
+
+  const enrichSelectedVariations = (selectedVariations?: SelectedVariationGroup[]): SelectedVariationGroup[] => {
+    if (!selectedVariations?.length) return [];
+    return selectedVariations.map(group => ({
+      ...group,
+      variations: group.variations.map(variation => ({
+        ...variation,
+        name: variation.name || getVariationName(variation.variationId),
+        additionalPrice:
+          variation.additionalPrice !== undefined
+            ? variation.additionalPrice
+            : getVariationPrice(variation.variationId),
+      })),
+    }));
+  };
+
+  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => {
+    const { selectedVariations, ...item } = menuItem;
+
+    const enrichedVariations = enrichSelectedVariations(selectedVariations);
+    const itemId = item.id;
+
+    setCartItems(prevItems => {
+      const existingItem = prevItems.find(
+        i =>
+          i.id === itemId &&
+          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
+      );
+
+      if (existingItem) {
+        return prevItems.map(i =>
+          i.id === itemId &&
+          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        );
+      } else {
+        const newItem: CartItem = {
+          ...item,
+          quantity: 1,
+          selectedVariations: enrichedVariations,
+        };
+        return [...prevItems, newItem];
+      }
+    });
+
+    toast({
+      title: "Item adicionado",
+      description: `${item.name} foi adicionado ao carrinho`,
+      duration: 2000,
+    });
+    
+// --- INÍCIO DO CÓDIGO DE RASTREAMENTO (ATUALIZADO) ---
+    try {
+      const itemParaCalculo: CartItem = { ...menuItem, quantity: 1, selectedVariations: enrichedVariations };
+      let finalPrice = 0;
+
+      if (itemParaCalculo.isHalfPizza) {
+        finalPrice = itemParaCalculo.price || 0;
+      } else {
+        const basePrice = itemParaCalculo.priceFrom ? 0 : (itemParaCalculo.price || 0);
+        const variationsTotal = calculateVariationsTotal(itemParaCalculo);
+        finalPrice = basePrice + variationsTotal;
       }
-      return [...prev, item];
-    });
-  };
 
-  const removeFromCart = (id: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
+      // Montando o objeto de dados completo para a nova função
+      const trackingData = {
+        id: item.id,
+        name: item.name,
+        price: finalPrice,
+        quantity: 1,
+        category: item.categoryName, // Supondo que você tenha o nome da categoria no objeto 'item'
+        // Mapeando as variações para um formato mais simples para o rastreamento
+        variations: enrichedVariations?.flatMap(group => 
+          group.variations.map(v => ({ name: v.name, price: v.additionalPrice }))
+        ),
+      };
 
-  const clearCart = () => {
-    setCartItems([]);
-    setCoupon(null);
-  };
+      trackAddToCart(trackingData); // <--- Chamada atualizada!
 
-  const total = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
-
-  // 🔹 Aplica o cupom
-  const applyCoupon = (code: string) => {
-    const found = availableCoupons.find(
-      (c) => c.code.toLowerCase() === code.toLowerCase()
-    );
-
-    if (!found) {
-      console.error("Cupom inválido");
-      setCoupon(null);
-      return;
+    } catch (error) {
+        console.error("Falha ao rastrear evento AddToCart:", error);
     }
+    // --- FIM DO CÓDIGO DE RASTREAMENTO ---
 
-    setCoupon(found);
-    console.log(`Cupom aplicado: ${found.code}`);
-  };
+  };
 
-  // 🔹 Calcula o desconto baseado no cupom
-  const discount = coupon
-    ? coupon.discountType === "percent"
-      ? (total * coupon.discountValue) / 100
-      : coupon.discountValue
-    : 0;
+  const addToCart = (item: MenuItem) => addItem(item);
 
-  const finalTotal = Math.max(total - discount, 0);
+  const removeFromCart = (id: string) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+  };
 
-  return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addToCart,
-        removeFromCart,
-        clearCart,
-        total,
-        discount,
-        finalTotal,
-        applyCoupon,
-        coupon,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+  const increaseQuantity = (id: string) => {
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+      )
+    );
+  };
+
+  const decreaseQuantity = (id: string) => {
+    setCartItems(prevItems =>
+      prevItems
+        .map(item =>
+          item.id === id && item.quantity > 1
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        )
+        .filter(item => !(item.id === id && item.quantity === 1))
+    );
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
+  return (
+    <CartContext.Provider
+      value={{
+        cartItems,
+        addItem,
+        addToCart,
+        removeFromCart,
+        increaseQuantity,
+        decreaseQuantity,
+        clearCart,
+        cartTotal,
+        itemCount,
+        isCartOpen,
+        setIsCartOpen,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 };
 
-// Hook para usar no projeto
 export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
-  return context;
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
 };
