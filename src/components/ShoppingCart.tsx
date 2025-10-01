@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { getAllVariations, getVariationById } from "@/services/variationService";
+import { getAllVariations } from "@/services/variationService";
 import { Variation } from "@/types/menu";
-import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 const ShoppingCart: React.FC = () => {
   const {
@@ -22,14 +21,18 @@ const ShoppingCart: React.FC = () => {
     setIsCartOpen,
     itemCount,
   } = useCart();
-  
+
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [variations, setVariations] = useState<Variation[]>([]);
   const [variationsLoading, setVariationsLoading] = useState(true);
 
-  // Load all variations when the component mounts
+  // Estado para cupons
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [discountValue, setDiscountValue] = useState(0);
+
   useEffect(() => {
     const loadVariations = async () => {
       try {
@@ -41,7 +44,6 @@ const ShoppingCart: React.FC = () => {
         setVariationsLoading(false);
       }
     };
-    
     loadVariations();
   }, []);
 
@@ -56,47 +58,80 @@ const ShoppingCart: React.FC = () => {
       navigate("/login");
       return;
     }
-    
+
     setIsCartOpen(false);
     navigate("/checkout");
   };
 
-  // Determine if we're on the checkout page to adjust the cart button position
-  const isCheckoutPage = window.location.pathname === "/checkout";
+  // Verificação de cupom no Supabase
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
 
-  // Don't show the cart button on the checkout page at all
-  if (isCheckoutPage) {
-    return null;
-  }
+    const { data, error } = await supabase
+      .from("cupons")
+      .select("*")
+      .eq("codigo", couponCode.trim())
+      .maybeSingle();
 
-  // Função para obter o nome da variação a partir do ID
-  const getVariationName = (variationId: string): string => {
-    // Procurar a variação no estado local
-    const variation = variations.find(v => v.id === variationId);
-    
-    if (variation) {
-      return variation.name;
+    if (error || !data) {
+      toast({ title: "Cupom inválido", variant: "destructive" });
+      return;
     }
-    
-    // Se não encontrar (enquanto está carregando), retornar um placeholder
-    return variationsLoading ? "Carregando..." : "Variação não encontrada";
+
+    // Validar data
+    const now = new Date();
+    if (data.data_expiracao && new Date(data.data_expiracao) < now) {
+      toast({ title: "Este cupom expirou", variant: "destructive" });
+      return;
+    }
+
+    if (!data.ativo) {
+      toast({ title: "Este cupom não está ativo", variant: "destructive" });
+      return;
+    }
+
+    // Calcular desconto
+    let desconto = 0;
+    if (data.tipo === "percentual") {
+      desconto = (cartTotal * data.valor) / 100;
+    } else if (data.tipo === "fixo") {
+      desconto = data.valor;
+    }
+
+    if (desconto > cartTotal) desconto = cartTotal;
+
+    setAppliedCoupon(data);
+    setDiscountValue(desconto);
+    toast({ title: "Cupom aplicado com sucesso!" });
   };
 
-  // Função para obter o preço adicional da variação
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountValue(0);
+    setCouponCode("");
+    toast({ title: "Cupom removido" });
+  };
+
+  // Totais
+  const finalTotal = cartTotal - discountValue;
+
+  // Oculta carrinho no checkout
+  const isCheckoutPage = window.location.pathname === "/checkout";
+  if (isCheckoutPage) return null;
+
+  const getVariationName = (variationId: string): string => {
+    const variation = variations.find(v => v.id === variationId);
+    return variation ? variation.name : (variationsLoading ? "Carregando..." : "Variação não encontrada");
+  };
+
   const getVariationPrice = (variationId: string): number => {
     const variation = variations.find(v => v.id === variationId);
     return variation?.additionalPrice || 0;
   };
 
-  // Função para calcular o valor total das variações de um item
   const calculateVariationsTotal = (item: any): number => {
-    // Para pizzas meio a meio, não calcular variações extras pois o preço já está correto
-    if (item.isHalfPizza) {
-      return 0;
-    }
-    
+    if (item.isHalfPizza) return 0;
     let variationsTotal = 0;
-    
     if (item.selectedVariations && item.selectedVariations.length > 0) {
       item.selectedVariations.forEach((group: any) => {
         if (group.variations && group.variations.length > 0) {
@@ -109,18 +144,11 @@ const ShoppingCart: React.FC = () => {
         }
       });
     }
-    
     return variationsTotal;
   };
 
-  // Função para calcular o total do item (base + variações) x quantidade
   const calculateItemTotal = (item: any): number => {
-    // Para pizzas meio a meio, usar apenas o preço calculado
-    if (item.isHalfPizza) {
-      return item.price * item.quantity;
-    }
-    
-    // Se o item tem "a partir de", o preço base é 0
+    if (item.isHalfPizza) return item.price * item.quantity;
     const basePrice = item.priceFrom ? 0 : (item.price || 0);
     const variationsTotal = calculateVariationsTotal(item);
     return (basePrice + variationsTotal) * item.quantity;
@@ -128,7 +156,7 @@ const ShoppingCart: React.FC = () => {
 
   return (
     <>
-      {/* Cart Trigger Button */}
+      {/* Botão do Carrinho */}
       <button
         className="fixed bottom-6 right-6 z-30 bg-brand p-4 rounded-full shadow-lg hover:bg-brand-600 transition-all duration-300"
         onClick={() => setIsCartOpen(true)}
@@ -143,7 +171,7 @@ const ShoppingCart: React.FC = () => {
         </div>
       </button>
 
-      {/* Cart Overlay */}
+      {/* Overlay */}
       <div
         className={cn(
           "fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity",
@@ -152,7 +180,7 @@ const ShoppingCart: React.FC = () => {
         onClick={() => setIsCartOpen(false)}
       ></div>
 
-      {/* Cart Slide Panel */}
+      {/* Painel do Carrinho */}
       <div
         className={cn(
           "fixed right-0 top-0 h-full w-full sm:w-96 bg-white z-50 p-6 shadow-xl overflow-y-auto transform transition-transform duration-300 ease-in-out",
@@ -170,7 +198,6 @@ const ShoppingCart: React.FC = () => {
           <div className="flex flex-col items-center justify-center h-64">
             <ShoppingBag className="h-16 w-16 text-gray-300 mb-4" />
             <p className="text-gray-500 text-center">Seu carrinho está vazio</p>
-            <p className="text-gray-400 text-sm text-center mt-2">Adicione itens do menu para começar seu pedido</p>
             <Button
               className="mt-6 bg-brand hover:bg-brand-600"
               onClick={() => setIsCartOpen(false)}
@@ -180,9 +207,9 @@ const ShoppingCart: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* Itens */}
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => {
-                // Se o item tem "a partir de", o preço base é 0
                 const basePrice = item.priceFrom ? 0 : (item.price || 0);
                 const variationsTotal = calculateVariationsTotal(item);
                 const itemTotal = calculateItemTotal(item);
@@ -210,8 +237,6 @@ const ShoppingCart: React.FC = () => {
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      
-                      {/* Preço base do item */}
                       {!item.isHalfPizza && (
                         <div className="text-sm text-gray-600">
                           {item.priceFrom ? (
@@ -221,8 +246,6 @@ const ShoppingCart: React.FC = () => {
                           )}
                         </div>
                       )}
-                      
-                      {/* Para pizzas meio a meio, mostrar informações da combinação */}
                       {item.isHalfPizza && item.combination && (
                         <div className="text-sm text-gray-600">
                           <p>Pizza {item.combination.tamanho} - Meio a meio</p>
@@ -230,35 +253,28 @@ const ShoppingCart: React.FC = () => {
                           <p className="text-brand font-medium">{formatCurrency(item.price)}</p>
                         </div>
                       )}
-                      
-                      {/* Variações selecionadas (apenas para itens que não são pizza meio a meio) */}
-                      {!item.isHalfPizza && item.selectedVariations && item.selectedVariations.length > 0 && (
+                      {!item.isHalfPizza && item.selectedVariations?.length > 0 && (
                         <div className="mt-2 text-sm">
                           {item.selectedVariations.map((group, index) => (
                             <div key={group.groupId || index} className="mb-1">
                               {group.groupName && (
                                 <p className="font-medium text-xs text-gray-700">{group.groupName}:</p>
                               )}
-                              {group.variations
-                                .filter(v => v.quantity > 0)
-                                .map(v => {
-                                  const variationPrice = getVariationPrice(v.variationId);
-                                  return (
-                                    <div key={v.variationId} className="flex justify-between pl-2 text-xs text-gray-600">
-                                      <span>{getVariationName(v.variationId)} x{v.quantity}</span>
-                                      {variationPrice > 0 && (
-                                        <span className="text-green-600 font-medium">
-                                          +{formatCurrency(variationPrice * v.quantity)}
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              }
+                              {group.variations.filter(v => v.quantity > 0).map(v => {
+                                const variationPrice = getVariationPrice(v.variationId);
+                                return (
+                                  <div key={v.variationId} className="flex justify-between pl-2 text-xs text-gray-600">
+                                    <span>{getVariationName(v.variationId)} x{v.quantity}</span>
+                                    {variationPrice > 0 && (
+                                      <span className="text-green-600 font-medium">
+                                        +{formatCurrency(variationPrice * v.quantity)}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           ))}
-                          
-                          {/* Total das variações */}
                           {variationsTotal > 0 && (
                             <div className="text-xs text-green-600 font-medium border-t border-gray-200 pt-1">
                               Complementos/Adicionais: {formatCurrency(variationsTotal)}
@@ -266,26 +282,17 @@ const ShoppingCart: React.FC = () => {
                           )}
                         </div>
                       )}
-                      
-                      {/* Subtotal unitário */}
                       {!item.isHalfPizza && (
                         <div className="text-sm font-medium text-brand-600 mt-1">
                           Subtotal: {formatCurrency(basePrice + variationsTotal)}
                         </div>
                       )}
-                      
                       <div className="flex items-center mt-2">
-                        <button
-                          onClick={() => decreaseQuantity(item.id)}
-                          className="counter-btn"
-                        >
+                        <button onClick={() => decreaseQuantity(item.id)} className="counter-btn">
                           <Minus className="h-4 w-4" />
                         </button>
                         <span className="mx-2 w-8 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => increaseQuantity(item.id)}
-                          className="counter-btn"
-                        >
+                        <button onClick={() => increaseQuantity(item.id)} className="counter-btn">
                           <Plus className="h-4 w-4" />
                         </button>
                         <div className="ml-auto font-bold">
@@ -297,13 +304,52 @@ const ShoppingCart: React.FC = () => {
                 );
               })}
             </div>
+
+            {/* Cupom */}
+            <div className="border-t pt-4 mb-4">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-green-600 font-medium">
+                    Cupom "{appliedCoupon.codigo}" aplicado (-{formatCurrency(discountValue)})
+                  </span>
+                  <button onClick={removeCoupon} className="text-red-500 text-xs">
+                    Remover
+                  </button>
+                </div>
+              ) : (
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Insira seu cupom"
+                    className="flex-1 border rounded px-2 py-1 text-sm"
+                  />
+                  <Button size="sm" onClick={applyCoupon}>
+                    Aplicar
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Totais */}
             <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-bold mb-6">
-                <span>Total</span>
+              <div className="flex justify-between text-lg font-bold">
+                <span>Subtotal</span>
                 <span>{formatCurrency(cartTotal)}</span>
               </div>
+              {discountValue > 0 && (
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                  <span>Desconto</span>
+                  <span>-{formatCurrency(discountValue)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-xl font-bold mt-2">
+                <span>Total</span>
+                <span>{formatCurrency(finalTotal)}</span>
+              </div>
               <Button 
-                className="w-full text-center py-3 bg-food-green hover:bg-opacity-90"
+                className="w-full text-center py-3 bg-food-green hover:bg-opacity-90 mt-4"
                 onClick={handleCheckout}
               >
                 Finalizar Pedido
