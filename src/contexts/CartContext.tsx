@@ -176,7 +176,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     // --- FIM DO CÓDIGO DE RASTREAMENTO ---
 
-    setIsCartOpen(true);
   };
 
   const addToCart = (item: MenuItem) => addItem(item);
