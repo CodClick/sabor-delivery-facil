@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function ShoppingCart() {
-  const { cartItems, cartTotal, discount, finalTotal, appliedCoupon, applyCoupon } =
-    useContext(CartContext);
+const { cartItems, total, discount, finalTotal, applyCoupon, coupon, removeFromCart, clearCart } = useCart();
+
 
   const [cupom, setCupom] = useState("");
 
