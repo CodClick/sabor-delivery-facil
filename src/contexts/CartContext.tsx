@@ -222,10 +222,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         itemCount,
         isCartOpen,
         setIsCartOpen,
-        appliedCoupon,
-        discountValue,
-        applyCoupon
-
       }}
     >
       {children}
