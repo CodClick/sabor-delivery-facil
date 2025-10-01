@@ -30,7 +30,7 @@ type Cupom = {
   criado_em: string;
 };
 
-export default function AdminCoupons() {
+export default function AdminCupons() {
   const [cupons, setCupons] = useState<Cupom[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
