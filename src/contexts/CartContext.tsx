@@ -1,57 +1,50 @@
-// src/contexts/CartContext.tsx
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { toast } from "react-toastify";
 
-interface CartItem {
+type CartItem = {
   id: string;
   name: string;
   price: number;
   quantity: number;
-}
+};
 
-interface Coupon {
-  id: string;
-  codigo: string;
-  tipo: "percentual" | "fixo";
-  valor: number;
-  ativo: boolean;
-  validade: string | null;
-  uso_maximo: number | null;
-  valor_minimo: number | null;
-}
+type Coupon = {
+  code: string;
+  discountType: "percent" | "fixed";
+  discountValue: number;
+};
 
-interface CartContextType {
-  cart: CartItem[];
-  cartTotal: number;
+type CartContextType = {
+  cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
-  appliedCoupon: Coupon | null;
+  total: number;
   discount: number;
   finalTotal: number;
-  applyCoupon: (code: string) => Promise<void>;
-  removeCoupon: () => void;
-}
+  applyCoupon: (code: string) => void;
+  coupon: Coupon | null;
+};
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [discount, setDiscount] = useState<number>(0);
+type CartProviderProps = {
+  children: ReactNode;
+};
 
-  const cartTotal = cart.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
+export const CartProvider = ({ children }: CartProviderProps) => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [coupon, setCoupon] = useState<Coupon | null>(null);
 
-  const finalTotal = Math.max(cartTotal - discount, 0);
+  // 🔹 Exemplo de cupons válidos (pode vir de API ou banco depois)
+  const availableCoupons: Coupon[] = [
+    { code: "DESC10", discountType: "percent", discountValue: 10 },
+    { code: "VALE50", discountType: "fixed", discountValue: 50 },
+  ];
 
   const addToCart = (item: CartItem) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) {
+    setCartItems((prev) => {
+      const existingItem = prev.find((i) => i.id === item.id);
+      if (existingItem) {
         return prev.map((i) =>
           i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
         );
@@ -61,79 +54,56 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const clearCart = () => {
-    setCart([]);
-    setAppliedCoupon(null);
-    setDiscount(0);
+    setCartItems([]);
+    setCoupon(null);
   };
 
-  const applyCoupon = async (code: string) => {
-    if (!code) {
-      toast.error("Digite um código de cupom válido");
+  const total = cartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  // 🔹 Aplica o cupom
+  const applyCoupon = (code: string) => {
+    const found = availableCoupons.find(
+      (c) => c.code.toLowerCase() === code.toLowerCase()
+    );
+
+    if (!found) {
+      console.error("Cupom inválido");
+      setCoupon(null);
       return;
     }
 
-    const { data, error } = await supabase
-      .from("cupons")
-      .select("*")
-      .eq("codigo", code.toUpperCase())
-      .single();
-
-    if (error || !data) {
-      toast.error("Cupom inválido ou não encontrado");
-      return;
-    }
-
-    const now = new Date();
-    if (data.validade && new Date(data.validade) < now) {
-      toast.error("Cupom expirado");
-      return;
-    }
-
-    if (!data.ativo) {
-      toast.error("Este cupom está inativo");
-      return;
-    }
-
-    if (data.valor_minimo && cartTotal < data.valor_minimo) {
-      toast.error(`Valor mínimo para este cupom é R$ ${data.valor_minimo}`);
-      return;
-    }
-
-    let newDiscount = 0;
-    if (data.tipo === "percentual") {
-      newDiscount = (cartTotal * data.valor) / 100;
-    } else if (data.tipo === "fixo") {
-      newDiscount = data.valor;
-    }
-
-    setAppliedCoupon(data);
-    setDiscount(newDiscount);
-    toast.success("Cupom aplicado com sucesso!");
+    setCoupon(found);
+    console.log(`Cupom aplicado: ${found.code}`);
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setDiscount(0);
-    toast.info("Cupom removido");
-  };
+  // 🔹 Calcula o desconto baseado no cupom
+  const discount = coupon
+    ? coupon.discountType === "percent"
+      ? (total * coupon.discountValue) / 100
+      : coupon.discountValue
+    : 0;
+
+  const finalTotal = Math.max(total - discount, 0);
 
   return (
     <CartContext.Provider
       value={{
-        cart,
-        cartTotal,
+        cartItems,
         addToCart,
         removeFromCart,
         clearCart,
-        appliedCoupon,
+        total,
         discount,
         finalTotal,
         applyCoupon,
-        removeCoupon,
+        coupon,
       }}
     >
       {children}
@@ -141,6 +111,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Hook para usar no projeto
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
