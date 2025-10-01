@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
 import Checkout from "./pages/Checkout";
 import ForgotPassword from "./pages/ForgotPassword";
+import AdminCupons from "@/pages/AdminCupons";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,13 @@ const AppRoutes = () => (
           <PDV />
         </AdminRoute>
       } />
+
+      <Route  path="/admin-cupons" element={
+    <AdminRoute>
+        <AdminCupons />
+    </AdminRoute>
+  }
+/>
       
       <Route path="/api/*" element={<Api />} />
       <Route path="*" element={<NotFound />} />
