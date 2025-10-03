@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useSessionId } from "@/hooks/useSessionId";
 
 const ChatAssistant = () => {
+  const sessionId = useSessionId();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<
     { from: "user" | "assistant" | "system"; text: string }[]
@@ -16,11 +18,11 @@ const ChatAssistant = () => {
 
     try {
       const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant",
+        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/chatassistant",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input }),
+          body: JSON.stringify({ message: input, sessionId }),
         }
       );
 
@@ -37,8 +39,6 @@ const ChatAssistant = () => {
         ? data[0]?.output || data[0]?.reply
         : data.output || data.reply;
 
-      console.log("✅ Texto extraído:", output);
-
       if (output) {
         setMessages((prev) => [...prev, { from: "assistant", text: output }]);
       } else {
@@ -53,13 +53,13 @@ const ChatAssistant = () => {
     }
   };
 
-  // Mensagem inicial quando abrir o chat
+  // Mensagem inicial automática
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
           from: "assistant",
-          text: "Olá 👋! Sou o atendente virtual do restaurante. Como posso ajudar você hoje? Posso fazer ou consultar pedidos, tirar dúvidas ou passar informações sobre a Pizzaria Oliveira!",
+          text: "Olá 👋! Sou o atendente virtual do restaurante. Como posso ajudar você hoje?",
         },
       ]);
     }
@@ -127,5 +127,3 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
-
-
