@@ -22,7 +22,7 @@ const ChatAssistant: React.FC = () => {
     setInput("");
 
     try {
-      const res = await fetch("https://api.seudominio.com/assistente", {
+      const res = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,3 +98,4 @@ const ChatAssistant: React.FC = () => {
 };
 
 export default ChatAssistant;
+
