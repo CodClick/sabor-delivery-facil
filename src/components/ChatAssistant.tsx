@@ -32,12 +32,17 @@ const ChatAssistant: React.FC = () => {
         }),
       });
 
-      const data = await res.json();
+const data = await response.json();
 
-      setMessages(prev => [
-        ...prev,
-        { sender: "Assistente", text: data.resposta || "Sem resposta no momento." },
-      ]);
+// se vier array, pega o primeiro item
+const output = Array.isArray(data) ? data[0]?.output : data.output || data.reply;
+
+if (output) {
+  setMessages(prev => [...prev, { from: "assistant", text: output }]);
+} else {
+  throw new Error("Resposta inválida do servidor");
+}
+
     } catch (err) {
       console.error("Erro ao enviar mensagem:", err);
       setMessages(prev => [
@@ -98,4 +103,5 @@ const ChatAssistant: React.FC = () => {
 };
 
 export default ChatAssistant;
+
 
