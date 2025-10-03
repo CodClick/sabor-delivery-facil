@@ -20,6 +20,7 @@ import PDV from "./pages/PDV";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
 import ShoppingCart from "./components/ShoppingCart";
+import ChatAssistant from "./components/ChatAssistant";
 import Checkout from "./pages/Checkout";
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminCupons from "@/pages/AdminCupons";
