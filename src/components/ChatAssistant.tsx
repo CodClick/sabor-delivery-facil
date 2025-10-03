@@ -1,53 +1,53 @@
 import React, { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send } from "lucide-react";
 
-const ChatAssistant: React.FC = () => {
+const ChatAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<{ from: "user" | "assistant" | "system"; text: string }[]>([]);
   const [input, setInput] = useState("");
-  const { currentUser } = useAuth();
 
-  const toggleChat = () => setIsOpen(!isOpen);
-
-  const sendMessage = async () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
-    // adiciona mensagem do usuário localmente
-    setMessages(prev => [...prev, { sender: "Você", text: input }]);
-    const userMessage = input;
+    const userMessage = { from: "user", text: input };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
 
     try {
-      const res = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clienteId: currentUser?.uid || "anon",
-          mensagem: userMessage,
-          contexto: "cardapio",
-        }),
-      });
+      const response = await fetch(
+        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input }),
+        }
+      );
 
-const data = await response.json();
+      if (!response.ok) {
+        console.error("❌ Erro HTTP:", response.status, response.statusText);
+        throw new Error("Falha na requisição");
+      }
 
-// se vier array, pega o primeiro item
-const output = Array.isArray(data) ? data[0]?.output : data.output || data.reply;
+      const data = await response.json();
+      console.log("📥 Resposta do servidor:", data);
 
-if (output) {
-  setMessages(prev => [...prev, { from: "assistant", text: output }]);
-} else {
-  throw new Error("Resposta inválida do servidor");
-}
+      // Normaliza a resposta (suporta array ou objeto)
+      const output = Array.isArray(data)
+        ? data[0]?.output || data[0]?.reply
+        : data.output || data.reply;
+
+      console.log("✅ Texto extraído:", output);
+
+      if (output) {
+        setMessages(prev => [...prev, { from: "assistant", text: output }]);
+      } else {
+        throw new Error("Resposta inválida do servidor");
+      }
 
     } catch (err) {
-      console.error("Erro ao enviar mensagem:", err);
+      console.error("⚠️ Erro no handleSend:", err);
       setMessages(prev => [
         ...prev,
-        { sender: "Sistema", text: "Erro ao conectar. Tente novamente." },
+        { from: "system", text: "Erro ao conectar. Tente novamente." },
       ]);
     }
   };
@@ -55,46 +55,57 @@ if (output) {
   return (
     <>
       {/* Botão flutuante */}
-      <Button
-        onClick={toggleChat}
-        className="fixed bottom-20 left-5 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-50 bg-orange-500 hover:bg-orange-600"
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition"
       >
-        <MessageCircle className="h-6 w-6 text-white" />
-      </Button>
+        💬
+      </button>
 
-      {/* Chatbox */}
+      {/* Janela do Chat */}
       {isOpen && (
-        <div className="fixed bottom-40 left-5 w-80 h-96 bg-background border rounded-lg shadow-xl flex flex-col z-50">
-          <div className="p-2 border-b font-semibold text-sm">
-            Atendente Virtual
+        <div className="fixed bottom-20 left-4 w-80 h-96 bg-white border rounded-lg shadow-lg flex flex-col z-50">
+          {/* Cabeçalho */}
+          <div className="p-3 bg-primary text-white flex justify-between items-center rounded-t-lg">
+            <span>Atendente Virtual</span>
+            <button onClick={() => setIsOpen(false)} className="text-white">
+              ✖
+            </button>
           </div>
 
-          {/* Área de mensagens */}
-          <ScrollArea className="flex-1 p-3 text-sm">
-            {messages.map((m, i) => (
+          {/* Mensagens */}
+          <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
+            {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`mb-2 ${
-                  m.sender === "Você" ? "text-right text-blue-600" : "text-left text-gray-800"
+                className={`p-2 rounded-md ${
+                  msg.from === "user"
+                    ? "bg-primary text-white self-end ml-auto"
+                    : msg.from === "assistant"
+                    ? "bg-gray-100 text-gray-900 self-start"
+                    : "bg-red-100 text-red-700 text-center w-full"
                 }`}
               >
-                <span className="font-medium">{m.sender}:</span> {m.text}
+                {msg.text}
               </div>
             ))}
-          </ScrollArea>
+          </div>
 
-          {/* Campo de entrada */}
-          <div className="border-t p-2 flex gap-2">
-            <Input
+          {/* Input */}
+          <div className="p-2 border-t flex">
+            <input
               value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && sendMessage()}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              className="flex-1 border rounded-l-md px-2 py-1 text-sm focus:outline-none"
               placeholder="Digite sua mensagem..."
-              className="text-sm"
             />
-            <Button onClick={sendMessage} size="icon" className="bg-orange-500 hover:bg-orange-600">
-              <Send className="h-4 w-4" />
-            </Button>
+            <button
+              onClick={handleSend}
+              className="bg-primary text-white px-3 rounded-r-md"
+            >
+              ➤
+            </button>
           </div>
         </div>
       )}
@@ -103,5 +114,3 @@ if (output) {
 };
 
 export default ChatAssistant;
-
-
