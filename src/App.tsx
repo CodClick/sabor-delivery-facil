@@ -86,6 +86,7 @@ const AppRoutes = () => (
       <Route path="*" element={<NotFound />} />
     </Routes>
     <ShoppingCart />
+    <ChatAssistant /> 
   </BrowserRouter>
 );
 
