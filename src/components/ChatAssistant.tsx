@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send } from "lucide-react";
 
 const ChatAssistant: React.FC = () => {
@@ -13,7 +16,7 @@ const ChatAssistant: React.FC = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // adiciona mensagem do usuário
+    // adiciona mensagem do usuário localmente
     setMessages(prev => [...prev, { sender: "Você", text: input }]);
     const userMessage = input;
     setInput("");
@@ -25,52 +28,68 @@ const ChatAssistant: React.FC = () => {
         body: JSON.stringify({
           clienteId: currentUser?.uid || "anon",
           mensagem: userMessage,
-          contexto: "cardapio"
-        })
+          contexto: "cardapio",
+        }),
       });
 
       const data = await res.json();
-      setMessages(prev => [...prev, { sender: "Assistente", text: data.resposta }]);
+
+      setMessages(prev => [
+        ...prev,
+        { sender: "Assistente", text: data.resposta || "Sem resposta no momento." },
+      ]);
     } catch (err) {
       console.error("Erro ao enviar mensagem:", err);
-      setMessages(prev => [...prev, { sender: "Sistema", text: "Erro ao conectar. Tente novamente." }]);
+      setMessages(prev => [
+        ...prev,
+        { sender: "Sistema", text: "Erro ao conectar. Tente novamente." },
+      ]);
     }
   };
 
   return (
     <>
       {/* Botão flutuante */}
-      <button
+      <Button
         onClick={toggleChat}
-        className="fixed bottom-20 left-5 w-14 h-14 bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center z-50"
+        className="fixed bottom-20 left-5 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-50 bg-orange-500 hover:bg-orange-600"
       >
-        <MessageCircle size={24} />
-      </button>
+        <MessageCircle className="h-6 w-6 text-white" />
+      </Button>
 
       {/* Chatbox */}
       {isOpen && (
-        <div className="fixed bottom-40 left-5 w-80 h-96 bg-white border rounded-lg shadow-lg flex flex-col z-50">
-          <div className="flex-1 p-3 overflow-y-auto text-sm">
+        <div className="fixed bottom-40 left-5 w-80 h-96 bg-background border rounded-lg shadow-xl flex flex-col z-50">
+          <div className="p-2 border-b font-semibold text-sm">
+            Atendente Virtual
+          </div>
+
+          {/* Área de mensagens */}
+          <ScrollArea className="flex-1 p-3 text-sm">
             {messages.map((m, i) => (
-              <div key={i} className={`mb-2 ${m.sender === "Você" ? "text-right" : "text-left"}`}>
-                <span className="font-semibold">{m.sender}:</span> {m.text}
+              <div
+                key={i}
+                className={`mb-2 ${
+                  m.sender === "Você" ? "text-right text-blue-600" : "text-left text-gray-800"
+                }`}
+              >
+                <span className="font-medium">{m.sender}:</span> {m.text}
               </div>
             ))}
-          </div>
-          <div className="border-t p-2 flex">
-            <input
+          </ScrollArea>
+
+          {/* Campo de entrada */}
+          <div className="border-t p-2 flex gap-2">
+            <Input
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && sendMessage()}
               placeholder="Digite sua mensagem..."
-              className="flex-1 border rounded px-2 py-1 text-sm"
+              className="text-sm"
             />
-            <button
-              onClick={sendMessage}
-              className="ml-2 bg-orange-500 text-white px-3 py-1 rounded"
-            >
-              <Send size={16} />
-            </button>
+            <Button onClick={sendMessage} size="icon" className="bg-orange-500 hover:bg-orange-600">
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}
