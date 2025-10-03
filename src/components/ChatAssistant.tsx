@@ -5,52 +5,60 @@ const ChatAssistant = () => {
   const [messages, setMessages] = useState<{ from: "user" | "assistant" | "system"; text: string }[]>([]);
   const [input, setInput] = useState("");
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+const handleSend = async () => {
+  if (!input.trim()) return;
 
-    const userMessage = { from: "user", text: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
+  const userMessage = { from: "user", text: input };
+  setMessages(prev => [...prev, userMessage]);
+  setInput("");
 
-    try {
-      const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input }),
-        }
-      );
-
-      if (!response.ok) {
-        console.error("❌ Erro HTTP:", response.status, response.statusText);
-        throw new Error("Falha na requisição");
+  try {
+    const response = await fetch(
+      "https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/chatassistant",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
       }
+    );
 
-      const data = await response.json();
-      console.log("📥 Resposta do servidor:", data);
-
-      // Normaliza a resposta (suporta array ou objeto)
-      const output = Array.isArray(data)
-        ? data[0]?.output || data[0]?.reply
-        : data.output || data.reply;
-
-      console.log("✅ Texto extraído:", output);
-
-      if (output) {
-        setMessages(prev => [...prev, { from: "assistant", text: output }]);
-      } else {
-        throw new Error("Resposta inválida do servidor");
-      }
-
-    } catch (err) {
-      console.error("⚠️ Erro no handleSend:", err);
-      setMessages(prev => [
-        ...prev,
-        { from: "system", text: "Erro ao conectar. Tente novamente." },
-      ]);
+    if (!response.ok) {
+      console.error("❌ Erro HTTP:", response.status, response.statusText);
+      throw new Error("Falha na requisição");
     }
-  };
+
+    let data: any;
+    try {
+      // tenta ler como JSON
+      data = await response.json();
+      console.log("📥 Resposta JSON:", data);
+    } catch {
+      // se falhar, lê como texto puro
+      const text = await response.text();
+      console.log("📥 Resposta texto puro:", text);
+      data = { output: text };
+    }
+
+    const output = Array.isArray(data)
+      ? data[0]?.output || data[0]?.reply
+      : data.output || data.reply;
+
+    console.log("✅ Texto extraído:", output);
+
+    if (output) {
+      setMessages(prev => [...prev, { from: "assistant", text: output }]);
+    } else {
+      throw new Error("Resposta inválida do servidor");
+    }
+
+  } catch (err) {
+    console.error("⚠️ Erro no handleSend:", err);
+    setMessages(prev => [
+      ...prev,
+      { from: "system", text: "Erro ao conectar. Tente novamente." },
+    ]);
+  }
+};
 
   return (
     <>
@@ -114,3 +122,4 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
+
