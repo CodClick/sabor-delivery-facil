@@ -14,7 +14,7 @@ const handleSend = async () => {
 
   try {
     const response = await fetch(
-      "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant",
+      "https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/chatassistant",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,16 +27,15 @@ const handleSend = async () => {
       throw new Error("Falha na requisição");
     }
 
+    // 🔹 Sempre lê como texto primeiro
+    const rawText = await response.text();
+    console.log("📥 Resposta bruta:", rawText);
+
     let data: any;
     try {
-      // tenta ler como JSON
-      data = await response.json();
-      console.log("📥 Resposta JSON:", data);
+      data = JSON.parse(rawText); // tenta interpretar como JSON
     } catch {
-      // se falhar, lê como texto puro
-      const text = await response.text();
-      console.log("📥 Resposta texto puro:", text);
-      data = { output: text };
+      data = { output: rawText }; // se não for JSON, trata como texto puro
     }
 
     const output = Array.isArray(data)
@@ -122,5 +121,6 @@ const handleSend = async () => {
 };
 
 export default ChatAssistant;
+
 
 
