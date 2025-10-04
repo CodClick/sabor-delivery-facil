@@ -4,7 +4,7 @@ import React from "react";
 const RestaurantHeader: React.FC = () => {
   return (
     <div className="relative">
-      <div className="h-48 sm:h-64 w-full bg-gradient-to-r from-brand-700 to-brand overflow-hidden">
+      <div>
         <img
           src="/images/restaurant-banner.jpg"
           alt="Sabor Delivery Fácil"
