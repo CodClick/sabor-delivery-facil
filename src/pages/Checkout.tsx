@@ -15,9 +15,10 @@ import { useNavigate } from "react-router-dom";
 import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/lib/utils";
 
 const Checkout = () => {
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart, appliedCoupon, discountAmount, finalTotal } = useCart();
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -221,12 +222,32 @@ const handleSubmit = async (e: React.FormEvent) => {
       paymentMethod,
       observations,
       items: itemsWithSubtotal,
-      total, // 🔥 agora salva o total também
+      total: finalTotal, // Total com desconto aplicado
+      discount: discountAmount,
+      couponCode: appliedCoupon?.nome || null,
     };
 
     console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
 
     const order = await createOrder(orderData);
+
+    // Registrar uso do cupom se houver
+    if (appliedCoupon && currentUser) {
+      const { data: userData } = await supabase
+        .from("users" as any)
+        .select("user_id")
+        .eq("firebase_id", currentUser.uid)
+        .maybeSingle();
+
+      if (userData) {
+        const userDataTyped = userData as any;
+        await supabase.from("cupons_usos" as any).insert({
+          cupom_id: appliedCoupon.id,
+          user_id: userDataTyped.user_id,
+          pedido_id: order.id,
+        });
+      }
+    }
 
     // Salvar dados do cliente após criar o pedido
     await saveCustomerData({
@@ -410,7 +431,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Processando..." : `Finalizar Pedido - R$ ${cartTotal.toFixed(2)}`}
+                {isLoading ? "Processando..." : `Finalizar Pedido - ${formatCurrency(finalTotal)}`}
               </Button>
             </form>
           </CardContent>

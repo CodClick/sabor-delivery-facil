@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
-import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { X, Minus, Plus, ShoppingBag, Trash2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAllVariations, getVariationById } from "@/services/variationService";
 import { Variation } from "@/types/menu";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 const ShoppingCart: React.FC = () => {
   const {
@@ -21,6 +23,10 @@ const ShoppingCart: React.FC = () => {
     isCartOpen,
     setIsCartOpen,
     itemCount,
+    appliedCoupon,
+    setAppliedCoupon,
+    discountAmount,
+    finalTotal,
   } = useCart();
   
   
@@ -29,6 +35,8 @@ const ShoppingCart: React.FC = () => {
   const { toast } = useToast();
   const [variations, setVariations] = useState<Variation[]>([]);
   const [variationsLoading, setVariationsLoading] = useState(true);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
   // Load all variations when the component mounts
   useEffect(() => {
@@ -45,6 +53,147 @@ const ShoppingCart: React.FC = () => {
     
     loadVariations();
   }, []);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Código inválido",
+        description: "Digite um código de cupom",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCouponLoading(true);
+    try {
+      const { data: cupom, error } = await supabase
+        .from("cupons" as any)
+        .select("*")
+        .eq("nome", couponCode.trim())
+        .maybeSingle();
+
+      if (error || !cupom) {
+        toast({
+          title: "Cupom não encontrado",
+          description: "Código de cupom inválido",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const cupomData = cupom as any;
+
+      // Validar se está ativo
+      if (!cupomData.ativo) {
+        toast({
+          title: "Cupom inativo",
+          description: "Este cupom não está mais disponível",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validar data de validade
+      const today = new Date();
+      const dataInicio = new Date(cupomData.data_inicio);
+      const dataFim = new Date(cupomData.data_fim);
+      
+      if (today < dataInicio || today > dataFim) {
+        toast({
+          title: "Cupom expirado",
+          description: "Este cupom não está mais válido",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validar valor mínimo do pedido
+      if (cupomData.valor_minimo_pedido && cartTotal < cupomData.valor_minimo_pedido) {
+        toast({
+          title: "Valor mínimo não atingido",
+          description: `Pedido mínimo de ${formatCurrency(cupomData.valor_minimo_pedido)} para usar este cupom`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validar limite total de uso
+      if (cupomData.limite_uso) {
+        const { count } = await supabase
+          .from("cupons_usos" as any)
+          .select("*", { count: "exact", head: true })
+          .eq("cupom_id", cupomData.id);
+
+        if (count && count >= cupomData.limite_uso) {
+          toast({
+            title: "Cupom esgotado",
+            description: "Este cupom atingiu o limite de uso",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Validar usos por usuário (se estiver logado)
+      if (currentUser && cupomData.usos_por_usuario) {
+        const { data: userData } = await supabase
+          .from("users" as any)
+          .select("user_id")
+          .eq("firebase_id", currentUser.uid)
+          .maybeSingle();
+
+        if (userData) {
+          const userDataTyped = userData as any;
+          const { count } = await supabase
+            .from("cupons_usos" as any)
+            .select("*", { count: "exact", head: true })
+            .eq("cupom_id", cupomData.id)
+            .eq("user_id", userDataTyped.user_id);
+
+          if (count && count >= cupomData.usos_por_usuario) {
+            toast({
+              title: "Limite de uso atingido",
+              description: "Você já usou este cupom o máximo de vezes permitido",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      }
+
+      // Aplicar cupom
+      setAppliedCoupon({
+        id: cupomData.id,
+        nome: cupomData.nome,
+        tipo: cupomData.tipo,
+        valor: cupomData.valor,
+      });
+
+      toast({
+        title: "Cupom aplicado!",
+        description: `Desconto de ${cupomData.tipo === "percentual" ? `${cupomData.valor}%` : formatCurrency(cupomData.valor)} aplicado`,
+      });
+
+      setCouponCode("");
+    } catch (error) {
+      console.error("Erro ao aplicar cupom:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível aplicar o cupom",
+        variant: "destructive",
+      });
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    toast({
+      title: "Cupom removido",
+      description: "O desconto foi removido do seu pedido",
+    });
+  };
 
   const handleCheckout = () => {
     if (!currentUser) {
@@ -298,11 +447,69 @@ const ShoppingCart: React.FC = () => {
                 );
               })}
             </div>
-            <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-bold mb-6">
-                <span>Total</span>
+            
+            {/* Seção de Cupom */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Código do cupom"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  disabled={couponLoading || !!appliedCoupon}
+                />
+                {appliedCoupon ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleRemoveCoupon}
+                    className="shrink-0"
+                  >
+                    Remover
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading}
+                    className="shrink-0"
+                  >
+                    <Tag className="h-4 w-4 mr-1" />
+                    Aplicar
+                  </Button>
+                )}
+              </div>
+              
+              {appliedCoupon && (
+                <div className="bg-green-50 border border-green-200 rounded p-2 text-sm">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <Tag className="h-4 w-4" />
+                    <span className="font-medium">{appliedCoupon.nome}</span>
+                  </div>
+                  <p className="text-green-600 text-xs mt-1">
+                    Desconto de {appliedCoupon.tipo === "percentual" ? `${appliedCoupon.valor}%` : formatCurrency(appliedCoupon.valor)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-base">
+                <span>Subtotal</span>
                 <span>{formatCurrency(cartTotal)}</span>
               </div>
+              
+              {appliedCoupon && discountAmount > 0 && (
+                <div className="flex justify-between text-base text-green-600">
+                  <span>Desconto</span>
+                  <span>-{formatCurrency(discountAmount)}</span>
+                </div>
+              )}
+              
+              <Separator />
+              
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total</span>
+                <span>{formatCurrency(finalTotal)}</span>
+              </div>
+              
               <Button 
                 className="w-full text-center py-3 bg-food-green hover:bg-opacity-90"
                 onClick={handleCheckout}

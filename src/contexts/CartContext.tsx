@@ -4,28 +4,42 @@ import { toast } from "@/components/ui/use-toast";
 import { getAllVariations } from "@/services/variationService";
 import { trackAddToCart } from "@/utils/trackingEvents"; // <--- 1. IMPORTAÇÃO ADICIONADA
 
+interface AppliedCoupon {
+  id: string;
+  nome: string;
+  tipo: "percentual" | "fixo";
+  valor: number;
+}
+
 interface CartContextType {
-  cartItems: CartItem[];
-  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => void;
-  addToCart: (item: MenuItem) => void;
-  removeFromCart: (id: string) => void;
-  increaseQuantity: (id: string) => void;
-  decreaseQuantity: (id: string) => void;
-  clearCart: () => void;
-  cartTotal: number;
-  itemCount: number;
-  isCartOpen: boolean;
-  setIsCartOpen: (isOpen: boolean) => void;
+  cartItems: CartItem[];
+  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => void;
+  addToCart: (item: MenuItem) => void;
+  removeFromCart: (id: string) => void;
+  increaseQuantity: (id: string) => void;
+  decreaseQuantity: (id: string) => void;
+  clearCart: () => void;
+  cartTotal: number;
+  itemCount: number;
+  isCartOpen: boolean;
+  setIsCartOpen: (isOpen: boolean) => void;
+  appliedCoupon: AppliedCoupon | null;
+  setAppliedCoupon: (coupon: AppliedCoupon | null) => void;
+  discountAmount: number;
+  finalTotal: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartTotal, setCartTotal] = useState(0);
-  const [itemCount, setItemCount] = useState(0);
-  const [variations, setVariations] = useState<any[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartTotal, setCartTotal] = useState(0);
+  const [itemCount, setItemCount] = useState(0);
+  const [variations, setVariations] = useState<any[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [finalTotal, setFinalTotal] = useState(0);
 
   // carregar variações
   useEffect(() => {
@@ -65,31 +79,43 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return variationsTotal;
   };
 
-  // recalcular totais
+  // recalcular totais
   useEffect(() => {
-    const { total, count } = cartItems.reduce(
-      (acc, item) => {
-        let itemTotal = 0;
+    const { total, count } = cartItems.reduce(
+      (acc, item) => {
+        let itemTotal = 0;
 
-        if (item.isHalfPizza) {
-          // Para pizza meio a meio, já usamos o price final
-          itemTotal = (item.price || 0) * item.quantity;
-        } else {
-          const basePrice = item.priceFrom ? 0 : (item.price || 0);
-          const variationsTotal = calculateVariationsTotal(item);
-          itemTotal = (basePrice + variationsTotal) * item.quantity;
-        }
+        if (item.isHalfPizza) {
+          // Para pizza meio a meio, já usamos o price final
+          itemTotal = (item.price || 0) * item.quantity;
+        } else {
+          const basePrice = item.priceFrom ? 0 : (item.price || 0);
+          const variationsTotal = calculateVariationsTotal(item);
+          itemTotal = (basePrice + variationsTotal) * item.quantity;
+        }
 
-        acc.total += itemTotal;
-        acc.count += item.quantity;
-        return acc;
-      },
-      { total: 0, count: 0 }
-    );
+        acc.total += itemTotal;
+        acc.count += item.quantity;
+        return acc;
+      },
+      { total: 0, count: 0 }
+    );
 
-    setCartTotal(total);
-    setItemCount(count);
-  }, [cartItems, variations]);
+    setCartTotal(total);
+    setItemCount(count);
+
+    // Calcular desconto e total final
+    let discount = 0;
+    if (appliedCoupon) {
+      if (appliedCoupon.tipo === "percentual") {
+        discount = total * (appliedCoupon.valor / 100);
+      } else {
+        discount = appliedCoupon.valor;
+      }
+    }
+    setDiscountAmount(discount);
+    setFinalTotal(Math.max(0, total - discount));
+  }, [cartItems, variations, appliedCoupon]);
 
 
   const enrichSelectedVariations = (selectedVariations?: SelectedVariationGroup[]): SelectedVariationGroup[] => {
@@ -204,29 +230,34 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  const clearCart = () => {
+    setCartItems([]);
+    setAppliedCoupon(null);
+  };
 
-  return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addItem,
-        addToCart,
-        removeFromCart,
-        increaseQuantity,
-        decreaseQuantity,
-        clearCart,
-        cartTotal,
-        itemCount,
-        isCartOpen,
-        setIsCartOpen,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+  return (
+    <CartContext.Provider
+      value={{
+        cartItems,
+        addItem,
+        addToCart,
+        removeFromCart,
+        increaseQuantity,
+        decreaseQuantity,
+        clearCart,
+        cartTotal,
+        itemCount,
+        isCartOpen,
+        setIsCartOpen,
+        appliedCoupon,
+        setAppliedCoupon,
+        discountAmount,
+        finalTotal,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 };
 
 export const useCart = () => {
