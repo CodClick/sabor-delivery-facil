@@ -162,7 +162,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: item.name,
         price: finalPrice,
         quantity: 1,
-        category: item.categoryName, // Supondo que você tenha o nome da categoria no objeto 'item'
+        category: item.category,
         // Mapeando as variações para um formato mais simples para o rastreamento
         variations: enrichedVariations?.flatMap(group => 
           group.variations.map(v => ({ name: v.name, price: v.additionalPrice }))

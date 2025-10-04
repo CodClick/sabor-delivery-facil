@@ -12,7 +12,7 @@ const ChatAssistant = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { from: "user", text: input };
+    const userMessage = { from: "user" as const, text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
@@ -40,7 +40,7 @@ const ChatAssistant = () => {
         : data.output || data.reply;
 
       if (output) {
-        setMessages((prev) => [...prev, { from: "assistant", text: output }]);
+        setMessages((prev) => [...prev, { from: "assistant" as const, text: output }]);
       } else {
         throw new Error("Resposta inválida do servidor");
       }
@@ -48,7 +48,7 @@ const ChatAssistant = () => {
       console.error("⚠️ Erro no handleSend:", err);
       setMessages((prev) => [
         ...prev,
-        { from: "system", text: "Erro ao conectar. Tente novamente." },
+        { from: "system" as const, text: "Erro ao conectar. Tente novamente." },
       ]);
     }
   };
@@ -58,7 +58,7 @@ const ChatAssistant = () => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
-          from: "assistant",
+          from: "assistant" as const,
           text: "Olá 👋! Sou o atendente virtual do restaurante. Como posso ajudar você hoje?",
         },
       ]);

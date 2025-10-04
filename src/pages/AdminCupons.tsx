@@ -53,7 +53,7 @@ export default function AdminCupons() {
       .from("cupons")
       .select("*")
       .order("criado_em", { ascending: false });
-    if (!error && data) setCupons(data);
+    if (!error && data) setCupons(data as Cupom[]);
   }
 
   async function salvarCupom() {

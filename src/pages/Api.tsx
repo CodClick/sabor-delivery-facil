@@ -91,9 +91,20 @@ const Api = () => {
             <p className="text-sm text-gray-600">GET /api/orders?phone=+5511999999999</p>
           </div>
           
-          <div className="border p-4 rounded">
-            <h3 className="font-bold">Buscar Pedido por ID</h3>
+          <div className="border p-4 rounded bg-green-50">
+            <h3 className="font-bold text-green-800">Buscar Pedido por ID/Número</h3>
             <p className="text-sm text-gray-600">GET /api/orders/detail?orderId=abc123</p>
+            <p className="text-sm mt-2 text-green-700">✨ Novo endpoint para n8n</p>
+            <p className="text-sm mt-2">Exemplo de uso no n8n (HTTP Request):</p>
+            <pre className="bg-gray-100 p-2 rounded text-xs mt-1 overflow-auto">
+{`URL: https://seu-dominio.com/api/orders/detail
+Query Parameters:
+  - orderId: ID_DO_PEDIDO
+  - apiKey: mex-food-api-12345
+
+Headers:
+  - x-api-key: mex-food-api-12345`}
+            </pre>
           </div>
           
           <div className="border p-4 rounded">

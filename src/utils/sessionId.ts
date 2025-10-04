@@ -3,15 +3,18 @@
  * Gera um UUID seguro.
  */
 function generateId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    // @ts-ignore
-    return crypto.randomUUID();
+  if (typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto) {
+    return window.crypto.randomUUID();
   }
-  const arr = new Uint8Array(16);
-  crypto.getRandomValues(arr);
-  return Array.from(arr)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+    const arr = new Uint8Array(16);
+    window.crypto.getRandomValues(arr);
+    return Array.from(arr)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+  // Fallback para ambientes sem crypto
+  return `${Date.now()}-${Math.random().toString(36).substring(2)}`;
 }
 
 /**
