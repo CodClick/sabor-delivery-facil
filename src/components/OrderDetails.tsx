@@ -58,10 +58,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
 
+  // Debug do pedido completo
   console.log("=== ORDER DETAILS DEBUG ===");
   console.log("Pedido completo:", order);
   console.log("Status de pagamento:", order.paymentStatus);
-
+  
+  // Traduzir status para português
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
       pending: "Pendente",
@@ -78,16 +80,18 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     return statusMap[status] || status;
   };
 
+  // Traduzir método de pagamento para português
   const translatePaymentMethod = (method: Order["paymentMethod"]) => {
     const methodMap: Record<Order["paymentMethod"], string> = {
       card: "Cartão",
-      cash: "Dinheiro",
+      cash: "Dinheiro", 
       pix: "PIX",
       payroll_discount: "Desconto em Folha"
     };
     return methodMap[method] || method;
   };
 
+  // Formatar data para exibição
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("pt-BR", {
@@ -99,6 +103,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }).format(date);
   };
 
+  // Obter classe de cor com base no status
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -115,6 +120,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
+  // Obter ícone para cada status
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
       case "pending": return <ClipboardList className="h-5 w-5" />;
@@ -131,12 +137,15 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
+  // Calcular subtotal do item incluindo variações (fallback para pedidos antigos)
   const calculateItemSubtotal = (item: any) => {
     if (item.isHalfPizza) {
       return (item.price || 0) * (item.quantity || 1);
     }
+    
     let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
     let variationsTotal = 0;
+    
     if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
       item.selectedVariations.forEach((group: any) => {
         if (group.variations && Array.isArray(group.variations)) {
@@ -150,10 +159,11 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         }
       });
     }
+    
     return basePrice + variationsTotal;
   };
 
-  // 🚀 Função aprimorada para enviar todas as informações do pedido ao webhook n8n
+  // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
   const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
     try {
       const payload = {
@@ -166,9 +176,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         metodo_pagamento: orderData.paymentMethod,
         status_pagamento: orderData.paymentStatus,
         valor_total: orderData.total,
-        cupom_desconto: orderData.couponCode || null,
+        cupom_desconto: (orderData as any).couponCode || null,
         data_criacao: orderData.createdAt,
-        horario_recebido: orderData.receivedAt || null,
+        horario_recebido: (orderData as any).receivedAt || null,
         motivo_cancelamento: orderData.cancellationReason || null,
         itens: orderData.items.map((item: any) => ({
           nome: item.name,
@@ -206,6 +216,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
+  // Função wrapper para atualizar o status principal do pedido
   const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
     if (status === "confirmed") {
       printOrder(order);
@@ -218,31 +229,37 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     onUpdateStatus(orderId, status, cancellationReasonValue);
   };
 
+  // Função SEPARADA para atualizar APENAS o status de pagamento
   const handleUpdatePaymentStatus = (orderId: string, paymentStatus: "a_receber" | "recebido") => {
     const updatedOrder: Order = { ...order, paymentStatus };
     sendOrderStatusWebhook(updatedOrder);
     onUpdateStatus(orderId, order.status, undefined, paymentStatus);
   };
 
+  // Quando confirmar o cancelamento no primeiro modal, abrir o do motivo
   const handleConfirmCancelDialogYes = () => {
     setIsConfirmDialogOpen(false);
     setIsReasonDialogOpen(true);
   };
 
+  // Ao fechar o modal do motivo ou cancelar, resetar states
   const handleCloseReasonDialog = () => {
     setIsReasonDialogOpen(false);
     setCancellationReason("");
   };
 
+  // Finalizar cancelamento após inserir o motivo
   const handleSubmitReason = () => {
     handleUpdateStatus(order.id, "cancelled", cancellationReason);
     setIsReasonDialogOpen(false);
     setCancellationReason("");
   };
 
+  // Usar a nova lógica de sequência de status
   const paymentReceived = hasReceivedPayment(order);
   const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived, order.paymentMethod);
 
+  // Lista de botões para atualização de status
   const nextStatusButtons = nextStatusOptions.map(status => {
     const icon = getStatusIcon(status);
     const label = translateStatus(status);
@@ -266,7 +283,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setIsConfirmDialogOpen(false)}>Não</AlertDialogCancel>
-                <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleConfirmCancelDialogYes}>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={handleConfirmCancelDialogYes}
+                >
                   Sim
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -290,8 +310,15 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
                 />
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={handleCloseReasonDialog} type="button">Cancelar</Button>
-                <Button variant="destructive" onClick={handleSubmitReason} type="button" disabled={!cancellationReason.trim()}>
+                <Button variant="outline" onClick={handleCloseReasonDialog} type="button">
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleSubmitReason}
+                  type="button"
+                  disabled={!cancellationReason.trim()}
+                >
                   Confirmar Cancelamento
                 </Button>
               </DialogFooter>
@@ -301,9 +328,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       );
     }
 
+    // Destacar botões específicos com cores diferentes
     let buttonVariant: "default" | "secondary" | "outline" = "default";
     let buttonClass = "flex items-center gap-1";
-
+    
     if (status === "received") {
       buttonVariant = "secondary";
       buttonClass = "flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300";
@@ -314,7 +342,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
 
     return (
-      <Button key={status} onClick={() => handleUpdateStatus(order.id, status)} variant={buttonVariant} className={buttonClass}>
+      <Button
+        key={status}
+        onClick={() => handleUpdateStatus(order.id, status)}
+        variant={buttonVariant}
+        className={buttonClass}
+      >
         {icon}
         {label}
       </Button>
@@ -323,8 +356,183 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
 
   return (
     <div className="space-y-6">
-      {/* Layout do pedido - permanece idêntico */}
-      {/* ... todo o restante do layout sem alterações ... */}
+      {/* Informações básicas do pedido */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">ID do Pedido</h3>
+          <p className="mt-1">{order.id}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">Data do Pedido</h3>
+          <p className="mt-1">{formatDate(order.createdAt as string)}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">Cliente</h3>
+          <p className="mt-1">{order.customerName}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">Telefone</h3>
+          <p className="mt-1">{order.customerPhone}</p>
+        </div>
+        <div className="col-span-2">
+          <h3 className="text-sm font-medium text-gray-500">Endereço</h3>
+          <p className="mt-1">{order.address}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">Forma de Pagamento</h3>
+          <p className="mt-1 font-medium">{translatePaymentMethod(order.paymentMethod)}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">Total</h3>
+          <p className="mt-1 font-semibold">R$ {order.total.toFixed(2)}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-500">Status</h3>
+          <p className="mt-1">
+            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm ${getStatusColor(order.status)}`}>
+              {getStatusIcon(order.status)}
+              {translateStatus(order.status)}
+            </span>
+          </p>
+        </div>
+        {order.observations && (
+          <div className="col-span-2">
+            <h3 className="text-sm font-medium text-gray-500">Observações</h3>
+            <p className="mt-1">{order.observations}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Status de Pagamento */}
+      <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
+        <h3 className="text-md font-medium mb-3 text-blue-800">Status de Pagamento</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-blue-600" />
+            <span className="font-medium">
+              Status: {order.paymentStatus === "recebido" ? "Recebido" : "A Receber"}
+            </span>
+          </div>
+          {order.paymentStatus !== "recebido" && (
+            <Button
+              onClick={() => handleUpdatePaymentStatus(order.id, "recebido")}
+              variant="default"
+              className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <DollarSign className="h-4 w-4" />
+              Marcar como Recebido
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Motivo do cancelamento */}
+      {order.status === "cancelled" && (order.cancellationReason || cancellationReason) && (
+        <div className="bg-red-50 border border-red-200 p-3 rounded-md">
+          <div className="text-sm font-semibold text-red-700">Motivo do cancelamento:</div>
+          <div className="text-sm text-gray-800 mt-1">
+            {order.cancellationReason || cancellationReason}
+          </div>
+        </div>
+      )}
+
+      {/* Itens do pedido */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Itens do Pedido</h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Preço Base</TableHead>
+              <TableHead>Qtd</TableHead>
+              <TableHead>Subtotal</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {order.items.map((item, index) => (
+              <React.Fragment key={index}>
+                <TableRow>
+                  {/* ITEM */}
+                  <TableCell className="font-medium align-top w-[280px] min-w-[220px]">
+                    <div className="font-semibold">
+                      {item.name}
+                      {item.priceFrom && (
+                        <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          a partir de
+                        </span>
+                      )}
+                    </div>
+                    {/* Variações */}
+                    {item.selectedVariations && Array.isArray(item.selectedVariations) && item.selectedVariations.length > 0 ? (
+                      <div className="mt-1">
+                        {item.selectedVariations.map((group, groupIndex) => (
+                          <div key={groupIndex} className="pl-2 text-xs text-gray-700 border-l-2 border-gray-200 mb-1">
+                            {group.groupName && (
+                              <div className="font-medium text-[12px] text-gray-600 mb-0.5">{group.groupName}:</div>
+                            )}
+                            {group.variations && Array.isArray(group.variations) && group.variations.length > 0 ? (
+                              group.variations.map((variation, varIndex) => {
+                                const additionalPrice = variation.additionalPrice || 0;
+                                const quantity = variation.quantity || 1;
+                                const variationTotal = additionalPrice * quantity;
+                                return (
+                                  <div key={varIndex} className="flex justify-between">
+                                    <span>
+                                      {quantity > 1 ? `${quantity}x ` : ""}
+                                      {variation.name}
+                                    </span>
+                                    {variationTotal > 0 && (
+                                      <span className="text-gray-500 ml-2">
+                                        +R$ {variationTotal.toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-gray-500 italic">Nenhuma variação</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 italic mt-1">Sem variações</div>
+                    )}
+                  </TableCell>
+
+                  {/* PREÇO BASE */}
+                  <TableCell className="align-top w-[100px]">
+                    R$ {(item.price || 0).toFixed(2)}
+                  </TableCell>
+
+                  {/* QUANTIDADE */}
+                  <TableCell className="align-top w-[80px]">
+                    {item.quantity}
+                  </TableCell>
+
+                                    {/* SUBTOTAL */}
+                  <TableCell className="align-top w-[120px] font-medium">
+                    R$ {(item.subtotal ?? calculateItemSubtotal(item)).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={3} className="text-right font-semibold">
+                Total
+              </TableCell>
+              <TableCell className="font-bold">R$ {order.total.toFixed(2)}</TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+
+      {/* Botões de ação */}
+      <div className="flex flex-wrap gap-2">
+        {nextStatusButtons}
+      </div>
     </div>
   );
 };
