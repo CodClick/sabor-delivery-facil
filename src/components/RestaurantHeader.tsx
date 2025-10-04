@@ -4,7 +4,7 @@ import React from "react";
 const RestaurantHeader: React.FC = () => {
   return (
     <div className="relative">
-      <div>
+      <div className="h-48 sm:h-64 w-full bg-gradient-to-r from-brand-700 to-brand overflow-hidden">
         <img
           src="/images/restaurant-banner.jpg"
           alt="Sabor Delivery Fácil"
@@ -14,7 +14,7 @@ const RestaurantHeader: React.FC = () => {
             target.src = "https://ypsfoumafbfgcvrxylmw.supabase.co/storage/v1/object/public/imagens_cardapio/ClickPrato.png";
           }}
         />
-      </div className="h-48 sm:h-64 w-full bg-gradient-to-r from-brand-700 to-brand overflow-hidden">
+      </div>
       <div className="container mx-auto px-4 relative -mt-16 sm:-mt-24 z-10 mb-6">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex flex-col sm:flex-row items-center">
