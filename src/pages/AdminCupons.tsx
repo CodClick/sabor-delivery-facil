@@ -50,10 +50,10 @@ export default function AdminCupons() {
 
   async function carregarCupons() {
     const { data, error } = await supabase
-      .from("cupons")
+      .from("cupons" as any)
       .select("*")
       .order("criado_em", { ascending: false });
-    if (!error && data) setCupons(data as Cupom[]);
+    if (!error && data) setCupons(data as unknown as Cupom[]);
   }
 
   async function salvarCupom() {
@@ -62,8 +62,8 @@ export default function AdminCupons() {
     if (editando) {
       // Atualizar cupom
       const { error } = await supabase
-        .from("cupons")
-        .update(form)
+        .from("cupons" as any)
+        .update(form as any)
         .eq("id", editando.id);
       setLoading(false);
       if (!error) {
@@ -75,7 +75,7 @@ export default function AdminCupons() {
       }
     } else {
       // Criar novo cupom
-      const { error } = await supabase.from("cupons").insert([form]);
+      const { error } = await supabase.from("cupons" as any).insert([form as any]);
       setLoading(false);
       if (!error) {
         setOpen(false);
@@ -88,15 +88,15 @@ export default function AdminCupons() {
 
   async function toggleAtivo(cupom: Cupom) {
     await supabase
-      .from("cupons")
-      .update({ ativo: !cupom.ativo })
+      .from("cupons" as any)
+      .update({ ativo: !cupom.ativo } as any)
       .eq("id", cupom.id);
     carregarCupons();
   }
 
   async function deletarCupom(id: string) {
     if (confirm("Tem certeza que deseja excluir este cupom?")) {
-      await supabase.from("cupons").delete().eq("id", id);
+      await supabase.from("cupons" as any).delete().eq("id", id);
       carregarCupons();
     }
   }
