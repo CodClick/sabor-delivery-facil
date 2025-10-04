@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator, Bike, square-percent } from "lucide-react";
+import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator, Bike, Percent } from "lucide-react";
 
 const AdminDashboard = () => {
   const { currentUser, logOut } = useAuth();
