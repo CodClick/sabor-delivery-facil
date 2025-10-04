@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator, Bike } from "lucide-react";
+import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator, Bike, square-percent } from "lucide-react";
 
 const AdminDashboard = () => {
   const { currentUser, logOut } = useAuth();
@@ -84,6 +84,23 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
+              <square-percent className="h-8 w-8 text-purple-600" />
+            </div>
+            <CardTitle className="text-xl">Cupons de Desconto</CardTitle>
+            <CardDescription>
+              Crie, Edite e Exclua os cupons de desconto da sua loja
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/admin-cupons">Acessar Cupons</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
