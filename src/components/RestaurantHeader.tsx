@@ -11,7 +11,7 @@ const RestaurantHeader: React.FC = () => {
           className="w-full h-full object-cover mix-blend-overlay opacity-50"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = "https://ypsfoumafbfgcvrxylmw.supabase.co/storage/v1/object/public/imagens_cardapio/ClickPrato_20251003_224954_0000.png";
+            target.src = "https://ypsfoumafbfgcvrxylmw.supabase.co/storage/v1/object/public/imagens_cardapio/ClickPrato.png";
           }}
         />
       </div>
