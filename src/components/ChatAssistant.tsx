@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSessionId } from "@/hooks/useSessionId";
 
 const ChatAssistant = () => {
@@ -9,16 +9,26 @@ const ChatAssistant = () => {
   >([]);
   const [input, setInput] = useState("");
 
+  // 🔹 Referência para o container das mensagens
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // 🔹 Scroll automático quando novas mensagens chegam
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { from: "user" as const, text: input };
+    const userMessage = { from: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
     try {
       const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant",
+        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/chatassistant",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -26,29 +36,21 @@ const ChatAssistant = () => {
         }
       );
 
-      if (!response.ok) {
-        console.error("❌ Erro HTTP:", response.status, response.statusText);
-        throw new Error("Falha na requisição");
-      }
-
       const data = await response.json();
-      console.log("📥 Resposta do servidor:", data);
-
-      // Normaliza a resposta (suporta array ou objeto)
       const output = Array.isArray(data)
         ? data[0]?.output || data[0]?.reply
         : data.output || data.reply;
 
       if (output) {
-        setMessages((prev) => [...prev, { from: "assistant" as const, text: output }]);
+        setMessages((prev) => [...prev, { from: "assistant", text: output }]);
       } else {
         throw new Error("Resposta inválida do servidor");
       }
     } catch (err) {
-      console.error("⚠️ Erro no handleSend:", err);
+      console.error("⚠️ Erro:", err);
       setMessages((prev) => [
         ...prev,
-        { from: "system" as const, text: "Erro ao conectar. Tente novamente." },
+        { from: "system", text: "Erro ao conectar. Tente novamente." },
       ]);
     }
   };
@@ -58,7 +60,7 @@ const ChatAssistant = () => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
-          from: "assistant" as const,
+          from: "assistant",
           text: "Olá 👋! Sou o atendente virtual do restaurante. Como posso ajudar você hoje?",
         },
       ]);
@@ -86,8 +88,11 @@ const ChatAssistant = () => {
             </button>
           </div>
 
-          {/* Mensagens */}
-          <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
+          {/* 🔹 Container de mensagens com ref */}
+          <div
+            ref={messagesEndRef}
+            className="flex-1 p-3 overflow-y-auto space-y-2 text-sm scroll-smooth"
+          >
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -127,4 +132,3 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
-
