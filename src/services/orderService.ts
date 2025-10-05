@@ -140,7 +140,9 @@ export const createOrder = async (
       observations: orderData.observations || "",
       items: orderItems,
       status: "pending",
-      total, // 🔥 salva o total correto
+      total: orderData.total || total, // 🔥 usa o total com desconto do checkout ou calcula
+      discount: orderData.discount || 0,
+      couponCode: orderData.couponCode || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

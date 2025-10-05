@@ -58,6 +58,9 @@ export interface CreateOrderRequest {
     isHalfPizza?: boolean;
     combination?: any;
   }[];
+  total?: number;
+  discount?: number;
+  couponCode?: string;
 }
 
 export interface UpdateOrderRequest {
