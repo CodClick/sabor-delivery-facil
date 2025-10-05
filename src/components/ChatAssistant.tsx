@@ -25,7 +25,7 @@ const ChatAssistant = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { from: "user", text: input };
+    const userMessage = { from: "user" as const, text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 

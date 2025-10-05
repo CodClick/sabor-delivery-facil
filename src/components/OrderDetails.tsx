@@ -383,8 +383,22 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           <p className="mt-1 font-medium">{translatePaymentMethod(order.paymentMethod)}</p>
         </div>
         <div>
-          <h3 className="text-sm font-medium text-gray-500">Total</h3>
-          <p className="mt-1 font-semibold">R$ {order.total.toFixed(2)}</p>
+          <h3 className="text-sm font-medium text-gray-500">
+            {(order as any).discount && (order as any).discount > 0 ? 'Total (com desconto)' : 'Total'}
+          </h3>
+          <div className="mt-1 space-y-1">
+            {(order as any).discount && (order as any).discount > 0 && (
+              <>
+                <p className="text-sm text-gray-600">
+                  Subtotal: R$ {((order.total + (order as any).discount)).toFixed(2)}
+                </p>
+                <p className="text-sm text-green-600">
+                  Desconto ({(order as any).couponCode}): - R$ {((order as any).discount).toFixed(2)}
+                </p>
+              </>
+            )}
+            <p className="font-semibold text-lg">R$ {order.total.toFixed(2)}</p>
+          </div>
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-500">Status</h3>

@@ -543,9 +543,23 @@ const handleSubmit = async (e: React.FormEvent) => {
               
               <Separator />
               
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span>R$ {cartTotal.toFixed(2)}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-md">
+                  <span>Subtotal:</span>
+                  <span>R$ {cartTotal.toFixed(2)}</span>
+                </div>
+                
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-md text-green-600">
+                    <span>Desconto ({appliedCoupon?.nome}):</span>
+                    <span>- R$ {discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total</span>
+                  <span>R$ {finalTotal.toFixed(2)}</span>
+                </div>
               </div>
             </div>
           </CardContent>
