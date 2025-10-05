@@ -8,23 +8,26 @@ const ChatAssistant = () => {
     { from: "user" | "assistant" | "system"; text: string }[]
   >([]);
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false); // 👈 indicador de digitação
 
-  // 🔹 Referência para o container das mensagens
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // 🔹 Scroll automático quando novas mensagens chegam
+  // 🔹 Scroll automático
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
+  // 🔹 Envio de mensagem
   const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage = { from: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+
+    setIsTyping(true); // mostra “digitando...”
 
     try {
       const response = await fetch(
@@ -52,10 +55,12 @@ const ChatAssistant = () => {
         ...prev,
         { from: "system", text: "Erro ao conectar. Tente novamente." },
       ]);
+    } finally {
+      setIsTyping(false); // sempre remove o “digitando...”
     }
   };
 
-  // Mensagem inicial automática
+  // 🔹 Mensagem inicial automática
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
@@ -88,7 +93,7 @@ const ChatAssistant = () => {
             </button>
           </div>
 
-          {/* 🔹 Container de mensagens com ref */}
+          {/* Mensagens */}
           <div
             ref={messagesEndRef}
             className="flex-1 p-3 overflow-y-auto space-y-2 text-sm scroll-smooth"
@@ -96,7 +101,7 @@ const ChatAssistant = () => {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`p-2 rounded-md ${
+                className={`p-2 rounded-md max-w-[80%] ${
                   msg.from === "user"
                     ? "bg-primary text-white self-end ml-auto"
                     : msg.from === "assistant"
@@ -107,6 +112,18 @@ const ChatAssistant = () => {
                 {msg.text}
               </div>
             ))}
+
+            {/* 🔹 Indicador de digitação */}
+            {isTyping && (
+              <div className="flex items-center space-x-2 text-gray-500 text-xs mt-2">
+                <div className="flex space-x-1">
+                  <span className="animate-bounce delay-[0ms]">●</span>
+                  <span className="animate-bounce delay-[150ms]">●</span>
+                  <span className="animate-bounce delay-[300ms]">●</span>
+                </div>
+                <span>Digitando...</span>
+              </div>
+            )}
           </div>
 
           {/* Input */}
@@ -120,7 +137,12 @@ const ChatAssistant = () => {
             />
             <button
               onClick={handleSend}
-              className="bg-primary text-white px-3 rounded-r-md"
+              disabled={isTyping}
+              className={`px-3 rounded-r-md text-white ${
+                isTyping
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-primary hover:bg-primary/90"
+              }`}
             >
               ➤
             </button>
@@ -132,4 +154,3 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
-
