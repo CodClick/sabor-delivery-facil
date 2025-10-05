@@ -28,7 +28,7 @@ const ChatAssistant = () => {
 
     try {
       const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/chatassistant",
+        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/chatassistant",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -132,3 +132,4 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
+
