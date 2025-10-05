@@ -329,8 +329,20 @@ const AdminOrders = () => {
             <CardContent className="py-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium">Itens: {order.items.length}</p>
-                <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
-                <Button 
+                {(order as any).discount && (order as any).discount > 0 ? (
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      Subtotal: R$ {((order.total + (order as any).discount)).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-green-600">
+                      Desconto ({(order as any).couponCode}): - R$ {((order as any).discount).toFixed(2)}
+                    </p>
+                    <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                  </div>
+                ) : (
+                  <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                )}
+                <Button
                   onClick={() => handleViewOrder(order)} 
                   variant="outline"
                   className="w-full mt-2"
