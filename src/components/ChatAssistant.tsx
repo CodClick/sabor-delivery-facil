@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSessionId } from "@/hooks/useSessionId";
+import { useAuth } from "@/hooks/useAuth"; // 👈 Importa dados do usuário
 
 const ChatAssistant = () => {
   const sessionId = useSessionId();
+  const { currentUser } = useAuth(); // 👈 pega usuário autenticado (Firebase)
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<
     { from: "user" | "assistant" | "system"; text: string }[]
   >([]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false); // 👈 indicador de digitação
+  const [isTyping, setIsTyping] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -19,7 +21,7 @@ const ChatAssistant = () => {
     }
   }, [messages, isTyping]);
 
-  // 🔹 Envio de mensagem
+  // 🔹 Enviar mensagem
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -27,7 +29,24 @@ const ChatAssistant = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    setIsTyping(true); // mostra “digitando...”
+    setIsTyping(true);
+
+    // 🔸 Monta o payload com dados do usuário autenticado
+    const payload = {
+      message: input,
+      sessionId,
+      user: currentUser
+        ? {
+            uid: currentUser.uid,
+            name: currentUser.displayName || "Usuário",
+            email: currentUser.email || "sem-email",
+          }
+        : {
+            uid: "anon-" + sessionId.slice(0, 8),
+            name: "Visitante",
+            email: null,
+          },
+    };
 
     try {
       const response = await fetch(
@@ -35,7 +54,7 @@ const ChatAssistant = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input, sessionId }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -56,7 +75,7 @@ const ChatAssistant = () => {
         { from: "system", text: "Erro ao conectar. Tente novamente." },
       ]);
     } finally {
-      setIsTyping(false); // sempre remove o “digitando...”
+      setIsTyping(false);
     }
   };
 
@@ -113,7 +132,7 @@ const ChatAssistant = () => {
               </div>
             ))}
 
-            {/* 🔹 Indicador de digitação */}
+            {/* Indicador de digitação */}
             {isTyping && (
               <div className="flex items-center space-x-2 text-gray-500 text-xs mt-2">
                 <div className="flex space-x-1">
