@@ -72,14 +72,18 @@ export const EditVariationGroupModal = ({
       // Check if we're creating a new group or updating an existing one
       const isNew = !editVariationGroup.id || !variationGroups.some(g => g.id === editVariationGroup.id);
       
-      await saveVariationGroup(editVariationGroup);
+      const savedId = await saveVariationGroup(editVariationGroup);
+      
+      // Sincronizar os itens de menu com as novas variações
+      const { syncMenuItemsWithVariationGroup } = await import("@/services/variationGroupService");
+      await syncMenuItemsWithVariationGroup(savedId, editVariationGroup.variations);
 
       setEditVariationGroup(null);
       toast({
         title: "Sucesso",
         description: isNew
-          ? "Grupo de variação criado com sucesso"
-          : "Grupo de variação atualizado com sucesso",
+          ? "Grupo de variação criado e itens sincronizados com sucesso"
+          : "Grupo de variação atualizado e itens sincronizados com sucesso",
       });
       onSuccess();
     } catch (error) {

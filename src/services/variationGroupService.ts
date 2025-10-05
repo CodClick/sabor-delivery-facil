@@ -9,7 +9,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { VariationGroup } from "@/types/menu";
+import { VariationGroup, MenuItem } from "@/types/menu";
 
 export const getAllVariationGroups = async (): Promise<VariationGroup[]> => {
   try {
@@ -192,5 +192,52 @@ export const deleteVariationGroup = async (id: string): Promise<void> => {
   } catch (error) {
     console.error("Erro ao deletar grupo de variação:", error);
     throw new Error(`Falha ao deletar grupo de variação: ${error.message}`);
+  }
+};
+
+// Sincroniza as variações de um grupo com todos os itens de menu que o utilizam
+export const syncMenuItemsWithVariationGroup = async (
+  groupId: string,
+  newVariations: string[]
+): Promise<void> => {
+  try {
+    console.log("Sincronizando itens de menu com grupo de variações:", groupId);
+    
+    // Buscar todos os itens do menu
+    const menuItemsCollection = collection(db, "menuItems");
+    const menuItemsSnapshot = await getDocs(query(menuItemsCollection));
+    const allItems = menuItemsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as MenuItem[];
+    
+    // Filtrar itens que usam este grupo de variações
+    const itemsWithGroup = allItems.filter(item => 
+      item.variationGroups?.some(g => g.id === groupId)
+    );
+    
+    console.log(`Encontrados ${itemsWithGroup.length} itens usando o grupo ${groupId}`);
+    
+    // Atualizar cada item
+    for (const item of itemsWithGroup) {
+      const updatedVariationGroups = item.variationGroups!.map(group => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            variations: newVariations
+          };
+        }
+        return group;
+      });
+      
+      const itemDocRef = doc(db, "menuItems", item.id);
+      await updateDoc(itemDocRef, { variationGroups: updatedVariationGroups });
+      console.log(`Item ${item.name} (${item.id}) atualizado`);
+    }
+    
+    console.log("Sincronização concluída com sucesso");
+  } catch (error) {
+    console.error("Erro ao sincronizar itens de menu:", error);
+    throw new Error(`Falha ao sincronizar itens: ${error.message}`);
   }
 };
