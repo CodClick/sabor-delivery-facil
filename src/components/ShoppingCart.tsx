@@ -240,11 +240,6 @@ const ShoppingCart: React.FC = () => {
 
   // Função para calcular o valor total das variações de um item
   const calculateVariationsTotal = (item: any): number => {
-    // Para pizzas meio a meio, não calcular variações extras pois o preço já está correto
-    if (item.isHalfPizza) {
-      return 0;
-    }
-    
     let variationsTotal = 0;
     
     if (item.selectedVariations && item.selectedVariations.length > 0) {
@@ -381,8 +376,8 @@ const ShoppingCart: React.FC = () => {
                         </div>
                       )}
                       
-                      {/* Variações selecionadas (apenas para itens que não são pizza meio a meio) */}
-                      {!item.isHalfPizza && item.selectedVariations && item.selectedVariations.length > 0 && (
+                      {/* Variações selecionadas */}
+                      {item.selectedVariations && item.selectedVariations.length > 0 && (
                         <div className="mt-2 text-sm">
                           {item.selectedVariations.map((group, index) => (
                             <div key={group.groupId || index} className="mb-1">

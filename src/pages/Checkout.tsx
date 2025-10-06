@@ -467,6 +467,32 @@ const handleSubmit = async (e: React.FormEvent) => {
                           )}
                         </p>
                       )}
+                      
+                      {/* Mostrar variações selecionadas */}
+                      {item.selectedVariations && item.selectedVariations.length > 0 && (
+                        <div className="mt-2 text-xs text-gray-600 space-y-1">
+                          {item.selectedVariations.map((group: any, groupIndex: number) => (
+                            <div key={groupIndex}>
+                              {group.groupName && (
+                                <p className="font-medium text-gray-700">{group.groupName}:</p>
+                              )}
+                              {group.variations
+                                .filter((v: any) => v.quantity > 0)
+                                .map((variation: any, varIndex: number) => (
+                                  <div key={varIndex} className="pl-2 flex justify-between">
+                                    <span>{variation.name || "Variação"} x{variation.quantity}</span>
+                                    {variation.additionalPrice > 0 && (
+                                      <span className="text-green-600 font-medium">
+                                        +R$ {(variation.additionalPrice * variation.quantity).toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))
+                              }
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right font-semibold text-lg">
                       R$ {(
