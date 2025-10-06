@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { supabase } from "@/lib/supabase"; // ✅ Importação adicionada
+import { supabase } from "@/integrations/supabase/client"; // ✅ Importação adicionada
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
@@ -334,37 +334,20 @@ const AdminOrders = () => {
         </Button>
       </div>
 
-  <label className="text-sm font-medium mb-2 block">Buscar por número do pedido:</label>
-  <div className="relative">
-    <input
-      type="text"
-      placeholder="Ex: CP-431..."
-      value={codigoCurto}
-      onChange={(e) => {
-        const value = e.target.value;
-        setCodigoCurto(value);
-        if (value.length >= 2 || value.length === 0) {
-          // Faz a busca automática quando há 2+ caracteres ou quando o campo é apagado
-          handleSearchByCodigoCurto(value);
-        }
-      }}
-      className="w-full border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-    />
-
-    {/* Botão de limpar */}
-    {codigoCurto && (
-      <button
-        onClick={() => {
-          setCodigoCurto("");
-          handleSearchByCodigoCurto("");
-        }}
-        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-      >
-        ✕
-      </button>
-    )}
-  </div>
-</div>
+      {/* ✅ Novo campo de busca */}
+      <div className="mb-6">
+        <label className="text-sm font-medium mb-2 block">Buscar por número do pedido:</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Digite o código curto (ex: CP-4312)"
+            value={codigoCurto}
+            onChange={(e) => setCodigoCurto(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+          <Button onClick={handleSearchByCodigoCurto}>Buscar</Button>
+        </div>
+      </div>
 
       {/* Filtros existentes */}
       <div className="space-y-6">
