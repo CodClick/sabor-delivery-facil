@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSessionId } from "@/hooks/useSessionId";
-import { useAuth } from "@/hooks/useAuth"; // 👈 Importa dados do usuário
+import { useAuth } from "@/hooks/useAuth";
+import { Bot, X, Send } from "lucide-react"; // 👈 novos ícones modernos
 
 const ChatAssistant = () => {
   const sessionId = useSessionId();
-  const { currentUser } = useAuth(); // 👈 pega usuário autenticado (Firebase)
+  const { currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<
     { from: "user" | "assistant" | "system"; text: string }[]
   >([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // 🔹 Scroll automático
@@ -28,10 +28,8 @@ const ChatAssistant = () => {
     const userMessage = { from: "user" as const, text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-
     setIsTyping(true);
 
-    // 🔸 Monta o payload com dados do usuário autenticado
     const payload = {
       message: input,
       sessionId,
@@ -93,22 +91,27 @@ const ChatAssistant = () => {
 
   return (
     <>
-      {/* Botão flutuante */}
+      {/* 🔹 Botão flutuante (lado esquerdo, alinhado com o carrinho) */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 left-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition"
+        className="fixed bottom-4 left-6 z-50 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition flex items-center justify-center"
+        style={{ transform: "translateY(-10px)" }} // ajusta verticalmente para alinhar ao carrinho
+        title="Atendente Virtual"
       >
-        💬
+        <Bot size={22} />
       </button>
 
-      {/* Janela do Chat */}
+      {/* 🔹 Janela do Chat */}
       {isOpen && (
-        <div className="fixed bottom-20 left-4 w-80 h-96 bg-white border rounded-lg shadow-lg flex flex-col z-50">
+        <div className="fixed bottom-20 left-6 w-80 h-96 bg-white border rounded-lg shadow-lg flex flex-col z-50">
           {/* Cabeçalho */}
           <div className="p-3 bg-primary text-white flex justify-between items-center rounded-t-lg">
-            <span>Atendente Virtual</span>
-            <button onClick={() => setIsOpen(false)} className="text-white">
-              ✖
+            <span className="flex items-center gap-2">
+              <Bot size={18} />
+              <span>Atendente Virtual</span>
+            </span>
+            <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
+              <X size={18} />
             </button>
           </div>
 
@@ -132,7 +135,6 @@ const ChatAssistant = () => {
               </div>
             ))}
 
-            {/* Indicador de digitação */}
             {isTyping && (
               <div className="flex items-center space-x-2 text-gray-500 text-xs mt-2">
                 <div className="flex space-x-1">
@@ -145,7 +147,7 @@ const ChatAssistant = () => {
             )}
           </div>
 
-          {/* Input */}
+          {/* Campo de entrada */}
           <div className="p-2 border-t flex">
             <input
               value={input}
@@ -157,13 +159,13 @@ const ChatAssistant = () => {
             <button
               onClick={handleSend}
               disabled={isTyping}
-              className={`px-3 rounded-r-md text-white ${
+              className={`px-3 rounded-r-md text-white flex items-center justify-center ${
                 isTyping
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-primary hover:bg-primary/90"
               }`}
             >
-              ➤
+              <Send size={16} />
             </button>
           </div>
         </div>
