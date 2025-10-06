@@ -57,9 +57,10 @@ export interface Variation {
 export interface VariationGroup {
   id: string;
   name: string;
-  internalName?: string; // 🔥 agora sim
+  internalName?: string;
   minRequired: number;
   maxAllowed: number;
   variations: string[];
   customMessage?: string;
+  applyToHalfPizza?: boolean; // Indica se o grupo aparece em pizzas meio a meio
 }

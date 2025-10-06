@@ -213,6 +213,19 @@ export const EditVariationGroupModal = ({
                 )}
               </div>
             </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="applyToHalfPizza"
+                checked={editVariationGroup.applyToHalfPizza || false}
+                onCheckedChange={(checked) =>
+                  setEditVariationGroup({ ...editVariationGroup, applyToHalfPizza: checked as boolean })
+                }
+              />
+              <Label htmlFor="applyToHalfPizza" className="text-sm font-normal cursor-pointer">
+                Aplicar a pizzas meio a meio
+              </Label>
+            </div>
           </div>
         </ScrollArea>
         

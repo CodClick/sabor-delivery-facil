@@ -106,11 +106,18 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
 
     const finalPrice = calculatePrice();
 
+    // Filtrar apenas os grupos de variações que devem aparecer em pizzas meio a meio
+    const halfPizzaVariationGroups = item.variationGroups?.filter(
+      group => group.applyToHalfPizza === true
+    ) || [];
+
     const combinedItem = {
       ...item,
       name: `Pizza Meio a Meio (Grande) - 1/2 ${pizza1.name} + 1/2 ${pizza2.name}`,
       price: finalPrice,
       isHalfPizza: true,
+      hasVariations: halfPizzaVariationGroups.length > 0,
+      variationGroups: halfPizzaVariationGroups,
       combination: {
         sabor1: { id: sabor1, name: pizza1.name },
         sabor2: { id: sabor2, name: pizza2.name },
