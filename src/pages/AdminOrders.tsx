@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client"; // ✅ Importação adicionada
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
@@ -45,6 +46,8 @@ const AdminOrders = () => {
     from: today,
     to: today
   });
+
+  const [codigoCurto, setCodigoCurto] = useState(""); // ✅ Novo estado
 
   const loadOrders = async (status: string, dateRange: DateRange | undefined) => {
     try {
@@ -100,7 +103,6 @@ const AdminOrders = () => {
       const unsubscribe = onSnapshot(
         ordersQuery,
         (snapshot) => {
-          // Atualiza sempre a lista completa
           const newOrders: Order[] = snapshot.docs.map((doc) => {
             const data = doc.data();
             return {
@@ -112,7 +114,6 @@ const AdminOrders = () => {
 
           setOrders(newOrders);
 
-          // Mostrar toast para novos pedidos recentes
           snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
               const data = change.doc.data();
@@ -142,6 +143,73 @@ const AdminOrders = () => {
     }
   }, [activeStatus, dateRange, toast]);
 
+  // ✅ Função para buscar por código curto
+  const handleSearchByCodigoCurto = async () => {
+    if (!codigoCurto.trim()) {
+      loadOrders(activeStatus, dateRange);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from("pedidos_sabor_delivery")
+        .select("codigo_pedido")
+        .eq("codigo_curto", codigoCurto.trim())
+        .single();
+
+      if (error || !data) {
+        setOrders([]);
+        toast({
+          title: "Pedido não encontrado",
+          description: "Nenhum pedido com esse número foi encontrado.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const orderRef = collection(db, "orders");
+      const q = query(orderRef, where("__name__", "==", data.codigo_pedido));
+      const snapshot = await new Promise((resolve, reject) => {
+        const unsub = onSnapshot(
+          q,
+          (snap) => {
+            unsub();
+            resolve(snap);
+          },
+          reject
+        );
+      });
+
+      const docSnap = (snapshot as any).docs[0];
+      if (docSnap) {
+        const orderData = docSnap.data();
+        const order: Order = {
+          id: docSnap.id,
+          ...orderData,
+          createdAt: orderData.createdAt?.toDate?.().toISOString() || orderData.createdAt,
+        };
+        setOrders([order]);
+      } else {
+        setOrders([]);
+        toast({
+          title: "Pedido não encontrado",
+          description: "Nenhum pedido com esse número foi encontrado.",
+          variant: "destructive",
+        });
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Erro ao buscar pedido por código curto:", err);
+      setError("Erro ao buscar pedido por código curto.");
+      setLoading(false);
+    }
+  };
+
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
   };
@@ -162,13 +230,8 @@ const AdminOrders = () => {
       
       const updateData: any = {};
       
-      if (newStatus) {
-        updateData.status = newStatus;
-      }
-      
-      if (paymentStatus) {
-        updateData.paymentStatus = paymentStatus;
-      }
+      if (newStatus) updateData.status = newStatus;
+      if (paymentStatus) updateData.paymentStatus = paymentStatus;
 
       const updatedOrder = await updateOrder(orderId, updateData);
 
@@ -181,9 +244,9 @@ const AdminOrders = () => {
           setSelectedOrder(updatedOrder);
         }
 
-        const statusMessage = newStatus ? 
-          `Status alterado para ${translateStatus(newStatus)}` :
-          `Status de pagamento alterado para ${paymentStatus === "recebido" ? "Recebido" : "A Receber"}`;
+        const statusMessage = newStatus 
+          ? `Status alterado para ${translateStatus(newStatus)}`
+          : `Status de pagamento alterado para ${paymentStatus === "recebido" ? "Recebido" : "A Receber"}`;
 
         toast({
           title: "Pedido atualizado",
@@ -257,10 +320,6 @@ const AdminOrders = () => {
     { value: "paid", label: "Pagos" }
   ];
 
-  const handleRetryLoad = () => {
-    loadOrders(activeStatus, dateRange);
-  };
-
   const totalOrders = orders.length;
   const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
 
@@ -271,10 +330,26 @@ const AdminOrders = () => {
       </div>
       <div className="flex justify-between items-center mb-6">
         <Button onClick={() => navigate("/admin-dashboard")} variant="outline">
-          Pagina de Administração
+          Página de Administração
         </Button>
       </div>
 
+      {/* ✅ Novo campo de busca */}
+      <div className="mb-6">
+        <label className="text-sm font-medium mb-2 block">Buscar por número do pedido:</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Digite o código curto (ex: CP-4312)"
+            value={codigoCurto}
+            onChange={(e) => setCodigoCurto(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+          <Button onClick={handleSearchByCodigoCurto}>Buscar</Button>
+        </div>
+      </div>
+
+      {/* Filtros existentes */}
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -297,13 +372,14 @@ const AdminOrders = () => {
             <label className="text-sm font-medium mb-2 block">Filtrar por período:</label>
             <DateRangePicker 
               dateRange={dateRange}
-              onDateRangeChange={handleDateRangeChange}
+              onDateRangeChange={setDateRange}
               className="w-full"
             />
           </div>
         </div>
       </div>
 
+      {/* Cards de pedidos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         {orders.map((order) => (
           <Card key={order.id} className="overflow-hidden">
@@ -367,6 +443,7 @@ const AdminOrders = () => {
         ))}
       </div>
 
+      {/* Rodapé de totais */}
       <div className="mt-8 p-4 bg-gray-100 rounded-lg border-t-4 border-blue-500">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="text-center">
