@@ -123,11 +123,12 @@ export const saveVariationGroup = async (
     // Clean the data before saving - remove any empty/invalid properties
     const cleanVariationGroup = {
       name: variationGroup.name.trim(),
-      internalName: variationGroup.internalName?.trim() || "", // 🔥 ADICIONADO
+      internalName: variationGroup.internalName?.trim() || "",
       minRequired: variationGroup.minRequired,
       maxAllowed: variationGroup.maxAllowed,
       variations: variationGroup.variations.filter(id => id && id.trim() !== ''),
-      customMessage: variationGroup.customMessage?.trim() || ""
+      customMessage: variationGroup.customMessage?.trim() || "",
+      applyToHalfPizza: variationGroup.applyToHalfPizza || false
     };
 
     if (variationGroup.id && variationGroup.id.trim() !== '') {
@@ -218,13 +219,21 @@ export const syncMenuItemsWithVariationGroup = async (
     
     console.log(`Encontrados ${itemsWithGroup.length} itens usando o grupo ${groupId}`);
     
+    // Buscar o grupo atualizado para pegar todos os campos
+    const updatedGroup = await getVariationGroup(groupId);
+    
+    if (!updatedGroup) {
+      throw new Error(`Grupo de variações ${groupId} não encontrado`);
+    }
+    
     // Atualizar cada item
     for (const item of itemsWithGroup) {
       const updatedVariationGroups = item.variationGroups!.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
-            variations: newVariations
+            variations: newVariations,
+            applyToHalfPizza: updatedGroup.applyToHalfPizza
           };
         }
         return group;
