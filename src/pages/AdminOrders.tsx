@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client"; // ✅ Importação adicionada
 import { Order } from "@/types/order";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
@@ -29,7 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { supabase } from "@/integrations/supabase/client"; // ✅ import correto do Supabase
 
 const AdminOrders = () => {
   const navigate = useNavigate();
@@ -40,13 +40,14 @@ const AdminOrders = () => {
   const [activeStatus, setActiveStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [codigoCurto, setCodigoCurto] = useState(""); // ✅ novo estado para busca
 
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: today,
     to: today
   });
+
+  const [codigoCurto, setCodigoCurto] = useState(""); // ✅ Novo estado
 
   const loadOrders = async (status: string, dateRange: DateRange | undefined) => {
     try {
@@ -142,44 +143,69 @@ const AdminOrders = () => {
     }
   }, [activeStatus, dateRange, toast]);
 
-  // 🔍 Busca por código curto
-  const handleSearchByCodigoCurto = async (codigoCurto: string) => {
-    if (!codigoCurto) {
+  // ✅ Função para buscar por código curto
+  const handleSearchByCodigoCurto = async () => {
+    if (!codigoCurto.trim()) {
       loadOrders(activeStatus, dateRange);
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
+
       const { data, error } = await supabase
         .from("pedidos_sabor_delivery")
         .select("codigo_pedido")
-        .ilike("codigo_curto", codigoCurto.trim().toUpperCase())
+		    .ilike("codigo_curto", codigoCurto.trim().toUpperCase())
         .single();
 
       if (error || !data) {
         setOrders([]);
+        toast({
+          title: "Pedido não encontrado",
+          description: "Nenhum pedido com esse número foi encontrado.",
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
 
-      const pedidoId = data.codigo_pedido;
-
-      const ordersRef = collection(db, "orders");
-      const pedidoQuery = query(ordersRef, where("codigo_pedido", "==", pedidoId));
-
-      const unsubscribe = onSnapshot(pedidoQuery, (snapshot) => {
-        const results: Order[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Order[];
-        setOrders(results);
+      const orderRef = collection(db, "orders");
+      const q = query(orderRef, where("__name__", "==", data.codigo_pedido));
+      const snapshot = await new Promise((resolve, reject) => {
+        const unsub = onSnapshot(
+          q,
+          (snap) => {
+            unsub();
+            resolve(snap);
+          },
+          reject
+        );
       });
 
+      const docSnap = (snapshot as any).docs[0];
+      if (docSnap) {
+        const orderData = docSnap.data();
+        const order: Order = {
+          id: docSnap.id,
+          ...orderData,
+          createdAt: orderData.createdAt?.toDate?.().toISOString() || orderData.createdAt,
+        };
+        setOrders([order]);
+      } else {
+        setOrders([]);
+        toast({
+          title: "Pedido não encontrado",
+          description: "Nenhum pedido com esse número foi encontrado.",
+          variant: "destructive",
+        });
+      }
+
       setLoading(false);
-      return () => unsubscribe();
     } catch (err) {
-      console.error("Erro ao buscar código curto:", err);
+      console.error("Erro ao buscar pedido por código curto:", err);
+      setError("Erro ao buscar pedido por código curto.");
       setLoading(false);
     }
   };
@@ -200,7 +226,10 @@ const AdminOrders = () => {
     paymentStatus?: "a_receber" | "recebido"
   ) => {
     try {
+      console.log("AdminOrders - Atualizando pedido:", { orderId, newStatus, paymentStatus });
+      
       const updateData: any = {};
+      
       if (newStatus) updateData.status = newStatus;
       if (paymentStatus) updateData.paymentStatus = paymentStatus;
 
@@ -215,7 +244,7 @@ const AdminOrders = () => {
           setSelectedOrder(updatedOrder);
         }
 
-        const statusMessage = newStatus
+        const statusMessage = newStatus 
           ? `Status alterado para ${translateStatus(newStatus)}`
           : `Status de pagamento alterado para ${paymentStatus === "recebido" ? "Recebido" : "A Receber"}`;
 
@@ -305,9 +334,24 @@ const AdminOrders = () => {
         </Button>
       </div>
 
+      {/* ✅ Novo campo de busca */}
+      <div className="mb-6">
+        <label className="text-sm font-medium mb-2 block">Buscar por número do pedido:</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Digite o código curto (ex: CP-4312)"
+            value={codigoCurto}
+            onChange={(e) => setCodigoCurto(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+          <Button onClick={handleSearchByCodigoCurto}>Buscar</Button>
+        </div>
+      </div>
+
+      {/* Filtros existentes */}
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Filtro por status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="text-sm font-medium mb-2 block">Filtrar por status:</label>
             <Select value={activeStatus} onValueChange={setActiveStatus}>
@@ -324,51 +368,124 @@ const AdminOrders = () => {
             </Select>
           </div>
 
-          {/* Filtro por período */}
           <div>
             <label className="text-sm font-medium mb-2 block">Filtrar por período:</label>
             <DateRangePicker 
               dateRange={dateRange}
-              onDateRangeChange={handleDateRangeChange}
+              onDateRangeChange={setDateRange}
               className="w-full"
             />
-          </div>
-
-          {/* Filtro por número do pedido */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Buscar por número do pedido:</label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ex: CP-431..."
-                value={codigoCurto}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setCodigoCurto(value);
-                  if (value.length >= 2 || value.length === 0) {
-                    handleSearchByCodigoCurto(value);
-                  }
-                }}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              {codigoCurto && (
-                <button
-                  onClick={() => {
-                    setCodigoCurto("");
-                    handleSearchByCodigoCurto("");
-                  }}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Resto do código da renderização dos cards de pedidos permanece igual */}
-      ...
+      {/* Cards de pedidos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        {orders.map((order) => (
+          <Card key={order.id} className="overflow-hidden">
+            <CardHeader className="bg-gray-50 py-4">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">
+                    Pedido #{order.id.substring(0, 6)}
+                  </p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {formatFullDate(order.createdAt as string)}
+                  </p>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs flex items-center ${getStatusColor(order.status)}`}>
+                  {translateStatus(order.status)}
+                </span>
+              </div>
+              <div className="mt-2">
+                <div className="font-semibold">{order.customerName}</div>
+                <div className="text-sm text-gray-500">{order.customerPhone}</div>
+              </div>
+            </CardHeader>
+            <CardContent className="py-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Itens: {order.items.length}</p>
+                {(order as any).discount && (order as any).discount > 0 ? (
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      Subtotal: R$ {((order.total + (order as any).discount)).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-green-600">
+                      Desconto ({(order as any).couponCode}): - R$ {((order as any).discount).toFixed(2)}
+                    </p>
+                    <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                  </div>
+                ) : (
+                  <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                )}
+                <Button
+                  onClick={() => handleViewOrder(order)} 
+                  variant="outline"
+                  className="w-full mt-2"
+                >
+                  Ver detalhes
+                </Button>
+                {order.status !== "received" && order.status !== "delivered" && (
+                  <Button
+                    onClick={() => {
+                      const novoStatus = order.status === "delivering" ? "delivered" : "received";
+                      handleUpdateOrderStatus(order.id, novoStatus);
+                    }}
+                    variant="secondary"
+                    className="w-full mt-2"
+                  >
+                    ✅ Marcar como Recebido
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Rodapé de totais */}
+      <div className="mt-8 p-4 bg-gray-100 rounded-lg border-t-4 border-blue-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Total de Pedidos no Período</p>
+            <p className="text-2xl font-bold text-blue-600">{totalOrders}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Valor Total das Vendas</p>
+            <p className="text-2xl font-bold text-green-600">R$ {totalSales.toFixed(2)}</p>
+          </div>
+        </div>
+        {dateRange?.from && (
+          <div className="text-center mt-2 text-sm text-gray-500">
+            Período: {dateRange.from.toLocaleDateString('pt-BR')} 
+            {dateRange.to && dateRange.to !== dateRange.from && ` até ${dateRange.to.toLocaleDateString('pt-BR')}`}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Pedido</DialogTitle>
+            <DialogDescription>
+              Visualize e atualize o status do pedido
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <OrderDetails 
+              order={selectedOrder} 
+              onUpdateStatus={handleUpdateOrderStatus} 
+            />
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
