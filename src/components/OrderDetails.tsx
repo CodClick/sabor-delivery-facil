@@ -44,7 +44,7 @@ import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatus
 import { printOrder } from "@/utils/printUtils";
 
 // 🟢 Import do Supabase client
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderDetailsProps {
   order: Order;
