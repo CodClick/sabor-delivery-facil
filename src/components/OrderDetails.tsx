@@ -69,18 +69,18 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     const fetchShortCode = async () => {
       try {
         const { data, error } = await supabase
-          .from("pedidos_sabor_delivery") // nome da tabela no Supabase
+          .from("pedidos_sabor_delivery" as any)
           .select("codigo_curto")
           .eq("codigo_pedido", order.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.warn("⚠️ Erro ao buscar código curto:", error.message);
           return;
         }
 
-        if (data?.codigo_curto) {
-          setShortCode(data.codigo_curto);
+        if ((data as any)?.codigo_curto) {
+          setShortCode((data as any).codigo_curto);
         }
       } catch (err) {
         console.error("⚠️ Erro ao buscar código curto:", err);

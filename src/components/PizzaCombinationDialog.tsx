@@ -11,7 +11,7 @@ interface PizzaCombinationDialogProps {
   item: MenuItem;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (item: any) => void;
+  onAddToCart: (item: MenuItem) => void;
 }
 
 interface PizzaOption {
@@ -116,11 +116,9 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
         sabor2: { id: sabor2, name: pizza2.name },
         tamanho: "grande"
       },
-    };
+    } as MenuItem;
 
     onAddToCart(combinedItem);
-    onClose();
-
     setSabor1(null);
     setSabor2(null);
   };

@@ -15,10 +15,11 @@ interface MenuItemCardProps {
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   const { addToCart, addItem } = useCart();
   const [isVariationDialogOpen, setIsVariationDialogOpen] = useState(false);
-  const [isPizzaDialogOpen, setIsPizzaDialogOpen] = useState(false); // novo
+  const [isPizzaDialogOpen, setIsPizzaDialogOpen] = useState(false);
   const [availableVariations, setAvailableVariations] = useState<Variation[]>([]);
   const [groups, setGroups] = useState<{ [groupId: string]: Variation[] }>({});
   const [loading, setLoading] = useState(false);
+  const [tempCombinedItem, setTempCombinedItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
     const loadVariations = async () => {
@@ -70,6 +71,21 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
       ...item,
       selectedVariations: selectedVariationGroups,
     });
+    setTempCombinedItem(null);
+  };
+
+  const handlePizzaCombination = (combinedItem: MenuItem) => {
+    // Verifica se o item combinado tem variações
+    if (combinedItem.hasVariations && combinedItem.variationGroups && combinedItem.variationGroups.length > 0) {
+      // Armazena o item e abre o diálogo de variações
+      setTempCombinedItem(combinedItem);
+      setIsPizzaDialogOpen(false);
+      setIsVariationDialogOpen(true);
+    } else {
+      // Adiciona direto ao carrinho
+      addItem(combinedItem);
+      setIsPizzaDialogOpen(false);
+    }
   };
 
   return (
@@ -113,15 +129,18 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           item={item}
           isOpen={isPizzaDialogOpen}
           onClose={() => setIsPizzaDialogOpen(false)}
-          onAddToCart={addItem}
+          onAddToCart={handlePizzaCombination}
         />
       )}
 
       {/* Fluxo variações normais */}
       <ProductVariationDialog
-        item={item}
+        item={tempCombinedItem || item}
         isOpen={isVariationDialogOpen}
-        onClose={() => setIsVariationDialogOpen(false)}
+        onClose={() => {
+          setIsVariationDialogOpen(false);
+          setTempCombinedItem(null);
+        }}
         onAddToCart={handleAddItemWithVariations}
         availableVariations={availableVariations}
         groupVariations={groups}
