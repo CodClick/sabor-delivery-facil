@@ -83,7 +83,7 @@ const ChatAssistant = () => {
       setMessages([
         {
           from: "assistant",
-          text: "Olá 👋! Sou o atendente virtual do restaurante. Como posso ajudar você hoje?",
+          text: "Olá 👋! Sou o atendente virtual da Pizzaria Oliveira ! Como posso ajudar você hoje?",
         },
       ]);
     }
@@ -175,3 +175,4 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
+
