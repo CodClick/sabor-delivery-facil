@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatusService";
 import { printOrder } from "@/utils/printUtils";
 
+// 🟢 Import do Supabase client
+import { supabase } from "@/lib/supabaseClient";
+
 interface OrderDetailsProps {
   order: Order;
   onUpdateStatus: (
@@ -58,12 +61,40 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
 
+  // 🟢 Novo estado para o código curto
+  const [shortCode, setShortCode] = useState<string | null>(null);
+
+  // 🟢 Buscar código curto no Supabase quando o pedido carregar
+  useEffect(() => {
+    const fetchShortCode = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("order_codes") // nome da tabela no Supabase
+          .select("codigo_curto")
+          .eq("order_id", order.id)
+          .single();
+
+        if (error) {
+          console.warn("⚠️ Erro ao buscar código curto:", error.message);
+          return;
+        }
+
+        if (data?.codigo_curto) {
+          setShortCode(data.codigo_curto);
+        }
+      } catch (err) {
+        console.error("⚠️ Erro ao buscar código curto:", err);
+      }
+    };
+
+    if (order?.id) fetchShortCode();
+  }, [order.id]);
+
   // Debug do pedido completo
   console.log("=== ORDER DETAILS DEBUG ===");
   console.log("Pedido completo:", order);
   console.log("Status de pagamento:", order.paymentStatus);
-  
-  // Traduzir status para português
+
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
       pending: "Pendente",
@@ -80,18 +111,16 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     return statusMap[status] || status;
   };
 
-  // Traduzir método de pagamento para português
   const translatePaymentMethod = (method: Order["paymentMethod"]) => {
     const methodMap: Record<Order["paymentMethod"], string> = {
       card: "Cartão",
-      cash: "Dinheiro", 
+      cash: "Dinheiro",
       pix: "PIX",
       payroll_discount: "Desconto em Folha"
     };
     return methodMap[method] || method;
   };
 
-  // Formatar data para exibição
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("pt-BR", {
@@ -103,7 +132,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }).format(date);
   };
 
-  // Obter classe de cor com base no status
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -120,7 +148,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Obter ícone para cada status
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
       case "pending": return <ClipboardList className="h-5 w-5" />;
@@ -137,15 +164,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Calcular subtotal do item incluindo variações (fallback para pedidos antigos)
   const calculateItemSubtotal = (item: any) => {
     if (item.isHalfPizza) {
       return (item.price || 0) * (item.quantity || 1);
     }
-    
+
     let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
     let variationsTotal = 0;
-    
+
     if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
       item.selectedVariations.forEach((group: any) => {
         if (group.variations && Array.isArray(group.variations)) {
@@ -159,11 +185,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         }
       });
     }
-    
+
     return basePrice + variationsTotal;
   };
 
-  // FUNÇÃO PARA ENVIAR WEBHOOK SEMPRE QUE O STATUS FOR ATUALIZADO
   const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
     try {
       const payload = {
@@ -216,7 +241,6 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     }
   };
 
-  // Função wrapper para atualizar o status principal do pedido
   const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
     if (status === "confirmed") {
       printOrder(order);
@@ -229,37 +253,31 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     onUpdateStatus(orderId, status, cancellationReasonValue);
   };
 
-  // Função SEPARADA para atualizar APENAS o status de pagamento
   const handleUpdatePaymentStatus = (orderId: string, paymentStatus: "a_receber" | "recebido") => {
     const updatedOrder: Order = { ...order, paymentStatus };
     sendOrderStatusWebhook(updatedOrder);
     onUpdateStatus(orderId, order.status, undefined, paymentStatus);
   };
 
-  // Quando confirmar o cancelamento no primeiro modal, abrir o do motivo
   const handleConfirmCancelDialogYes = () => {
     setIsConfirmDialogOpen(false);
     setIsReasonDialogOpen(true);
   };
 
-  // Ao fechar o modal do motivo ou cancelar, resetar states
   const handleCloseReasonDialog = () => {
     setIsReasonDialogOpen(false);
     setCancellationReason("");
   };
 
-  // Finalizar cancelamento após inserir o motivo
   const handleSubmitReason = () => {
     handleUpdateStatus(order.id, "cancelled", cancellationReason);
     setIsReasonDialogOpen(false);
     setCancellationReason("");
   };
 
-  // Usar a nova lógica de sequência de status
   const paymentReceived = hasReceivedPayment(order);
   const nextStatusOptions = getNextStatusOptions(order.status, paymentReceived, order.paymentMethod);
 
-  // Lista de botões para atualização de status
   const nextStatusButtons = nextStatusOptions.map(status => {
     const icon = getStatusIcon(status);
     const label = translateStatus(status);
@@ -328,10 +346,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       );
     }
 
-    // Destacar botões específicos com cores diferentes
     let buttonVariant: "default" | "secondary" | "outline" = "default";
     let buttonClass = "flex items-center gap-1";
-    
+
     if (status === "received") {
       buttonVariant = "secondary";
       buttonClass = "flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 border-green-300";
@@ -360,7 +377,16 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <h3 className="text-sm font-medium text-gray-500">ID do Pedido</h3>
-          <p className="mt-1">{order.id}</p>
+          <p className="mt-1">
+            {shortCode ? (
+              <>
+                <span className="font-semibold text-lg">{shortCode}</span>
+                <span className="ml-2 text-xs text-gray-400">({order.id})</span>
+              </>
+            ) : (
+              order.id
+            )}
+          </p>
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-500">Data do Pedido</h3>
