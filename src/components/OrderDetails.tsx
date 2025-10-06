@@ -69,9 +69,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     const fetchShortCode = async () => {
       try {
         const { data, error } = await supabase
-          .from("order_codes") // nome da tabela no Supabase
+          .from("pedidos_sabor_delivery") // nome da tabela no Supabase
           .select("codigo_curto")
-          .eq("order_id", order.id)
+          .eq("codigo_pedido", order.id)
           .single();
 
         if (error) {
