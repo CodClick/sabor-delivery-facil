@@ -157,7 +157,7 @@ const AdminOrders = () => {
       const { data, error } = await supabase
         .from("pedidos_sabor_delivery")
         .select("codigo_pedido")
-        .eq("codigo_curto", codigoCurto.trim())
+		    .ilike("codigo_curto", codigoCurto.trim().toUpperCase())
         .single();
 
       if (error || !data) {
