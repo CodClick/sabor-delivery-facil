@@ -8,7 +8,7 @@ const RestaurantHeader: React.FC = () => {
         <img
           src="https://ypsfoumafbfgcvrxylmw.supabase.co/storage/v1/object/public/imagens_cardapio/ClickPrato_20251006_162209_0000.png"
           alt="Sabor Delivery Fácil"
-          className="w-full h-full object-cover mix-blend-overlay opacity-100"
+          className="w-full h-full  mix-blend-overlay opacity-100"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = "/images/restaurant-banner.jpg";
