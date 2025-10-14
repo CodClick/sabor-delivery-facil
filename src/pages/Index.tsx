@@ -22,7 +22,9 @@ const Index = () => {
   useEffect(() => {
     const loadMenuItems = async () => {
       const items = await getAllMenuItems();
-      setMenuItems(items);
+      // Filtrar apenas itens disponíveis
+      const availableItems = items.filter(item => item.available !== false);
+      setMenuItems(availableItems);
     };
 
     const loadCategories = async () => {

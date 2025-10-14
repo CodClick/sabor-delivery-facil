@@ -99,7 +99,8 @@ export const saveMenuItem = async (menuItem: MenuItem): Promise<string> => {
       const { id, ...menuItemData } = menuItem;
       const docRef = await addDoc(menuItemsCollection, {
         ...menuItemData,
-        image: menuItem.image || "/placeholder.svg"
+        image: menuItem.image || "/placeholder.svg",
+        available: menuItem.available !== false // Padrão: disponível
       });
       console.log("Novo item criado com ID:", docRef.id);
       return docRef.id;

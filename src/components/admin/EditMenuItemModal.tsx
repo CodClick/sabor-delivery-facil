@@ -367,6 +367,17 @@ export const EditMenuItemModal = ({
 
           <div className="flex items-center space-x-2">
             <Checkbox
+              id="available"
+              checked={editItem.available !== false}
+              onCheckedChange={(checked) =>
+                setEditItem({ ...editItem, available: checked === true })
+              }
+            />
+            <Label htmlFor="available">Produto disponível (se desmarcado, não aparecerá no cardápio)</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
               id="popular"
               checked={editItem.popular || false}
               onCheckedChange={(checked) =>

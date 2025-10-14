@@ -6,6 +6,7 @@ export interface MenuItem {
   image: string;
   category: string;
   popular?: boolean;
+  available?: boolean; // Indica se o produto está disponível
   hasVariations?: boolean;
   variationGroups?: VariationGroup[]; // Now accepts only VariationGroup objects
   priceFrom?: boolean; // New property to indicate "a partir de" pricing
