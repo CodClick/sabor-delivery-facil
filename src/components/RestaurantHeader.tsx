@@ -33,6 +33,8 @@ const RestaurantHeader: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Oliveira Pizzaria</h1>
               <p className="text-gray-600 mt-1"><b>Rua Nina Zanoto, 646</b></p>
               <p className="text-gray-600 mt-1"><b>Jd. Las Vegas - Santo André</b></p>
+                                    <p>&nbsp;</p>
+              <p className="text-gray-600 mt-1">As imagens utilizadas são ilustrativas produzidas com inteligência Artificial</p> 
               <div className="flex items-center justify-center sm:justify-start mt-2">
                 <div className="flex text-yellow-400">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -46,8 +48,6 @@ const RestaurantHeader: React.FC = () => {
             </div>               
           </div>
         </div>
-                      <p>&nbsp;</p>
-              <p className="text-gray-600 mt-1">As imagens utilizadas são ilustrativas produzidas com inteligência Artificial</p> 
       </div>
     </div>
   );
