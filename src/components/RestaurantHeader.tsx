@@ -33,7 +33,7 @@ const RestaurantHeader: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Oliveira Pizzaria</h1>
               <p className="text-gray-600 mt-1"><b>Rua Nina Zanoto, 646</b></p>
               <p className="text-gray-600 mt-1"><b>Jd. Las Vegas - Santo André</b></p>
-              <p className="text-gray-600 mt-1"><b>&nbsp;s</b></p>
+              <p className="text-gray-600 mt-1"><b>&nbsp;</b></p>
               <p className="text-gray-600 mt-1"><b>Fotos Ilustrativas Geradas</b></p>
               <p className="text-gray-600 mt-1"><b>Por Intelgência Artificial</b></p>
               <div className="flex items-center justify-center sm:justify-start mt-2">
