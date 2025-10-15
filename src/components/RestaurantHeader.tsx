@@ -41,10 +41,10 @@ const RestaurantHeader: React.FC = () => {
                     </svg>
                   ))}             
                 </div>
+              </div>
               <p>&nbsp;</p>
               <p className="text-gray-600 mt-1">As imagens utilizadas são ilustrativas produzidas com inteligência Artificial</p>                     
-                <span className="text-gray-600 ml-2">4.8 (120+)</span>
-              </div>
+                <span className="text-gray-600 ml-2">4.8 (120+)</span>              
             </div>
           </div>
         </div>
