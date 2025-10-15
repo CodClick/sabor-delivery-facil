@@ -34,7 +34,7 @@ const RestaurantHeader: React.FC = () => {
               <p className="text-gray-600 mt-1"><b>Rua Nina Zanoto, 646</b></p>
               <p className="text-gray-600 mt-1"><b>Jd. Las Vegas - Santo André</b></p>
               <p className="text-gray-600 mt-1"><b>&nbsp;</b></p>
-              <p className="text-gray-600 mt-1">Fotos Ilustrativas Geradas Por Intelgência Artificia</p>
+              <p className="text-gray-600 mt-1">Fotos Ilustrativas Geradas Por Intelgência Artificial</p>
               <p className="text-gray-600 mt-1"><b>&nbsp;</b></p>              
               <div className="flex items-center justify-center sm:justify-start mt-2">
                 <div className="flex text-yellow-400">
