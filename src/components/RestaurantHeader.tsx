@@ -41,8 +41,9 @@ const RestaurantHeader: React.FC = () => {
                     </svg>
                   ))}
                 </div>
-                <span className="text-gray-600 ml-2">4.8 (120+)</span>           
-            </div>               
+                <span className="text-gray-600 ml-2">4.8 (120+)</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
