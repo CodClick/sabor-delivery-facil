@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator, Bike, Percent } from "lucide-react";
+import { ClipboardList, Settings, LogOut, Calculator, Bike, Percent, Building2, Truck } from "lucide-react";
 
 const AdminDashboard = () => {
   const { currentUser, logOut } = useAuth();
@@ -101,7 +101,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
         
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
               <Bike className="h-8 w-8 text-purple-600" />
@@ -114,6 +114,40 @@ const AdminDashboard = () => {
           <CardContent>
             <Button asChild className="w-full">
               <Link to="/entregador">Acessar</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 p-3 bg-orange-100 rounded-full w-fit">
+              <Building2 className="h-8 w-8 text-orange-600" />
+            </div>
+            <CardTitle className="text-xl">Minha Empresa</CardTitle>
+            <CardDescription>
+              Configure informações da sua empresa
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/minha-empresa">Acessar</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 p-3 bg-red-100 rounded-full w-fit">
+              <Truck className="h-8 w-8 text-red-600" />
+            </div>
+            <CardTitle className="text-xl">Logística</CardTitle>
+            <CardDescription>
+              Configure valores de frete por quilometragem
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/logistica">Acessar</Link>
             </Button>
           </CardContent>
         </Card>

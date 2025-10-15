@@ -24,6 +24,8 @@ import ChatAssistant from "./components/ChatAssistant";
 import Checkout from "./pages/Checkout";
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminCupons from "@/pages/AdminCupons";
+import MinhaEmpresa from "@/pages/MinhaEmpresa";
+import Logistica from "@/pages/Logistica";
 
 const queryClient = new QueryClient();
 
@@ -75,12 +77,23 @@ const AppRoutes = () => (
         </AdminRoute>
       } />
 
-      <Route  path="/admin-cupons" element={
-    <AdminRoute>
-        <AdminCupons />
-    </AdminRoute>
-  }
-/>
+      <Route path="/admin-cupons" element={
+        <AdminRoute>
+          <AdminCupons />
+        </AdminRoute>
+      } />
+
+      <Route path="/minha-empresa" element={
+        <AdminRoute>
+          <MinhaEmpresa />
+        </AdminRoute>
+      } />
+
+      <Route path="/logistica" element={
+        <AdminRoute>
+          <Logistica />
+        </AdminRoute>
+      } />
       
       <Route path="/api/*" element={<Api />} />
       <Route path="*" element={<NotFound />} />

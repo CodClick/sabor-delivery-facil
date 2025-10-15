@@ -125,7 +125,7 @@ export async function updateUserLastSignIn(firebaseId: string) {
     
     const { error } = await supabase
       .from('users')
-      .update({ last_sign_in: new Date().toISOString() })
+      .update({ last_sign_in_at: new Date().toISOString() })
       .eq('id', user.id);
       
     if (error) {

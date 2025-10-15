@@ -176,37 +176,43 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: number
-          link: string | null
           nome_da_pizza: string | null
-          "preco_pizza_brotinho (4 pedaços)": number | null
-          "preco_pizza_grande (8 pedaços)": number | null
-          "preco_pizza_média (6 pedaços)": number | null
-          preço_refrigerante_2L: number | null
-          preço_refrigerante_lata_350ml: number | null
+          "preco_pizza_brotinho_4 pedacos": number | null
+          preco_pizza_gigante_12_pedacos: number | null
+          preco_pizza_grande_8_pedacos: number | null
+          preco_pizza_media_6_pedacos: number | null
+          preco_refrigerante_2L: number | null
+          preco_refrigerante_lata_350ml: number | null
+          url_imagem: string | null
+          url_site: string | null
         }
         Insert: {
           created_at?: string
           descricao?: string | null
           id?: number
-          link?: string | null
           nome_da_pizza?: string | null
-          "preco_pizza_brotinho (4 pedaços)"?: number | null
-          "preco_pizza_grande (8 pedaços)"?: number | null
-          "preco_pizza_média (6 pedaços)"?: number | null
-          preço_refrigerante_2L?: number | null
-          preço_refrigerante_lata_350ml?: number | null
+          "preco_pizza_brotinho_4 pedacos"?: number | null
+          preco_pizza_gigante_12_pedacos?: number | null
+          preco_pizza_grande_8_pedacos?: number | null
+          preco_pizza_media_6_pedacos?: number | null
+          preco_refrigerante_2L?: number | null
+          preco_refrigerante_lata_350ml?: number | null
+          url_imagem?: string | null
+          url_site?: string | null
         }
         Update: {
           created_at?: string
           descricao?: string | null
           id?: number
-          link?: string | null
           nome_da_pizza?: string | null
-          "preco_pizza_brotinho (4 pedaços)"?: number | null
-          "preco_pizza_grande (8 pedaços)"?: number | null
-          "preco_pizza_média (6 pedaços)"?: number | null
-          preço_refrigerante_2L?: number | null
-          preço_refrigerante_lata_350ml?: number | null
+          "preco_pizza_brotinho_4 pedacos"?: number | null
+          preco_pizza_gigante_12_pedacos?: number | null
+          preco_pizza_grande_8_pedacos?: number | null
+          preco_pizza_media_6_pedacos?: number | null
+          preco_refrigerante_2L?: number | null
+          preco_refrigerante_lata_350ml?: number | null
+          url_imagem?: string | null
+          url_site?: string | null
         }
         Relationships: []
       }
@@ -267,6 +273,33 @@ export type Database = {
           serve?: string | null
           tipo?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      cardapio_oliveira: {
+        Row: {
+          created_at: string
+          id: number
+          ingredientes: string | null
+          nome: string | null
+          tipo: string | null
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ingredientes?: string | null
+          nome?: string | null
+          tipo?: string | null
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ingredientes?: string | null
+          nome?: string | null
+          tipo?: string | null
+          valor?: number | null
         }
         Relationships: []
       }
@@ -420,6 +453,108 @@ export type Database = {
         }
         Relationships: []
       }
+      consulta_frete: {
+        Row: {
+          "1Km": number | null
+          created_at: string
+          id: number
+        }
+        Insert: {
+          "1Km"?: number | null
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          "1Km"?: number | null
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      cupons: {
+        Row: {
+          ativo: boolean | null
+          criado_em: string | null
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          id: string
+          limite_uso: number | null
+          nome: string
+          tipo: string
+          usos_por_usuario: number | null
+          valor: number
+          valor_minimo_pedido: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          id?: string
+          limite_uso?: number | null
+          nome: string
+          tipo: string
+          usos_por_usuario?: number | null
+          valor: number
+          valor_minimo_pedido?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          limite_uso?: number | null
+          nome?: string
+          tipo?: string
+          usos_por_usuario?: number | null
+          valor?: number
+          valor_minimo_pedido?: number | null
+        }
+        Relationships: []
+      }
+      cupons_usos: {
+        Row: {
+          cupom_id: string | null
+          data_uso: string | null
+          id: string
+          pedido_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cupom_id?: string | null
+          data_uso?: string | null
+          id?: string
+          pedido_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cupom_id?: string | null
+          data_uso?: string | null
+          id?: string
+          pedido_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cupons_usos_cupom_id_fkey"
+            columns: ["cupom_id"]
+            isOneToOne: false
+            referencedRelation: "cupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cupons_usos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_data: {
         Row: {
           cep: string | null
@@ -462,6 +597,39 @@ export type Database = {
           state?: string | null
           street?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      empresa_info: {
+        Row: {
+          created_at: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -908,6 +1076,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pedidos_best_burger: {
+        Row: {
+          created_at: string
+          empresa: string | null
+          endereco: string
+          id: number
+          nome: string
+          pagamento: string | null
+          pedido: string
+          sessao: string
+          total: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          empresa?: string | null
+          endereco: string
+          id?: number
+          nome: string
+          pagamento?: string | null
+          pedido: string
+          sessao: string
+          total: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          empresa?: string | null
+          endereco?: string
+          id?: number
+          nome?: string
+          pagamento?: string | null
+          pedido?: string
+          sessao?: string
+          total?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       pedidos_best_pizza: {
         Row: {
           created_at: string
@@ -944,6 +1151,72 @@ export type Database = {
           sessao?: string
           total?: string
           whatsapp?: string
+        }
+        Relationships: []
+      }
+      pedidos_sabor_delivery: {
+        Row: {
+          atualizado_em: string | null
+          atualizado_em_banco: string | null
+          codigo_curto: string | null
+          codigo_pedido: string | null
+          criado_em: string | null
+          cupom_desconto: string | null
+          data_criacao: string | null
+          endereco_entrega: string | null
+          horario_recebido: string | null
+          id: string
+          itens: Json | null
+          metodo_pagamento: string | null
+          motivo_cancelamento: string | null
+          nome_cliente: string | null
+          observacoes: string | null
+          origem: string | null
+          status_atual: string | null
+          telefone_cliente: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          atualizado_em_banco?: string | null
+          codigo_curto?: string | null
+          codigo_pedido?: string | null
+          criado_em?: string | null
+          cupom_desconto?: string | null
+          data_criacao?: string | null
+          endereco_entrega?: string | null
+          horario_recebido?: string | null
+          id?: string
+          itens?: Json | null
+          metodo_pagamento?: string | null
+          motivo_cancelamento?: string | null
+          nome_cliente?: string | null
+          observacoes?: string | null
+          origem?: string | null
+          status_atual?: string | null
+          telefone_cliente?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          atualizado_em_banco?: string | null
+          codigo_curto?: string | null
+          codigo_pedido?: string | null
+          criado_em?: string | null
+          cupom_desconto?: string | null
+          data_criacao?: string | null
+          endereco_entrega?: string | null
+          horario_recebido?: string | null
+          id?: string
+          itens?: Json | null
+          metodo_pagamento?: string | null
+          motivo_cancelamento?: string | null
+          nome_cliente?: string | null
+          observacoes?: string | null
+          origem?: string | null
+          status_atual?: string | null
+          telefone_cliente?: string | null
+          valor_total?: number | null
         }
         Relationships: []
       }
@@ -1107,33 +1380,33 @@ export type Database = {
           email: string | null
           firebase_id: string | null
           id: string
-          last_sign_in: string | null
+          last_sign_in_at: string | null
           name: string | null
           phone: string | null
           role: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at: string
           email?: string | null
           firebase_id?: string | null
           id?: string
-          last_sign_in?: string | null
+          last_sign_in_at?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           email?: string | null
           firebase_id?: string | null
           id?: string
-          last_sign_in?: string | null
+          last_sign_in_at?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
