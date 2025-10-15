@@ -453,21 +453,78 @@ export type Database = {
         }
         Relationships: []
       }
-      consulta_frete: {
+      consultar_frete: {
         Row: {
+          "10Km": number | null
+          "11Km": number | null
+          "12Km": number | null
+          "13Km": number | null
+          "14Km": number | null
+          "15Km": number | null
+          "16Km": number | null
+          "17Km": number | null
+          "18Km": number | null
+          "19Km": number | null
           "1Km": number | null
-          created_at: string
-          id: number
+          "20Km": number | null
+          "2Km": number | null
+          "3Km": number | null
+          "4Km": number | null
+          "5Km": number | null
+          "6Km": number | null
+          "7Km": number | null
+          "8Km": number | null
+          "9Km": number | null
+          created_at: string | null
+          id: string
         }
         Insert: {
+          "10Km"?: number | null
+          "11Km"?: number | null
+          "12Km"?: number | null
+          "13Km"?: number | null
+          "14Km"?: number | null
+          "15Km"?: number | null
+          "16Km"?: number | null
+          "17Km"?: number | null
+          "18Km"?: number | null
+          "19Km"?: number | null
           "1Km"?: number | null
-          created_at?: string
-          id?: number
+          "20Km"?: number | null
+          "2Km"?: number | null
+          "3Km"?: number | null
+          "4Km"?: number | null
+          "5Km"?: number | null
+          "6Km"?: number | null
+          "7Km"?: number | null
+          "8Km"?: number | null
+          "9Km"?: number | null
+          created_at?: string | null
+          id?: string
         }
         Update: {
+          "10Km"?: number | null
+          "11Km"?: number | null
+          "12Km"?: number | null
+          "13Km"?: number | null
+          "14Km"?: number | null
+          "15Km"?: number | null
+          "16Km"?: number | null
+          "17Km"?: number | null
+          "18Km"?: number | null
+          "19Km"?: number | null
           "1Km"?: number | null
-          created_at?: string
-          id?: number
+          "20Km"?: number | null
+          "2Km"?: number | null
+          "3Km"?: number | null
+          "4Km"?: number | null
+          "5Km"?: number | null
+          "6Km"?: number | null
+          "7Km"?: number | null
+          "8Km"?: number | null
+          "9Km"?: number | null
+          created_at?: string | null
+          id?: string
         }
         Relationships: []
       }
@@ -806,6 +863,33 @@ export type Database = {
           created_at?: string
           id?: string
           regiao?: string | null
+        }
+        Relationships: []
+      }
+      faixas_frete: {
+        Row: {
+          created_at: string | null
+          id: string
+          km_final: number
+          km_inicial: number
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          km_final: number
+          km_inicial: number
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          km_final?: number
+          km_inicial?: number
+          user_id?: string
+          valor?: number
         }
         Relationships: []
       }
