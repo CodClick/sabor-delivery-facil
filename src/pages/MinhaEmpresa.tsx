@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { supabase } from "@/integrations/supabase/cliente"; // ✅ import do Supabase
-import { db } from "@/firebase"; // assumindo que o Firestore é importado daqui
+import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 
 export default function MinhaEmpresa() {
@@ -57,18 +57,13 @@ export default function MinhaEmpresa() {
       console.log("Endereço salvo no Firestore, ID:", docRef.id);
 
       // 🧩 Duplicação no Supabase
+      const enderecoCompleto = `${rua}, ${numero}${complemento ? ', ' + complemento : ''} - ${bairro}, ${cidade}/${estado}`;
       const { data, error } = await supabase.from("empresa_info").insert([
         {
-          user_id: docRef.id, // 🔗 referenciando o ID do Firestore
+          user_id: docRef.id,
           cep: endereco.cep,
-          rua: endereco.rua,
-          numero: endereco.numero,
-          bairro: endereco.bairro,
-          cidade: endereco.cidade,
-          estado: endereco.estado,
-          complemento: endereco.complemento,
-          pais: endereco.pais,
-          created_at: endereco.created_at,
+          nome: "Minha Empresa",
+          endereco: enderecoCompleto,
         },
       ]);
 
