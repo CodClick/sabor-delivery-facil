@@ -13,7 +13,12 @@ import { ArrowLeft } from "lucide-react";
 interface EmpresaInfo {
   id?: string;
   nome: string;
-  endereco: string;
+  cep: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
   telefone: string;
   whatsapp: string;
   user_id: string;
@@ -25,7 +30,12 @@ const MinhaEmpresa = () => {
   const [loading, setLoading] = useState(false);
   const [empresaInfo, setEmpresaInfo] = useState<EmpresaInfo>({
     nome: "",
-    endereco: "",
+    cep: "",
+    rua: "",
+    numero: "",
+    bairro: "",
+    cidade: "",
+    uf: "",
     telefone: "",
     whatsapp: "",
     user_id: currentUser?.uid || "",
@@ -39,6 +49,7 @@ const MinhaEmpresa = () => {
     loadEmpresaInfo();
   }, [currentUser]);
 
+  // 🔹 Carrega dados existentes da empresa
   const loadEmpresaInfo = async () => {
     if (!currentUser) return;
 
@@ -60,6 +71,36 @@ const MinhaEmpresa = () => {
     }
   };
 
+  // 🔹 Busca automática de endereço pelo CEP
+  const handleBuscarCEP = async (cep: string) => {
+    const cepLimpo = cep.replace(/\D/g, "");
+    if (cepLimpo.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+
+      setEmpresaInfo((prev) => ({
+        ...prev,
+        rua: data.logradouro || "",
+        bairro: data.bairro || "",
+        cidade: data.localidade || "",
+        uf: data.uf || "",
+      }));
+
+      toast.success("Endereço preenchido automaticamente!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP");
+    }
+  };
+
+  // 🔹 Salva ou atualiza os dados
   const handleSave = async () => {
     if (!currentUser) return;
 
@@ -68,18 +109,21 @@ const MinhaEmpresa = () => {
       const empresaCollection = collection(db, "empresa_info");
 
       if (empresaInfo.id) {
-        // Update existing
         const empresaDoc = doc(db, "empresa_info", empresaInfo.id);
         await updateDoc(empresaDoc, {
           nome: empresaInfo.nome,
-          endereco: empresaInfo.endereco,
+          cep: empresaInfo.cep,
+          rua: empresaInfo.rua,
+          numero: empresaInfo.numero,
+          bairro: empresaInfo.bairro,
+          cidade: empresaInfo.cidade,
+          uf: empresaInfo.uf,
           telefone: empresaInfo.telefone,
           whatsapp: empresaInfo.whatsapp,
           updated_at: new Date(),
         });
         toast.success("Informações atualizadas com sucesso!");
       } else {
-        // Create new
         await addDoc(empresaCollection, {
           ...empresaInfo,
           user_id: currentUser.uid,
@@ -113,6 +157,7 @@ const MinhaEmpresa = () => {
           <CardHeader>
             <CardTitle>Informações da Empresa</CardTitle>
           </CardHeader>
+
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="nome">Nome da Empresa</Label>
@@ -127,15 +172,79 @@ const MinhaEmpresa = () => {
             </div>
 
             <div>
-              <Label htmlFor="endereco">Endereço</Label>
+              <Label htmlFor="cep">CEP</Label>
               <Input
-                id="endereco"
-                value={empresaInfo.endereco}
+                id="cep"
+                value={empresaInfo.cep}
                 onChange={(e) =>
-                  setEmpresaInfo({ ...empresaInfo, endereco: e.target.value })
+                  setEmpresaInfo({ ...empresaInfo, cep: e.target.value })
                 }
-                placeholder="Rua, número, bairro, cidade - estado"
+                onBlur={(e) => handleBuscarCEP(e.target.value)}
+                placeholder="00000-000"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="rua">Rua</Label>
+              <Input
+                id="rua"
+                value={empresaInfo.rua}
+                onChange={(e) =>
+                  setEmpresaInfo({ ...empresaInfo, rua: e.target.value })
+                }
+                placeholder="Nome da rua"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="numero">Número / Complemento</Label>
+              <Input
+                id="numero"
+                value={empresaInfo.numero}
+                onChange={(e) =>
+                  setEmpresaInfo({ ...empresaInfo, numero: e.target.value })
+                }
+                placeholder="123 - Casa / Apto / Bloco"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input
+                id="bairro"
+                value={empresaInfo.bairro}
+                onChange={(e) =>
+                  setEmpresaInfo({ ...empresaInfo, bairro: e.target.value })
+                }
+                placeholder="Bairro"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={empresaInfo.cidade}
+                  onChange={(e) =>
+                    setEmpresaInfo({ ...empresaInfo, cidade: e.target.value })
+                  }
+                  placeholder="Cidade"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="uf">UF</Label>
+                <Input
+                  id="uf"
+                  value={empresaInfo.uf}
+                  onChange={(e) =>
+                    setEmpresaInfo({ ...empresaInfo, uf: e.target.value })
+                  }
+                  placeholder="SP"
+                  maxLength={2}
+                />
+              </div>
             </div>
 
             <div>
@@ -173,3 +282,4 @@ const MinhaEmpresa = () => {
 };
 
 export default MinhaEmpresa;
+                  
