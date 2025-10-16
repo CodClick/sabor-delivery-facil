@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,55 +46,33 @@ export default function MinhaEmpresa() {
       return;
     }
 
+    const endereco = {
+      cep,
+      rua,
+      numero,
+      bairro,
+      cidade,
+      estado,
+      complemento,
+      pais: "Brasil",
+      user_id: currentUser.uid,
+      created_at: new Date().toISOString(),
+    };
+
     try {
-      // Buscar user_id do Supabase usando firebase_id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("user_id")
-        .eq("firebase_id", currentUser.uid)
-        .single();
-
-      if (userError || !userData) {
-        console.error("Erro ao buscar usuário:", userError);
-        setMessage("Erro: Usuário não encontrado no sistema.");
-        setLoading(false);
-        return;
-      }
-
-      const endereco = {
-        cep,
-        rua,
-        numero,
-        bairro,
-        cidade,
-        estado,
-        complemento,
-        pais: "Brasil",
-        created_at: new Date().toISOString(),
-      };
-
-      // 🔥 Salvamento no Firestore (mantido igual)
+      // Salvamento no Firestore
       const docRef = await addDoc(collection(db, "empresa_info"), endereco);
       console.log("Endereço salvo no Firestore, ID:", docRef.id);
-
-      // 🧩 Salvamento no Supabase
-      const enderecoCompleto = `${rua}, ${numero}${complemento ? ', ' + complemento : ''} - ${bairro}, ${cidade}/${estado}`;
-      const { data, error } = await supabase.from("empresa_info").insert([
-        {
-          user_id: userData.user_id,
-          cep: endereco.cep,
-          nome: "Minha Empresa",
-          endereco: enderecoCompleto,
-        },
-      ]);
-
-      if (error) {
-        console.error("Erro ao salvar no Supabase:", error);
-        setMessage("Endereço salvo no Firestore, mas houve erro ao enviar para o Supabase.");
-      } else {
-        console.log("Endereço salvo no Supabase:", data);
-        setMessage("Endereço salvo com sucesso!");
-      }
+      setMessage("Endereço salvo com sucesso!");
+      
+      // Limpar formulário
+      setCep("");
+      setRua("");
+      setNumero("");
+      setBairro("");
+      setCidade("");
+      setEstado("");
+      setComplemento("");
     } catch (error) {
       console.error("Erro ao salvar endereço:", error);
       setMessage("Erro ao salvar o endereço.");
