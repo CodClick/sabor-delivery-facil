@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from "@/integrations/supabase/cliente";
+import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from "sonner";
