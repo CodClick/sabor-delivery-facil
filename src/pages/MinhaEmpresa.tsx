@@ -47,19 +47,33 @@ export default function MinhaEmpresa() {
       return;
     }
 
-    const endereco = {
-      cep,
-      rua,
-      numero,
-      bairro,
-      cidade,
-      estado,
-      complemento,
-      pais: "Brasil",
-      created_at: new Date().toISOString(),
-    };
-
     try {
+      // Buscar user_id do Supabase usando firebase_id
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("firebase_id", currentUser.uid)
+        .single();
+
+      if (userError || !userData) {
+        console.error("Erro ao buscar usuário:", userError);
+        setMessage("Erro: Usuário não encontrado no sistema.");
+        setLoading(false);
+        return;
+      }
+
+      const endereco = {
+        cep,
+        rua,
+        numero,
+        bairro,
+        cidade,
+        estado,
+        complemento,
+        pais: "Brasil",
+        created_at: new Date().toISOString(),
+      };
+
       // 🔥 Salvamento no Firestore (mantido igual)
       const docRef = await addDoc(collection(db, "empresa_info"), endereco);
       console.log("Endereço salvo no Firestore, ID:", docRef.id);
@@ -68,7 +82,7 @@ export default function MinhaEmpresa() {
       const enderecoCompleto = `${rua}, ${numero}${complemento ? ', ' + complemento : ''} - ${bairro}, ${cidade}/${estado}`;
       const { data, error } = await supabase.from("empresa_info").insert([
         {
-          user_id: currentUser.uid,
+          user_id: userData.user_id,
           cep: endereco.cep,
           nome: "Minha Empresa",
           endereco: enderecoCompleto,
@@ -79,7 +93,7 @@ export default function MinhaEmpresa() {
         console.error("Erro ao salvar no Supabase:", error);
         setMessage("Endereço salvo no Firestore, mas houve erro ao enviar para o Supabase.");
       } else {
-        console.log("Endereço duplicado no Supabase:", data);
+        console.log("Endereço salvo no Supabase:", data);
         setMessage("Endereço salvo com sucesso!");
       }
     } catch (error) {
