@@ -150,15 +150,7 @@ export default function MinhaEmpresa() {
             className="w-full border rounded p-2"
           />
         </div>
-        <div>
-          <label>Complemento</label>
-          <input
-            type="text"
-            value={complemento}
-            onChange={(e) => setComplemento(e.target.value)}
-            className="w-full border rounded p-2"
-          />
-        </div>
+
         <button
           type="submit"
           disabled={loading}
