@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MinhaEmpresa() {
+  const { currentUser } = useAuth();
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
   const [numero, setNumero] = useState("");
@@ -13,15 +15,6 @@ export default function MinhaEmpresa() {
   const [complemento, setComplemento] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
-    };
-    getUser();
-  }, []);
 
   // 🔍 Busca automática no ViaCEP
   const buscarEndereco = async (cepDigitado: string) => {
@@ -48,7 +41,7 @@ export default function MinhaEmpresa() {
     setLoading(true);
     setMessage("");
 
-    if (!userId) {
+    if (!currentUser) {
       setMessage("Usuário não autenticado. Faça login primeiro.");
       setLoading(false);
       return;
@@ -75,7 +68,7 @@ export default function MinhaEmpresa() {
       const enderecoCompleto = `${rua}, ${numero}${complemento ? ', ' + complemento : ''} - ${bairro}, ${cidade}/${estado}`;
       const { data, error } = await supabase.from("empresa_info").insert([
         {
-          user_id: userId,
+          user_id: currentUser.uid,
           cep: endereco.cep,
           nome: "Minha Empresa",
           endereco: enderecoCompleto,
