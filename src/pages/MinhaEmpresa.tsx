@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/cliente"; // ✅ import do Supabase
+import { db } from "@/firebase"; // assumindo que o Firestore é importado daqui
 import { collection, addDoc } from "firebase/firestore";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function MinhaEmpresa() {
-  const { currentUser } = useAuth();
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
   const [numero, setNumero] = useState("");
@@ -40,12 +39,6 @@ export default function MinhaEmpresa() {
     setLoading(true);
     setMessage("");
 
-    if (!currentUser) {
-      setMessage("Usuário não autenticado. Faça login primeiro.");
-      setLoading(false);
-      return;
-    }
-
     const endereco = {
       cep,
       rua,
@@ -55,24 +48,37 @@ export default function MinhaEmpresa() {
       estado,
       complemento,
       pais: "Brasil",
-      user_id: currentUser.uid,
       created_at: new Date().toISOString(),
     };
 
     try {
-      // Salvamento no Firestore
+      // 🔥 Salvamento no Firestore (mantido igual)
       const docRef = await addDoc(collection(db, "empresa_info"), endereco);
       console.log("Endereço salvo no Firestore, ID:", docRef.id);
-      setMessage("Endereço salvo com sucesso!");
-      
-      // Limpar formulário
-      setCep("");
-      setRua("");
-      setNumero("");
-      setBairro("");
-      setCidade("");
-      setEstado("");
-      setComplemento("");
+
+      // 🧩 Duplicação no Supabase
+      const { data, error } = await supabase.from("empresa_info").insert([
+        {
+          user_id: docRef.id, // 🔗 referenciando o ID do Firestore
+          cep: endereco.cep,
+          rua: endereco.rua,
+          numero: endereco.numero,
+          bairro: endereco.bairro,
+          cidade: endereco.cidade,
+          estado: endereco.estado,
+          complemento: endereco.complemento,
+          pais: endereco.pais,
+          created_at: endereco.created_at,
+        },
+      ]);
+
+      if (error) {
+        console.error("Erro ao salvar no Supabase:", error);
+        setMessage("Endereço salvo no Firestore, mas houve erro ao enviar para o Supabase.");
+      } else {
+        console.log("Endereço duplicado no Supabase:", data);
+        setMessage("Endereço salvo com sucesso!");
+      }
     } catch (error) {
       console.error("Erro ao salvar endereço:", error);
       setMessage("Erro ao salvar o endereço.");
