@@ -17,16 +17,6 @@ import { Database } from "lucide-react";
 import { SeedDataButton } from "@/components/admin/SeedDataButton";
 import { categories as localCategories, menuItems as localMenuItems } from "@/data/menuData";
 
-const Admin = () => {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [variations, setVariations] = useState<Variation[]>([]);
-  const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>("menu");
 
   useEffect(() => {
     if (!currentUser) {
@@ -154,13 +144,6 @@ const Admin = () => {
             Gerenciamento do Cardápio
           </h1>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button 
-              onClick={() => navigate("/admin-dashboard")} 
-              variant="outline"
-              className="w-full sm:w-auto text-sm"
-            >
-              Painel de Administração 
-            </Button>
           </div>
         </div>
 
