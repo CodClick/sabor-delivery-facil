@@ -155,6 +155,13 @@ const Admin = () => {
             Gerenciamento do Cardápio
           </h1>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button 
+              onClick={() => navigate("/admin-dashboard")} 
+              variant="outline"
+              className="w-full sm:w-auto text-sm"
+            >
+              Painel de Administração 
+            </Button>
           </div>
         </div>
 
