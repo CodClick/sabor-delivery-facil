@@ -107,14 +107,6 @@ export default function MinhaEmpresa() {
           Informações da Empresa
         </h1>
 
-            <Button 
-              onClick={() => navigate("/admin-dashboard")} 
-              variant="outline"
-              className="w-full sm:w-auto text-sm"
-            >
-              Painel de Administração 
-            </Button>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nome */}
           <div>
