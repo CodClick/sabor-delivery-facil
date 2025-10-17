@@ -148,22 +148,21 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 flex justify-center items-center">
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6 border border-gray-100">
-
-        {/* 🔸 Cabeçalho com título e botão alinhados */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-[#fa6500] mb-3 sm:mb-0">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <h1 className="text-xl sm:text-2xl font-bold leading-tight">
             Gerenciamento do Cardápio
           </h1>
-
-          <Button 
-            onClick={() => navigate("/admin-dashboard")} 
-            variant="outline"
-            className="w-full sm:w-auto text-sm border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-all"
-          >
-            Painel de Administração 
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button 
+              onClick={() => navigate("/admin-dashboard")} 
+              variant="outline"
+              className="w-full sm:w-auto text-sm"
+            >
+              Painel de Administração 
+            </Button>
+          </div>
         </div>
 
         {loading && <div className="text-center py-4 text-sm">Carregando dados...</div>}
