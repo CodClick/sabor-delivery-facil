@@ -105,7 +105,7 @@ export default function MinhaEmpresa() {
         <h1 className="text-2xl font-bold mb-6 text-center text-[#fa6500]">
           Informações da Empresa
         </h1>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+
             <Button 
               onClick={() => navigate("/admin-dashboard")} 
               variant="outline"
@@ -113,7 +113,6 @@ export default function MinhaEmpresa() {
             >
               Painel de Administração 
             </Button>
-          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nome */}
