@@ -6,16 +6,6 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
-const Admin = () => {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [variations, setVariations] = useState<Variation[]>([]);
-  const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>("menu");
 
 export default function MinhaEmpresa() {
   const [nome, setNome] = useState("");
