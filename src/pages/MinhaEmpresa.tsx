@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 
 export default function MinhaEmpresa() {
+  const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -103,9 +104,21 @@ export default function MinhaEmpresa() {
   return (
     <div className="min-h-screen bg-background p-4 flex justify-center items-center">
       <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-6 border border-gray-100">
-        <h1 className="text-2xl font-bold mb-6 text-center text-[#fa6500]">
-          Informações da Empresa
-        </h1>
+
+        {/* 🔸 Cabeçalho com título e botão alinhados */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-[#fa6500] mb-3 sm:mb-0">
+            Informações da Empresa
+          </h1>
+
+          <Button 
+            onClick={() => navigate("/admin-dashboard")} 
+            variant="outline"
+            className="w-full sm:w-auto text-sm border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-all"
+          >
+            Painel de Administração 
+          </Button>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nome */}
