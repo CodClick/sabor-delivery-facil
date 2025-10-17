@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
@@ -103,6 +105,15 @@ export default function MinhaEmpresa() {
         <h1 className="text-2xl font-bold mb-6 text-center text-[#fa6500]">
           Informações da Empresa
         </h1>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button 
+              onClick={() => navigate("/admin-dashboard")} 
+              variant="outline"
+              className="w-full sm:w-auto text-sm"
+            >
+              Painel de Administração 
+            </Button>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nome */}
