@@ -1,185 +1,301 @@
-import { useEffect, useState } from "react";
+//@/pages/admin-coupons.tsx
+import React, { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { format } from "date-fns";
 
-interface Cupom {
+type Cupom = {
   id: string;
   nome: string;
-  desconto: number;
-  validade: string;
+  descricao: string | null;
+  tipo: "percentual" | "fixo";
+  valor: number;
+  data_inicio: string;
+  data_fim: string;
+  limite_uso: number | null;
+  usos_por_usuario: number | null;
+  valor_minimo_pedido: number | null;
   ativo: boolean;
-  created_at: string;
-}
+  criado_em: string;
+};
 
 export default function AdminCupons() {
   const [cupons, setCupons] = useState<Cupom[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [abrirDialog, setAbrirDialog] = useState(false);
-  const [novoCupom, setNovoCupom] = useState({
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editando, setEditando] = useState<Cupom | null>(null);
+  const [form, setForm] = useState<Partial<Cupom>>({
     nome: "",
-    desconto: "",
-    validade: "",
+    descricao: "",
+    tipo: "percentual",
+    valor: 0,
+    data_inicio: "",
+    data_fim: "",
+    limite_uso: null,
+    usos_por_usuario: null,
+    valor_minimo_pedido: null,
     ativo: true,
   });
 
-  useEffect(() => {
-    buscarCupons();
-  }, []);
-
-  async function buscarCupons() {
-    setLoading(true);
+  async function carregarCupons() {
     const { data, error } = await supabase
-      .from("cupons")
+      .from("cupons" as any)
       .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Erro ao buscar cupons:", error);
-    } else {
-      setCupons(data || []);
-    }
-    setLoading(false);
+      .order("criado_em", { ascending: false });
+    if (!error && data) setCupons(data as unknown as Cupom[]);
   }
 
   async function salvarCupom() {
-    if (!novoCupom.nome || !novoCupom.desconto || !novoCupom.validade) {
-      alert("Preencha todos os campos!");
-      return;
-    }
+    setLoading(true);
 
-    const { error } = await supabase.from("cupons").insert([
-      {
-        nome: novoCupom.nome,
-        desconto: Number(novoCupom.desconto),
-        validade: novoCupom.validade,
-        ativo: novoCupom.ativo,
-      },
-    ]);
-
-    if (error) {
-      console.error("Erro ao salvar cupom:", error);
-      alert("Erro ao salvar o cupom!");
+    if (editando) {
+      // Atualizar cupom
+      const { error } = await supabase
+        .from("cupons" as any)
+        .update(form as any)
+        .eq("id", editando.id);
+      setLoading(false);
+      if (!error) {
+        setOpen(false);
+        setEditando(null);
+        carregarCupons();
+      } else {
+        alert("Erro ao atualizar cupom: " + error.message);
+      }
     } else {
-      setAbrirDialog(false);
-      setNovoCupom({ nome: "", desconto: "", validade: "", ativo: true });
-      buscarCupons();
+      // Criar novo cupom
+      const { error } = await supabase.from("cupons" as any).insert([form as any]);
+      setLoading(false);
+      if (!error) {
+        setOpen(false);
+        carregarCupons();
+      } else {
+        alert("Erro ao salvar cupom: " + error.message);
+      }
     }
   }
 
-  async function excluirCupom(id: string) {
-    if (!confirm("Tem certeza que deseja excluir este cupom?")) return;
+  async function toggleAtivo(cupom: Cupom) {
+    await supabase
+      .from("cupons" as any)
+      .update({ ativo: !cupom.ativo } as any)
+      .eq("id", cupom.id);
+    carregarCupons();
+  }
 
-    const { error } = await supabase.from("cupons").delete().eq("id", id);
-
-    if (error) {
-      console.error("Erro ao excluir cupom:", error);
-      alert("Erro ao excluir cupom!");
-    } else {
-      buscarCupons();
+  async function deletarCupom(id: string) {
+    if (confirm("Tem certeza que deseja excluir este cupom?")) {
+      await supabase.from("cupons" as any).delete().eq("id", id);
+      carregarCupons();
     }
+  }
+
+  useEffect(() => {
+    carregarCupons();
+  }, []);
+
+  function abrirEdicao(c: Cupom) {
+    setEditando(c);
+    setForm(c);
+    setOpen(true);
+  }
+
+  function abrirCriacao() {
+    setEditando(null);
+    setForm({
+      nome: "",
+      descricao: "",
+      tipo: "percentual",
+      valor: 0,
+      data_inicio: "",
+      data_fim: "",
+      limite_uso: null,
+      usos_por_usuario: null,
+      valor_minimo_pedido: null,
+      ativo: true,
+    });
+    setOpen(true);
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      {/* Cabeçalho igual ao da página Minha Empresa */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Cupons de Desconto</h1>
-
-        <Button
-          onClick={() => (window.location.href = "/admin-dashboard")}
-          variant="outline"
-          className="border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors mt-3 sm:mt-0"
-        >
-          Painel de Administração
-        </Button>
-
-        <Button
-          onClick={() => setAbrirDialog(true)}
-          className="bg-[#fa6500] hover:bg-[#e25900] text-white mt-3 sm:mt-0"
-        >
-          Novo Cupom
-        </Button>
+        <Button onClick={abrirCriacao}>Novo Cupom</Button>
       </div>
 
-      {/* Lista de cupons */}
-      {loading ? (
-        <p>Carregando cupons...</p>
-      ) : cupons.length === 0 ? (
-        <p>Nenhum cupom encontrado.</p>
-      ) : (
-        <div className="grid gap-4">
-          {cupons.map((cupom) => (
-            <Card key={cupom.id} className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>{cupom.nome}</span>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => excluirCupom(cupom.id)}
-                  >
-                    Excluir
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p><strong>Desconto:</strong> {cupom.desconto}%</p>
-                <p><strong>Validade:</strong> {new Date(cupom.validade).toLocaleDateString()}</p>
-                <p><strong>Status:</strong> {cupom.ativo ? "Ativo" : "Inativo"}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Modal para criar novo cupom */}
-      <Dialog open={abrirDialog} onOpenChange={setAbrirDialog}>
-        <DialogContent>
+      {/* Modal Criar/Editar */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Criar Novo Cupom</DialogTitle>
+            <DialogTitle>
+              {editando ? "Editar Cupom" : "Criar Cupom"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <Label>Nome do Cupom</Label>
+              <Label>Código do Cupom</Label>
               <Input
-                value={novoCupom.nome}
-                onChange={(e) => setNovoCupom({ ...novoCupom, nome: e.target.value })}
+                value={form.nome || ""}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
               />
             </div>
-
             <div>
-              <Label>Desconto (%)</Label>
+              <Label>Descrição</Label>
+              <Input
+                value={form.descricao || ""}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Tipo</Label>
+              <select
+                className="w-full border rounded p-2"
+                value={form.tipo}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tipo: e.target.value as "percentual" | "fixo",
+                  })
+                }
+              >
+                <option value="percentual">Percentual (%)</option>
+                <option value="fixo">Valor Fixo (R$)</option>
+              </select>
+            </div>
+            <div>
+              <Label>Valor</Label>
               <Input
                 type="number"
-                value={novoCupom.desconto}
-                onChange={(e) => setNovoCupom({ ...novoCupom, desconto: e.target.value })}
+                value={form.valor || 0}
+                onChange={(e) =>
+                  setForm({ ...form, valor: Number(e.target.value) })
+                }
               />
             </div>
-
             <div>
-              <Label>Validade</Label>
+              <Label>Data Início</Label>
               <Input
                 type="date"
-                value={novoCupom.validade}
-                onChange={(e) => setNovoCupom({ ...novoCupom, validade: e.target.value })}
+                value={form.data_inicio || ""}
+                onChange={(e) =>
+                  setForm({ ...form, data_inicio: e.target.value })
+                }
               />
             </div>
-
-            <div className="flex justify-end">
-              <Button
-                onClick={salvarCupom}
-                className="bg-[#fa6500] hover:bg-[#e25900] text-white"
-              >
-                Salvar Cupom
-              </Button>
+            <div>
+              <Label>Data Fim</Label>
+              <Input
+                type="date"
+                value={form.data_fim || ""}
+                onChange={(e) =>
+                  setForm({ ...form, data_fim: e.target.value })
+                }
+              />
             </div>
+            <div>
+              <Label>Limite Total de Uso</Label>
+              <Input
+                type="number"
+                value={form.limite_uso || ""}
+                onChange={(e) =>
+                  setForm({ ...form, limite_uso: Number(e.target.value) })
+                }
+              />
+            </div>
+            <div>
+              <Label>Usos por Usuário</Label>
+              <Input
+                type="number"
+                value={form.usos_por_usuario || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    usos_por_usuario: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>Valor Mínimo do Pedido</Label>
+              <Input
+                type="number"
+                value={form.valor_minimo_pedido || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    valor_minimo_pedido: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={form.ativo || false}
+                onCheckedChange={(checked) =>
+                  setForm({ ...form, ativo: checked })
+                }
+              />
+              <Label>Ativo</Label>
+            </div>
+            <Button onClick={salvarCupom} disabled={loading}>
+              {loading
+                ? "Salvando..."
+                : editando
+                ? "Salvar Alterações"
+                : "Criar Cupom"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Listagem de Cupons */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {cupons.map((c) => (
+          <Card key={c.id}>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <h2 className="font-bold">{c.nome}</h2>
+                <Switch
+                  checked={c.ativo}
+                  onCheckedChange={() => toggleAtivo(c)}
+                />
+              </div>
+              <p className="text-sm text-gray-600">{c.descricao}</p>
+              <p className="text-sm">
+                {c.tipo === "percentual" ? `${c.valor}%` : `R$${c.valor}`}
+              </p>
+              <p className="text-xs text-gray-500">
+                Validade: {format(new Date(c.data_inicio), "dd/MM/yyyy")} -{" "}
+                {format(new Date(c.data_fim), "dd/MM/yyyy")}
+              </p>
+              <div className="flex justify-between mt-2">
+                <Button size="sm" onClick={() => abrirEdicao(c)}>
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deletarCupom(c.id)}
+                >
+                  Excluir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
