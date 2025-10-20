@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 
@@ -20,6 +21,7 @@ const Logistica = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [modeloFrete, setModeloFrete] = useState<"km_direto" | "cep_distancia">("km_direto");
   const [freteItems, setFreteItems] = useState<FreteItem[]>([
     { km_inicial: "", km_final: "", valor: "" },
   ]);
@@ -34,6 +36,7 @@ const Logistica = () => {
 
   const loadFreteData = async () => {
     try {
+      // Buscar faixas de frete
       const { data, error } = await supabase
         .from("faixas_frete")
         .select("*")
@@ -53,6 +56,17 @@ const Logistica = () => {
           valor: item.valor?.toString() || "",
         }));
         setFreteItems(items);
+      }
+
+      // Buscar modelo de frete configurado
+      const { data: empresaData } = await supabase
+        .from("empresa_info")
+        .select("modelo_frete")
+        .eq("user_id", currentUser?.uid)
+        .maybeSingle();
+
+      if (empresaData?.modelo_frete) {
+        setModeloFrete(empresaData.modelo_frete as "km_direto" | "cep_distancia");
       }
     } catch (error) {
       console.error("Erro ao carregar frete:", error);
@@ -127,6 +141,16 @@ const Logistica = () => {
 
       if (insertError) throw insertError;
 
+      // Salvar modelo de frete
+      const { error: modeloError } = await supabase
+        .from("empresa_info")
+        .update({ modelo_frete: modeloFrete })
+        .eq("user_id", currentUser.uid);
+
+      if (modeloError) {
+        console.error("Erro ao salvar modelo de frete:", modeloError);
+      }
+
       toast.success("Configurações de frete salvas com sucesso!");
       loadFreteData();
     } catch (error: any) {
@@ -153,8 +177,26 @@ const Logistica = () => {
           <CardHeader>
             <CardTitle>Configuração de Frete</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground mb-4">
+          <CardContent className="space-y-6">
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Modelo de Cobrança</Label>
+              <RadioGroup value={modeloFrete} onValueChange={(value) => setModeloFrete(value as "km_direto" | "cep_distancia")}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="km_direto" id="km_direto" />
+                  <Label htmlFor="km_direto" className="font-normal cursor-pointer">
+                    Quilometragem Direta - Cobrança baseada na distância informada pelo cliente
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cep_distancia" id="cep_distancia" />
+                  <Label htmlFor="cep_distancia" className="font-normal cursor-pointer">
+                    Distância por CEP - Calcula automaticamente a distância entre a loja e o endereço do cliente
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
               Configure as faixas de frete por quilometragem. Por exemplo: de 1km a 3km por
               R$ 5,00.
             </div>

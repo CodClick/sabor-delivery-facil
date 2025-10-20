@@ -659,30 +659,57 @@ export type Database = {
       }
       empresa_info: {
         Row: {
+          bairro: string | null
+          cep: string
+          cidade: string | null
+          complemento: string | null
           created_at: string | null
           endereco: string | null
+          estado: string | null
           id: string
+          modelo_frete: string | null
           nome: string
+          numero: string | null
+          pais: string | null
+          rua: string | null
           telefone: string | null
           updated_at: string | null
           user_id: string
           whatsapp: string | null
         }
         Insert: {
+          bairro?: string | null
+          cep: string
+          cidade?: string | null
+          complemento?: string | null
           created_at?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
+          modelo_frete?: string | null
           nome: string
+          numero?: string | null
+          pais?: string | null
+          rua?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id: string
           whatsapp?: string | null
         }
         Update: {
+          bairro?: string | null
+          cep?: string
+          cidade?: string | null
+          complemento?: string | null
           created_at?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
+          modelo_frete?: string | null
           nome?: string
+          numero?: string | null
+          pais?: string | null
+          rua?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id?: string

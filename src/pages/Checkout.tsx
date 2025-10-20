@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
+import { calculateFreteByCep, getModeloFrete } from "@/services/freteService";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 
@@ -37,6 +38,8 @@ const Checkout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [phoneLoading, setPhoneLoading] = useState(false);
+  const [valorFrete, setValorFrete] = useState<number>(0);
+  const [distanciaKm, setDistanciaKm] = useState<number | null>(null);
 
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
@@ -155,6 +158,55 @@ const Checkout = () => {
           setCity(cepInfo.city || "");
           setState(cepInfo.state || "");
         }
+
+        // Calcular frete se o modelo for por CEP e usuário estiver logado
+        if (currentUser) {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("user_id")
+            .eq("firebase_id", currentUser.uid)
+            .maybeSingle();
+
+          if (userData?.user_id) {
+            const modeloFrete = await getModeloFrete(userData.user_id);
+            
+            if (modeloFrete === "cep_distancia") {
+              // Buscar CEP da empresa
+              const { data: empresaData } = await supabase
+                .from("empresa_info")
+                .select("cep")
+                .eq("user_id", userData.user_id)
+                .maybeSingle();
+
+              if (empresaData?.cep) {
+                try {
+                  const freteData = await calculateFreteByCep(
+                    value,
+                    empresaData.cep,
+                    userData.user_id
+                  );
+                  
+                  setValorFrete(freteData.valorFrete);
+                  setDistanciaKm(freteData.distanciaKm);
+                  
+                  toast({
+                    title: "Frete calculado!",
+                    description: `Distância: ${freteData.distanciaKm.toFixed(2)}km - Frete: ${formatCurrency(freteData.valorFrete)}`,
+                  });
+                } catch (freteError: any) {
+                  console.error("Erro ao calcular frete:", freteError);
+                  toast({
+                    title: "Aviso",
+                    description: freteError.message || "Não foi possível calcular o frete",
+                    variant: "destructive",
+                  });
+                  setValorFrete(0);
+                  setDistanciaKm(null);
+                }
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
         toast({
@@ -212,8 +264,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       subtotal: calculateItemSubtotal(item), // 🔥 agora salva
     }));
 
-    // Calcular total do pedido
-    const total = itemsWithSubtotal.reduce((acc, item) => acc + item.subtotal, 0);
+    // Calcular total do pedido (incluindo frete)
+    const subtotalPedido = itemsWithSubtotal.reduce((acc, item) => acc + item.subtotal, 0);
+    const totalComFrete = finalTotal + valorFrete;
 
     const orderData = {
       customerName,
@@ -222,7 +275,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       paymentMethod,
       observations,
       items: itemsWithSubtotal,
-      total: finalTotal, // Total com desconto aplicado
+      total: totalComFrete, // Total com desconto e frete aplicados
       discount: discountAmount,
       couponCode: appliedCoupon?.nome || null,
     };
@@ -431,7 +484,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Processando..." : `Finalizar Pedido - ${formatCurrency(finalTotal)}`}
+                {isLoading ? "Processando..." : `Finalizar Pedido - ${formatCurrency(finalTotal + valorFrete)}`}
               </Button>
             </form>
           </CardContent>
@@ -582,9 +635,16 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </div>
                 )}
                 
+                {valorFrete > 0 && (
+                  <div className="flex justify-between text-md">
+                    <span>Frete {distanciaKm ? `(${distanciaKm.toFixed(2)}km)` : ''}:</span>
+                    <span>R$ {valorFrete.toFixed(2)}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>R$ {finalTotal.toFixed(2)}</span>
+                  <span>R$ {(finalTotal + valorFrete).toFixed(2)}</span>
                 </div>
               </div>
             </div>
