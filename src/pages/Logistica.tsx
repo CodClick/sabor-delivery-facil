@@ -35,12 +35,26 @@ const Logistica = () => {
   }, [currentUser]);
 
   const loadFreteData = async () => {
+    if (!currentUser?.uid) return;
+    
     try {
+      // Buscar user_id UUID baseado no firebase_id
+      const { data: userData } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("firebase_id", currentUser.uid)
+        .maybeSingle();
+
+      if (!userData?.user_id) {
+        console.error("Usuário não encontrado no banco");
+        return;
+      }
+
       // Buscar faixas de frete
       const { data, error } = await supabase
         .from("faixas_frete")
         .select("*")
-        .eq("user_id", currentUser?.uid)
+        .eq("user_id", userData.user_id)
         .order("km_inicial", { ascending: true });
 
       if (error) {
@@ -62,7 +76,7 @@ const Logistica = () => {
       const { data: empresaData } = await supabase
         .from("empresa_info")
         .select("modelo_frete")
-        .eq("user_id", currentUser?.uid)
+        .eq("user_id", userData.user_id)
         .maybeSingle();
 
       if (empresaData?.modelo_frete) {
@@ -95,7 +109,7 @@ const Logistica = () => {
   };
 
   const handleSave = async () => {
-    if (!currentUser) return;
+    if (!currentUser?.uid) return;
 
     // Validar que pelo menos um item tem dados
     const validItems = freteItems.filter(
@@ -119,17 +133,30 @@ const Logistica = () => {
 
     setLoading(true);
     try {
+      // Buscar user_id UUID
+      const { data: userData } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("firebase_id", currentUser.uid)
+        .maybeSingle();
+
+      if (!userData?.user_id) {
+        toast.error("Erro ao identificar usuário");
+        setLoading(false);
+        return;
+      }
+
       // Deletar faixas antigas
       const { error: deleteError } = await supabase
         .from("faixas_frete")
         .delete()
-        .eq("user_id", currentUser.uid);
+        .eq("user_id", userData.user_id);
 
       if (deleteError) throw deleteError;
 
       // Inserir novas faixas
       const insertData = validItems.map((item) => ({
-        user_id: currentUser.uid,
+        user_id: userData.user_id,
         km_inicial: parseFloat(item.km_inicial),
         km_final: parseFloat(item.km_final),
         valor: parseFloat(item.valor),
@@ -145,7 +172,7 @@ const Logistica = () => {
       const { error: modeloError } = await supabase
         .from("empresa_info")
         .update({ modelo_frete: modeloFrete })
-        .eq("user_id", currentUser.uid);
+        .eq("user_id", userData.user_id);
 
       if (modeloError) {
         console.error("Erro ao salvar modelo de frete:", modeloError);

@@ -5,10 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 
 export default function MinhaEmpresa() {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -46,6 +48,12 @@ export default function MinhaEmpresa() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!currentUser?.uid) {
+      toast.error("Você precisa estar logado para salvar as informações");
+      return;
+    }
+    
     setLoading(true);
 
     const empresa = {
@@ -64,14 +72,27 @@ export default function MinhaEmpresa() {
     };
 
     try {
-      // 🔥 Salvamento no Firestore
+      // Buscar user_id UUID do Supabase
+      const { data: userData } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("firebase_id", currentUser.uid)
+        .maybeSingle();
+
+      if (!userData?.user_id) {
+        toast.error("Erro ao identificar usuário");
+        setLoading(false);
+        return;
+      }
+
+      // Salvar no Firestore
       const docRef = await addDoc(collection(db, "empresa_info"), empresa);
       console.log("Empresa salva no Firestore, ID:", docRef.id);
 
-      // 🧩 Duplicação no Supabase
+      // Salvar no Supabase
       const { error } = await supabase.from("empresa_info").insert([
         {
-          user_id: docRef.id,
+          user_id: userData.user_id,
           nome: empresa.nome,
           telefone: empresa.telefone,
           whatsapp: empresa.whatsapp,
@@ -83,7 +104,6 @@ export default function MinhaEmpresa() {
           estado: empresa.estado,
           complemento: empresa.complemento,
           pais: empresa.pais,
-          created_at: empresa.created_at,
         },
       ]);
 
