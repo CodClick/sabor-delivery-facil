@@ -16,7 +16,7 @@ const formatDate = (dateString: string) => {
 const translatePaymentMethod = (method: Order["paymentMethod"]) => {
   const methodMap: Record<Order["paymentMethod"], string> = {
     card: "Cartão",
-    cash: "Dinheiro", 
+    cash: "Dinheiro",
     pix: "PIX",
     payroll_discount: "Desconto em Folha"
   };
@@ -25,32 +25,28 @@ const translatePaymentMethod = (method: Order["paymentMethod"]) => {
 
 // Função para calcular subtotal do item incluindo variações
 const calculateItemSubtotal = (item: any) => {
-  // Se o item tem "a partir de", o preço base é 0
   let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
   let variationsTotal = 0;
-  
+
   if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
     item.selectedVariations.forEach((group: any) => {
       if (group.variations && Array.isArray(group.variations)) {
         group.variations.forEach((variation: any) => {
           const additionalPrice = variation.additionalPrice || 0;
           const quantity = variation.quantity || 1;
-          
           if (additionalPrice > 0) {
-            const variationCost = additionalPrice * quantity * item.quantity;
-            variationsTotal += variationCost;
+            variationsTotal += additionalPrice * quantity * item.quantity;
           }
         });
       }
     });
   }
-  
+
   return basePrice + variationsTotal;
 };
 
 // Função principal para imprimir o pedido
 export const printOrder = (order: Order) => {
-  // Criar o conteúdo HTML para impressão
   const printContent = `
     <!DOCTYPE html>
     <html>
@@ -58,99 +54,131 @@ export const printOrder = (order: Order) => {
       <meta charset="UTF-8">
       <title>Pedido #${order.id}</title>
       <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          font-size: 12px; 
-          margin: 10px;
+        @page {
+          size: auto;
+          margin: 0;
+        }
+
+        html, body {
+          width: 80mm;
+          height: auto;
+          margin: 0;
+          padding: 0;
+          overflow: visible;
+          font-family: Arial, sans-serif;
+          font-size: 11px;
           color: #000;
         }
-        .header { 
-          text-align: center; 
-          margin-bottom: 20px; 
-          border-bottom: 2px solid #000; 
-          padding-bottom: 10px;
+
+        .header {
+          text-align: center;
+          border-bottom: 1px dashed #000;
+          margin-bottom: 6px;
+          padding-bottom: 4px;
         }
-        .order-info { 
-          margin-bottom: 15px; 
+
+        .header h1 {
+          font-size: 14px;
+          margin: 0;
+          text-transform: uppercase;
         }
-        .order-info div { 
-          margin-bottom: 5px; 
+
+        .header h2 {
+          font-size: 12px;
+          margin: 2px 0 0 0;
         }
-        .items-table { 
-          width: 100%; 
-          border-collapse: collapse; 
-          margin-bottom: 15px;
+
+        .order-info {
+          margin-bottom: 6px;
         }
-        .items-table th, .items-table td { 
-          border: 1px solid #000; 
-          padding: 5px; 
+
+        .order-info div {
+          margin-bottom: 2px;
+        }
+
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 6px;
+        }
+
+        .items-table th, .items-table td {
+          border-bottom: 1px dotted #000;
+          padding: 3px 0;
           text-align: left;
         }
-        .items-table th { 
-          background-color: #f0f0f0; 
+
+        .items-table th {
           font-weight: bold;
+          font-size: 11px;
         }
-        .variation { 
-          font-size: 10px; 
-          color: #666; 
-          margin-left: 10px;
+
+        .variation {
+          font-size: 9px;
+          color: #555;
+          margin-left: 8px;
+          display: block;
         }
-        .total { 
-          font-weight: bold; 
-          font-size: 14px; 
-          text-align: right; 
-          margin-top: 10px;
-          border-top: 2px solid #000;
-          padding-top: 10px;
+
+        .total {
+          font-weight: bold;
+          font-size: 13px;
+          text-align: right;
+          margin-top: 5px;
+          border-top: 1px solid #000;
+          padding-top: 5px;
         }
+
         .footer {
-          margin-top: 20px;
+          margin-top: 10px;
           text-align: center;
-          font-size: 10px;
-          border-top: 1px solid #ccc;
-          padding-top: 10px;
+          font-size: 9px;
+          border-top: 1px dashed #ccc;
+          padding-top: 4px;
         }
       </style>
     </head>
     <body>
       <div class="header">
-        <h1>COMANDA DE PEDIDO</h1>
+        <h1>Comanda de Pedido</h1>
         <h2>Pedido #${order.id}</h2>
       </div>
-      
+
       <div class="order-info">
         <div><strong>Data:</strong> ${formatDate(order.createdAt as string)}</div>
         <div><strong>Cliente:</strong> ${order.customerName}</div>
         <div><strong>Telefone:</strong> ${order.customerPhone}</div>
         <div><strong>Endereço:</strong> ${order.address}</div>
         <div><strong>Pagamento:</strong> ${translatePaymentMethod(order.paymentMethod)}</div>
-        ${order.observations ? `<div><strong>Observações:</strong> ${order.observations}</div>` : ''}
+        ${order.observations ? `<div><strong>Obs.:</strong> ${order.observations}</div>` : ''}
       </div>
-      
+
       <table class="items-table">
         <thead>
           <tr>
             <th>Item</th>
             <th>Qtd</th>
-            <th>Preço Unit.</th>
+            <th>Unit.</th>
             <th>Subtotal</th>
           </tr>
         </thead>
         <tbody>
           ${order.items.map(item => {
             const subtotal = calculateItemSubtotal(item);
-            let itemRow = `
+            return `
               <tr>
                 <td>
                   <strong>${item.name}</strong>
-                  ${item.priceFrom ? '<span style="font-size:10px;color:#666;">(a partir de)</span>' : ''}
-                  ${item.selectedVariations && Array.isArray(item.selectedVariations) ? 
-                    item.selectedVariations.map(group => 
-                      group.variations && Array.isArray(group.variations) ? 
-                        group.variations.map(variation => 
-                          `<div class="variation">+ ${variation.name} ${variation.quantity > 1 ? `(${variation.quantity}x)` : ''} ${variation.additionalPrice > 0 ? `+ R$ ${variation.additionalPrice.toFixed(2)}` : ''}</div>`
-                        ).join('') : ''
-                    ).join('') : ''
+                  ${item.priceFrom ? '<span style="font-size:9px;color:#666;">(a partir de)</span>' : ''}
+                  ${item.selectedVariations && Array.isArray(item.selectedVariations)
+                    ? item.selectedVariations.map(group =>
+                        group.variations && Array.isArray(group.variations)
+                          ? group.variations.map(variation =>
+                              `<div class="variation">+ ${variation.name} ${variation.quantity > 1 ? `(${variation.quantity}x)` : ''} ${variation.additionalPrice > 0 ? `+ R$ ${variation.additionalPrice.toFixed(2)}` : ''}</div>`
+                            ).join('')
+                          : ''
+                      ).join('')
+                    : ''
                   }
                 </td>
                 <td>${item.quantity}</td>
@@ -158,15 +186,14 @@ export const printOrder = (order: Order) => {
                 <td>R$ ${subtotal.toFixed(2)}</td>
               </tr>
             `;
-            return itemRow;
           }).join('')}
         </tbody>
       </table>
-      
+
       <div class="total">
-        <strong>TOTAL: R$ ${order.total.toFixed(2)}</strong>
+        TOTAL: R$ ${order.total.toFixed(2)}
       </div>
-      
+
       <div class="footer">
         Impressão automática - ${new Date().toLocaleString('pt-BR')}
       </div>
@@ -174,29 +201,32 @@ export const printOrder = (order: Order) => {
     </html>
   `;
 
-  // Criar uma nova janela para impressão
-  const printWindow = window.open('', '_blank', 'width=600,height=600');
-  
+  // Cria nova janela de impressão
+  const printWindow = window.open('', '_blank', 'width=400,height=600');
+
   if (printWindow) {
     printWindow.document.write(printContent);
     printWindow.document.close();
-    
-    // Aguardar o carregamento e imprimir
+
     printWindow.onload = () => {
+      // Garante que só imprime o conteúdo necessário
+      printWindow.document.body.style.height = "auto";
+      printWindow.document.body.style.overflow = "visible";
+
       printWindow.print();
       printWindow.close();
     };
   } else {
-    // Fallback se não conseguir abrir nova janela
+    // Fallback via iframe
     const printFrame = document.createElement('iframe');
     printFrame.style.display = 'none';
     document.body.appendChild(printFrame);
-    
+
     const frameDoc = printFrame.contentWindow?.document;
     if (frameDoc) {
       frameDoc.write(printContent);
       frameDoc.close();
-      
+
       setTimeout(() => {
         printFrame.contentWindow?.print();
         document.body.removeChild(printFrame);
