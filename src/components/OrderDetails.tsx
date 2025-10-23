@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
+import { getAuth } from "firebase/auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -189,60 +190,64 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     return basePrice + variationsTotal;
   };
 
-  const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
-    try {
-      const payload = {
-        codigo_pedido: orderData.id,
-        status_atual: orderData.status,    
-        nome_cliente: orderData.customerName,
-        telefone_cliente: orderData.customerPhone,
-        endereco_entrega: orderData.address,
-        observacoes: orderData.observations || null,
-        metodo_pagamento: orderData.paymentMethod,
-        status_pagamento: orderData.paymentStatus,
-        valor_total: orderData.total,
-        cupom_desconto: (orderData as any).couponCode || null,
-        data_criacao: orderData.createdAt,
-        horario_recebido: (orderData as any).receivedAt || null,
-        motivo_cancelamento: orderData.cancellationReason || null,
-        itens: orderData.items.map((item: any) => ({
-          nome: item.name,
-          quantidade: item.quantity,
-          preco_unitario: item.price,
-          subtotal: item.subtotal ?? calculateItemSubtotal(item),
-          variacoes: item.selectedVariations?.map((group: any) => ({
-            grupo: group.groupName,
-            opcoes: group.variations?.map((variation: any) => ({
-              nome: variation.name,
-              preco_adicional: variation.additionalPrice || 0,
-              quantidade: variation.quantity || 1,
-            })) || []
+const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
+  try {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    const payload = {
+      codigo_pedido: orderData.id,
+      status_atual: orderData.status,    
+      nome_cliente: orderData.customerName,
+      telefone_cliente: orderData.customerPhone,
+      endereco_entrega: orderData.address,
+      observacoes: orderData.observations || null,
+      metodo_pagamento: orderData.paymentMethod,
+      status_pagamento: orderData.paymentStatus,
+      valor_total: orderData.total,
+      cupom_desconto: (orderData as any).couponCode || null,
+      data_criacao: orderData.createdAt,
+      horario_recebido: (orderData as any).receivedAt || null,
+      motivo_cancelamento: orderData.cancellationReason || null,
+      itens: orderData.items.map((item: any) => ({
+        nome: item.name,
+        quantidade: item.quantity,
+        preco_unitario: item.price,
+        subtotal: item.subtotal ?? calculateItemSubtotal(item),
+        variacoes: item.selectedVariations?.map((group: any) => ({
+          grupo: group.groupName,
+          opcoes: group.variations?.map((variation: any) => ({
+            nome: variation.name,
+            preco_adicional: variation.additionalPrice || 0,
+            quantidade: variation.quantity || 1,
           })) || []
-        })),
-        atualizado_em: new Date().toISOString(),
-        origem: "AppDelivery",
-          firebase_id: currentUser.uid || null,
-          user_name: currentUser.displayName || null,
-          user_email: currentUser.email || null    
-      };
+        })) || []
+      })),
+      atualizado_em: new Date().toISOString(),
+      origem: "AppDelivery",
+      firebase_id: currentUser?.uid || null,
+      user_name: currentUser?.displayName || null,
+      user_email: currentUser?.email || null,
+    };
 
-      console.log("📦 Enviando payload do pedido para webhook n8n:", payload);
+    console.log("📦 Enviando payload do pedido para webhook n8n:", payload);
 
-      const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        console.error("❌ Falha ao enviar webhook:", await response.text());
-      } else {
-        console.log("✅ Webhook enviado com sucesso!");
-      }
-    } catch (err) {
-      console.error("⚠️ Erro ao enviar webhook de status:", err);
+    if (!response.ok) {
+      console.error("❌ Falha ao enviar webhook:", await response.text());
+    } else {
+      console.log("✅ Webhook enviado com sucesso!");
     }
-  };
+  } catch (err) {
+    console.error("⚠️ Erro ao enviar webhook de status:", err);
+  }
+};
+
 
   const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
     if (status === "confirmed") {
