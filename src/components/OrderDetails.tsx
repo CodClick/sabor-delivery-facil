@@ -193,10 +193,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
     try {
       const payload = {
         codigo_pedido: orderData.id,
-        status_atual: orderData.status,
-  firebase_id: currentUser?.uid || null,
-  user_name: currentUser?.displayName || null,
-  user_email: currentUser?.email || null,        
+        status_atual: orderData.status,    
         nome_cliente: orderData.customerName,
         telefone_cliente: orderData.customerPhone,
         endereco_entrega: orderData.address,
@@ -223,7 +220,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           })) || []
         })),
         atualizado_em: new Date().toISOString(),
-        origem: "AppDelivery"
+        origem: "AppDelivery",
+          firebase_id: currentUser?.uid || null,
+          user_name: currentUser?.displayName || null,
+          user_email: currentUser?.email || null    
       };
 
       console.log("📦 Enviando payload do pedido para webhook n8n:", payload);
