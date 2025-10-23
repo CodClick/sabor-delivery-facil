@@ -223,7 +223,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
           })) || []
         })),
         atualizado_em: new Date().toISOString(),
-        origem: "AppDelivery"
+        origem: "AppDelivery",
       };
 
       console.log("📦 Enviando payload do pedido para webhook n8n:", payload);
