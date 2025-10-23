@@ -223,7 +223,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
         origem: "AppDelivery",
         firebase_id: currentUser?.uid || null,
         user_name: currentUser?.displayName || null,
-        user_email: currentUser?.email || null
+        user_email: currentUser?.email || null,
       };
 
       console.log("📦 Enviando payload do pedido para webhook n8n:", payload);
