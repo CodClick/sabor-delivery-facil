@@ -278,6 +278,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       total: totalComFrete, // Total com desconto e frete aplicados
       discount: discountAmount,
       couponCode: appliedCoupon?.nome || null,
+	  firebaseId: currentUser?.uid,
+	  userName: currentUser.displayName,
+	  userEmail: currentUser.email,
     };
 
     console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
