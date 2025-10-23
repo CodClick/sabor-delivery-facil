@@ -194,6 +194,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       const payload = {
         codigo_pedido: orderData.id,
         status_atual: orderData.status,
+  firebase_id: currentUser?.uid || null,
+  user_name: currentUser?.displayName || null,
+  user_email: currentUser?.email || null,        
         nome_cliente: orderData.customerName,
         telefone_cliente: orderData.customerPhone,
         endereco_entrega: orderData.address,
