@@ -920,6 +920,84 @@ export type Database = {
         }
         Relationships: []
       }
+      fidelidade_historico: {
+        Row: {
+          data: string | null
+          id: string
+          observacao: string | null
+          premio_concedido: boolean | null
+          regra_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          data?: string | null
+          id?: string
+          observacao?: string | null
+          premio_concedido?: boolean | null
+          regra_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          data?: string | null
+          id?: string
+          observacao?: string | null
+          premio_concedido?: boolean | null
+          regra_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fidelidade_historico_regra_id_fkey"
+            columns: ["regra_id"]
+            isOneToOne: false
+            referencedRelation: "fidelidade_regras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fidelidade_historico_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fidelidade_regras: {
+        Row: {
+          ativo: boolean | null
+          criado_em: string | null
+          criterio: string
+          descricao: string | null
+          id: string
+          meta: number
+          nome: string
+          premio_id: string | null
+          premio_tipo: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          criterio: string
+          descricao?: string | null
+          id?: string
+          meta: number
+          nome: string
+          premio_id?: string | null
+          premio_tipo: string
+        }
+        Update: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          criterio?: string
+          descricao?: string | null
+          id?: string
+          meta?: number
+          nome?: string
+          premio_id?: string | null
+          premio_tipo?: string
+        }
+        Relationships: []
+      }
       horario_funcionamento: {
         Row: {
           created_at: string
@@ -1275,6 +1353,7 @@ export type Database = {
           cupom_desconto: string | null
           data_criacao: string | null
           endereco_entrega: string | null
+          firebase_id: string | null
           horario_recebido: string | null
           id: string
           itens: Json | null
@@ -1285,6 +1364,8 @@ export type Database = {
           origem: string | null
           status_atual: string | null
           telefone_cliente: string | null
+          user_email: string | null
+          user_name: string | null
           valor_total: number | null
         }
         Insert: {
@@ -1296,6 +1377,7 @@ export type Database = {
           cupom_desconto?: string | null
           data_criacao?: string | null
           endereco_entrega?: string | null
+          firebase_id?: string | null
           horario_recebido?: string | null
           id?: string
           itens?: Json | null
@@ -1306,6 +1388,8 @@ export type Database = {
           origem?: string | null
           status_atual?: string | null
           telefone_cliente?: string | null
+          user_email?: string | null
+          user_name?: string | null
           valor_total?: number | null
         }
         Update: {
@@ -1317,6 +1401,7 @@ export type Database = {
           cupom_desconto?: string | null
           data_criacao?: string | null
           endereco_entrega?: string | null
+          firebase_id?: string | null
           horario_recebido?: string | null
           id?: string
           itens?: Json | null
@@ -1327,6 +1412,8 @@ export type Database = {
           origem?: string | null
           status_atual?: string | null
           telefone_cliente?: string | null
+          user_email?: string | null
+          user_name?: string | null
           valor_total?: number | null
         }
         Relationships: []
@@ -1625,14 +1712,20 @@ export type Database = {
           whatsapp: string
         }[]
       }
-      get_dados_agente: {
-        Args: { p_user_id: string }
-        Returns: Json
-      }
-      get_user_role: {
-        Args: { user_uid: string } | { user_uid: string }
-        Returns: string
-      }
+      get_dados_agente: { Args: { p_user_id: string }; Returns: Json }
+      get_user_role:
+        | {
+            Args: { user_uid: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.get_user_role(user_uid => text), public.get_user_role(user_uid => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { user_uid: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.get_user_role(user_uid => text), public.get_user_role(user_uid => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
     }
     Enums: {
       [_ in never]: never
