@@ -45,28 +45,10 @@ const Logistica = () => {
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
-      // Se o usuário não existe, criar registro
       if (!userData?.id) {
-        console.log("Usuário não encontrado, criando registro...");
-        const { data: newUser, error: insertError } = await supabase
-          .from("users")
-          .insert({
-            firebase_id: currentUser.uid,
-            email: currentUser.email,
-            name: currentUser.displayName,
-            created_at: new Date().toISOString(),
-            last_sign_in_at: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
-
-        if (insertError) {
-          console.error("Erro ao criar usuário:", insertError);
-          toast.error("Erro ao criar registro de usuário");
-          return;
-        }
-
-        userData = newUser;
+        console.error("Usuário não encontrado no banco");
+        toast.error("Seu cadastro não está sincronizado. Por favor, faça logout e login novamente.");
+        return;
       }
 
       // Buscar faixas de frete
@@ -159,28 +141,10 @@ const Logistica = () => {
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
-      // Se o usuário não existe, criar registro
       if (!userData?.id) {
-        const { data: newUser, error: insertError } = await supabase
-          .from("users")
-          .insert({
-            firebase_id: currentUser.uid,
-            email: currentUser.email,
-            name: currentUser.displayName,
-            created_at: new Date().toISOString(),
-            last_sign_in_at: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
-
-        if (insertError) {
-          console.error("Erro ao criar usuário:", insertError);
-          toast.error("Erro ao criar registro de usuário");
-          setLoading(false);
-          return;
-        }
-
-        userData = newUser;
+        toast.error("Seu cadastro não está sincronizado. Por favor, faça logout e login novamente.");
+        setLoading(false);
+        return;
       }
 
       // Deletar faixas antigas
