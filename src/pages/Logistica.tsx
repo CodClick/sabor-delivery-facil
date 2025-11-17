@@ -41,11 +41,11 @@ const Logistica = () => {
       // Buscar user_id UUID baseado no firebase_id
       const { data: userData } = await supabase
         .from("users")
-        .select("user_id")
+        .select("id")
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
-      if (!userData?.user_id) {
+      if (!userData?.id) {
         console.error("Usuário não encontrado no banco");
         return;
       }
@@ -54,7 +54,7 @@ const Logistica = () => {
       const { data, error } = await supabase
         .from("faixas_frete")
         .select("*")
-        .eq("user_id", userData.user_id)
+        .eq("user_id", userData.id)
         .order("km_inicial", { ascending: true });
 
       if (error) {
@@ -76,7 +76,7 @@ const Logistica = () => {
       const { data: empresaData } = await supabase
         .from("empresa_info")
         .select("modelo_frete")
-        .eq("user_id", userData.user_id)
+        .eq("user_id", userData.id)
         .maybeSingle();
 
       if (empresaData?.modelo_frete) {
@@ -136,11 +136,11 @@ const Logistica = () => {
       // Buscar user_id UUID
       const { data: userData } = await supabase
         .from("users")
-        .select("user_id")
+        .select("id")
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
-      if (!userData?.user_id) {
+      if (!userData?.id) {
         toast.error("Erro ao identificar usuário");
         setLoading(false);
         return;
@@ -150,13 +150,13 @@ const Logistica = () => {
       const { error: deleteError } = await supabase
         .from("faixas_frete")
         .delete()
-        .eq("user_id", userData.user_id);
+        .eq("user_id", userData.id);
 
       if (deleteError) throw deleteError;
 
       // Inserir novas faixas
       const insertData = validItems.map((item) => ({
-        user_id: userData.user_id,
+        user_id: userData.id,
         km_inicial: parseFloat(item.km_inicial),
         km_final: parseFloat(item.km_final),
         valor: parseFloat(item.valor),
@@ -172,7 +172,7 @@ const Logistica = () => {
       const { error: modeloError } = await supabase
         .from("empresa_info")
         .update({ modelo_frete: modeloFrete })
-        .eq("user_id", userData.user_id);
+        .eq("user_id", userData.id);
 
       if (modeloError) {
         console.error("Erro ao salvar modelo de frete:", modeloError);
