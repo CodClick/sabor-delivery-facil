@@ -39,15 +39,34 @@ const Logistica = () => {
     
     try {
       // Buscar user_id UUID baseado no firebase_id
-      const { data: userData } = await supabase
+      let { data: userData } = await supabase
         .from("users")
         .select("id")
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
+      // Se o usuário não existe, criar registro
       if (!userData?.id) {
-        console.error("Usuário não encontrado no banco");
-        return;
+        console.log("Usuário não encontrado, criando registro...");
+        const { data: newUser, error: insertError } = await supabase
+          .from("users")
+          .insert({
+            firebase_id: currentUser.uid,
+            email: currentUser.email,
+            name: currentUser.displayName,
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          console.error("Erro ao criar usuário:", insertError);
+          toast.error("Erro ao criar registro de usuário");
+          return;
+        }
+
+        userData = newUser;
       }
 
       // Buscar faixas de frete
@@ -134,16 +153,34 @@ const Logistica = () => {
     setLoading(true);
     try {
       // Buscar user_id UUID
-      const { data: userData } = await supabase
+      let { data: userData } = await supabase
         .from("users")
         .select("id")
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
+      // Se o usuário não existe, criar registro
       if (!userData?.id) {
-        toast.error("Erro ao identificar usuário");
-        setLoading(false);
-        return;
+        const { data: newUser, error: insertError } = await supabase
+          .from("users")
+          .insert({
+            firebase_id: currentUser.uid,
+            email: currentUser.email,
+            name: currentUser.displayName,
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          console.error("Erro ao criar usuário:", insertError);
+          toast.error("Erro ao criar registro de usuário");
+          setLoading(false);
+          return;
+        }
+
+        userData = newUser;
       }
 
       // Deletar faixas antigas
