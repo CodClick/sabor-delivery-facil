@@ -73,16 +73,35 @@ export default function MinhaEmpresa() {
 
     try {
       // Buscar user_id UUID do Supabase
-      const { data: userData } = await supabase
+      let { data: userData } = await supabase
         .from("users")
-        .select("user_id")
+        .select("id")
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
-      if (!userData?.user_id) {
-        toast.error("Erro ao identificar usuário");
-        setLoading(false);
-        return;
+      // Se o usuário não existe, criar registro
+      if (!userData?.id) {
+        console.log("Usuário não encontrado, criando registro...");
+        const { data: newUser, error: insertError } = await supabase
+          .from("users")
+          .insert({
+            firebase_id: currentUser.uid,
+            email: currentUser.email,
+            name: currentUser.displayName,
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          console.error("Erro ao criar usuário:", insertError);
+          toast.error("Erro ao criar registro de usuário");
+          setLoading(false);
+          return;
+        }
+
+        userData = newUser;
       }
 
       // Salvar no Firestore
@@ -92,7 +111,7 @@ export default function MinhaEmpresa() {
       // Salvar no Supabase
       const { error } = await supabase.from("empresa_info").insert([
         {
-          user_id: userData.user_id,
+          user_id: userData.id,
           nome: empresa.nome,
           telefone: empresa.telefone,
           whatsapp: empresa.whatsapp,
