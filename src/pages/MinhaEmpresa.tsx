@@ -1,12 +1,9 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-
 
 export default function MinhaEmpresa() {
   const navigate = useNavigate();
@@ -22,6 +19,81 @@ export default function MinhaEmpresa() {
   const [estado, setEstado] = useState("");
   const [complemento, setComplemento] = useState("");
   const [loading, setLoading] = useState(false);
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Carregar dados salvos ao montar
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadEmpresaData();
+    }
+  }, [currentUser]);
+
+  const loadEmpresaData = async () => {
+    if (!currentUser?.uid) return;
+
+    try {
+      // Buscar user_id UUID do Supabase
+      let { data: userData } = await supabase
+        .from("users")
+        .select("id")
+        .eq("firebase_id", currentUser.uid)
+        .maybeSingle();
+
+      // Se o usuário não existe, criar registro
+      if (!userData?.id) {
+        console.log("Usuário não encontrado, criando registro...");
+        const { data: newUser, error: insertError } = await supabase
+          .from("users")
+          .insert({
+            firebase_id: currentUser.uid,
+            email: currentUser.email,
+            name: currentUser.displayName,
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          console.error("Erro ao criar usuário:", insertError);
+          return;
+        }
+
+        userData = newUser;
+      }
+
+      setUserId(userData.id);
+
+      // Buscar dados da empresa
+      const { data: empresaData, error } = await supabase
+        .from("empresa_info")
+        .select("*")
+        .eq("user_id", userData.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Erro ao carregar dados da empresa:", error);
+        return;
+      }
+
+      if (empresaData) {
+        setEmpresaId(empresaData.id);
+        setNome(empresaData.nome || "");
+        setTelefone(empresaData.telefone || "");
+        setWhatsapp(empresaData.whatsapp || "");
+        setCep(empresaData.cep || "");
+        setRua(empresaData.rua || "");
+        setNumero(empresaData.numero || "");
+        setBairro(empresaData.bairro || "");
+        setCidade(empresaData.cidade || "");
+        setEstado(empresaData.estado || "");
+        setComplemento(empresaData.complemento || "");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    }
+  };
 
   // 🔍 Busca automática no ViaCEP
   const buscarEndereco = async (cepDigitado: string) => {
@@ -53,10 +125,19 @@ export default function MinhaEmpresa() {
       toast.error("Você precisa estar logado para salvar as informações");
       return;
     }
+
+    if (!userId) {
+      toast.error("Erro ao identificar usuário");
+      return;
+    }
     
     setLoading(true);
 
-    const empresa = {
+    // Montar endereço completo
+    const enderecoCompleto = `${rua}, ${numero} - ${bairro}, ${cidade} - ${estado}, ${cep}`;
+
+    const empresaData = {
+      user_id: userId,
       nome,
       telefone,
       whatsapp,
@@ -67,68 +148,36 @@ export default function MinhaEmpresa() {
       cidade,
       estado,
       complemento,
+      endereco: enderecoCompleto,
       pais: "Brasil",
-      created_at: new Date().toISOString(),
     };
 
     try {
-      // Buscar user_id UUID do Supabase
-      let { data: userData } = await supabase
-        .from("users")
-        .select("id")
-        .eq("firebase_id", currentUser.uid)
-        .maybeSingle();
+      let error;
 
-      // Se o usuário não existe, criar registro
-      if (!userData?.id) {
-        console.log("Usuário não encontrado, criando registro...");
-        const { data: newUser, error: insertError } = await supabase
-          .from("users")
-          .insert({
-            firebase_id: currentUser.uid,
-            email: currentUser.email,
-            name: currentUser.displayName,
-            created_at: new Date().toISOString(),
-            last_sign_in_at: new Date().toISOString(),
-          })
+      if (empresaId) {
+        // Atualizar registro existente
+        const result = await supabase
+          .from("empresa_info")
+          .update(empresaData)
+          .eq("id", empresaId);
+        error = result.error;
+      } else {
+        // Criar novo registro
+        const result = await supabase
+          .from("empresa_info")
+          .insert([empresaData])
           .select("id")
           .single();
-
-        if (insertError) {
-          console.error("Erro ao criar usuário:", insertError);
-          toast.error("Erro ao criar registro de usuário");
-          setLoading(false);
-          return;
+        error = result.error;
+        if (result.data) {
+          setEmpresaId(result.data.id);
         }
-
-        userData = newUser;
       }
-
-      // Salvar no Firestore
-      const docRef = await addDoc(collection(db, "empresa_info"), empresa);
-      console.log("Empresa salva no Firestore, ID:", docRef.id);
-
-      // Salvar no Supabase
-      const { error } = await supabase.from("empresa_info").insert([
-        {
-          user_id: userData.id,
-          nome: empresa.nome,
-          telefone: empresa.telefone,
-          whatsapp: empresa.whatsapp,
-          cep: empresa.cep,
-          rua: empresa.rua,
-          numero: empresa.numero,
-          bairro: empresa.bairro,
-          cidade: empresa.cidade,
-          estado: empresa.estado,
-          complemento: empresa.complemento,
-          pais: empresa.pais,
-        },
-      ]);
 
       if (error) {
         console.error("Erro ao salvar no Supabase:", error);
-        toast.warning("Salvo no Firebase, mas houve erro ao enviar ao Supabase.");
+        toast.error("Erro ao salvar as informações.");
       } else {
         toast.success("Informações salvas com sucesso!");
       }
@@ -228,13 +277,13 @@ export default function MinhaEmpresa() {
 
           <div>
             <label className="block font-medium mb-1 text-gray-700">
-              Número / Complemento
+              Número
             </label>
             <input
               type="text"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
-              placeholder="123, apto 4"
+              placeholder="123"
               className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#fa6500]"
             />
           </div>
