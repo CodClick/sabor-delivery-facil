@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
-import { calculateFreteByCep, getModeloFrete } from "@/services/freteService";
+import { calculateFreteByCep } from "@/services/freteService";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 
@@ -151,6 +151,7 @@ const Checkout = () => {
     if (value.replace(/\D/g, '').length === 8) {
       setCepLoading(true);
       try {
+        // Buscar informações do endereço pelo CEP
         const cepInfo = await fetchAddressByCep(value);
         if (cepInfo) {
           setStreet(cepInfo.street || "");
@@ -159,7 +160,7 @@ const Checkout = () => {
           setState(cepInfo.state || "");
         }
 
-        // Calcular frete se o modelo for por CEP e usuário estiver logado
+        // Calcular frete automaticamente
         if (currentUser) {
           const { data: userData } = await supabase
             .from("users")
@@ -168,41 +169,45 @@ const Checkout = () => {
             .maybeSingle();
 
           if (userData?.user_id) {
-            const modeloFrete = await getModeloFrete(userData.user_id);
-            
-            if (modeloFrete === "cep_distancia") {
-              // Buscar CEP da empresa
-              const { data: empresaData } = await supabase
-                .from("empresa_info")
-                .select("cep")
-                .eq("user_id", userData.user_id)
-                .maybeSingle();
+            // Buscar CEP da empresa
+            const { data: empresaData } = await supabase
+              .from("empresa_info")
+              .select("cep")
+              .eq("user_id", userData.user_id)
+              .maybeSingle();
 
-              if (empresaData?.cep) {
-                try {
-                  const freteData = await calculateFreteByCep(
-                    value,
-                    empresaData.cep,
-                    userData.user_id
-                  );
-                  
-                  setValorFrete(freteData.valorFrete);
-                  setDistanciaKm(freteData.distanciaKm);
-                  
-                  toast({
-                    title: "Frete calculado!",
-                    description: `Distância: ${freteData.distanciaKm.toFixed(2)}km - Frete: ${formatCurrency(freteData.valorFrete)}`,
-                  });
-                } catch (freteError: any) {
-                  console.error("Erro ao calcular frete:", freteError);
-                  toast({
-                    title: "Aviso",
-                    description: freteError.message || "Não foi possível calcular o frete",
-                    variant: "destructive",
-                  });
-                  setValorFrete(0);
-                  setDistanciaKm(null);
+            if (empresaData?.cep) {
+              try {
+                const freteData = await calculateFreteByCep(
+                  value,
+                  empresaData.cep,
+                  userData.user_id
+                );
+                
+                setValorFrete(freteData.valorFrete);
+                setDistanciaKm(freteData.distanciaKm);
+                
+                // Mensagem personalizada baseada na origem do cálculo
+                let descricao = `Frete: ${formatCurrency(freteData.valorFrete)}`;
+                if (freteData.origem === 'cep_especial') {
+                  descricao = `CEP especial - Frete: ${formatCurrency(freteData.valorFrete)}`;
+                } else if (freteData.distanciaKm > 0) {
+                  descricao = `Distância: ${freteData.distanciaKm.toFixed(2)}km - Frete: ${formatCurrency(freteData.valorFrete)}`;
                 }
+                
+                toast({
+                  title: "Frete calculado!",
+                  description: descricao,
+                });
+              } catch (freteError: any) {
+                console.error("Erro ao calcular frete:", freteError);
+                toast({
+                  title: "Aviso",
+                  description: freteError.message || "Não foi possível calcular o frete",
+                  variant: "destructive",
+                });
+                setValorFrete(0);
+                setDistanciaKm(null);
               }
             }
           }
