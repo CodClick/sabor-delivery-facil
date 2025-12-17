@@ -8,6 +8,37 @@ export interface CalculateFreteRequest {
 export interface CalculateFreteResponse {
   distanciaKm: number;
   valorFrete: number;
+  origem: 'cep_especial' | 'webhook_valor' | 'webhook_distancia';
+}
+
+interface WebhookResponse {
+  valor?: number;
+  distancia?: number;
+}
+
+/**
+ * Verifica se o CEP é especial e retorna o valor do frete
+ */
+export async function checkCepEspecial(cep: string): Promise<number | null> {
+  try {
+    const cleanCep = cep.replace(/\D/g, '');
+    
+    const { data, error } = await supabase
+      .from("ceps_especiais")
+      .select("valor")
+      .eq("cep", cleanCep)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao verificar CEP especial:", error);
+      return null;
+    }
+
+    return data?.valor ?? null;
+  } catch (error) {
+    console.error("Erro ao verificar CEP especial:", error);
+    return null;
+  }
 }
 
 /**
@@ -23,7 +54,17 @@ export async function calculateFreteByCep(
     const cleanCepCliente = cepCliente.replace(/\D/g, '');
     const cleanCepEmpresa = cepEmpresa.replace(/\D/g, '');
 
-    // Chamar webhook para obter distância
+    // 1. Verificar se é CEP especial
+    const valorEspecial = await checkCepEspecial(cleanCepCliente);
+    if (valorEspecial !== null) {
+      return {
+        distanciaKm: 0,
+        valorFrete: valorEspecial,
+        origem: 'cep_especial'
+      };
+    }
+
+    // 2. Chamar webhook para obter distância ou valor
     const response = await fetch(
       "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/consulta_cep",
       {
@@ -43,9 +84,21 @@ export async function calculateFreteByCep(
     }
 
     const data = await response.json();
-    const distanciaMetros = data[0]?.distancia || 0;
     
-    // Converter metros para quilômetros
+    // Verificar formato da resposta (pode ser array ou objeto)
+    const webhookData: WebhookResponse = Array.isArray(data) ? data[0] : data;
+
+    // 3. Se veio valor direto do webhook, usar
+    if (webhookData?.valor !== undefined && webhookData.valor !== null) {
+      return {
+        distanciaKm: 0,
+        valorFrete: webhookData.valor,
+        origem: 'webhook_valor'
+      };
+    }
+
+    // 4. Se veio distância, calcular usando faixas_frete
+    const distanciaMetros = webhookData?.distancia || 0;
     const distanciaKm = distanciaMetros / 1000;
 
     // Buscar faixas de frete do usuário
@@ -78,6 +131,7 @@ export async function calculateFreteByCep(
     return {
       distanciaKm,
       valorFrete: faixaCorrespondente.valor,
+      origem: 'webhook_distancia'
     };
   } catch (error) {
     console.error("Erro ao calcular frete por CEP:", error);
