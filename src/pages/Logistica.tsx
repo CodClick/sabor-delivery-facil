@@ -9,6 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface FreteItem {
   id?: string;
@@ -17,14 +25,23 @@ interface FreteItem {
   valor: string;
 }
 
+interface CepEspecialItem {
+  id?: number;
+  cep: string;
+  valor: string;
+}
+
 const Logistica = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingCeps, setLoadingCeps] = useState(false);
   const [modeloFrete, setModeloFrete] = useState<"km_direto" | "cep_distancia">("km_direto");
   const [freteItems, setFreteItems] = useState<FreteItem[]>([
     { km_inicial: "", km_final: "", valor: "" },
   ]);
+  const [cepsEspeciais, setCepsEspeciais] = useState<CepEspecialItem[]>([]);
+  const [newCep, setNewCep] = useState({ cep: "", valor: "" });
 
   useEffect(() => {
     if (!currentUser) {
@@ -32,7 +49,81 @@ const Logistica = () => {
       return;
     }
     loadFreteData();
+    loadCepsEspeciais();
   }, [currentUser]);
+
+  const loadCepsEspeciais = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ceps_especiais")
+        .select("*")
+        .order("cep", { ascending: true });
+
+      if (error) {
+        console.error("Erro ao carregar CEPs especiais:", error);
+        return;
+      }
+
+      if (data) {
+        const items: CepEspecialItem[] = data.map((item) => ({
+          id: item.id,
+          cep: item.cep || "",
+          valor: item.valor?.toString() || "",
+        }));
+        setCepsEspeciais(items);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar CEPs especiais:", error);
+    }
+  };
+
+  const handleAddCepEspecial = async () => {
+    if (!newCep.cep || !newCep.valor) {
+      toast.error("Preencha o CEP e o valor");
+      return;
+    }
+
+    setLoadingCeps(true);
+    try {
+      const { error } = await supabase
+        .from("ceps_especiais")
+        .insert({
+          cep: newCep.cep,
+          valor: parseFloat(newCep.valor),
+        });
+
+      if (error) throw error;
+
+      toast.success("CEP especial adicionado!");
+      setNewCep({ cep: "", valor: "" });
+      loadCepsEspeciais();
+    } catch (error: any) {
+      console.error("Erro ao adicionar CEP especial:", error);
+      toast.error("Erro ao adicionar CEP especial");
+    } finally {
+      setLoadingCeps(false);
+    }
+  };
+
+  const handleRemoveCepEspecial = async (id: number) => {
+    setLoadingCeps(true);
+    try {
+      const { error } = await supabase
+        .from("ceps_especiais")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("CEP especial removido!");
+      loadCepsEspeciais();
+    } catch (error: any) {
+      console.error("Erro ao remover CEP especial:", error);
+      toast.error("Erro ao remover CEP especial");
+    } finally {
+      setLoadingCeps(false);
+    }
+  };
 
   const loadFreteData = async () => {
     if (!currentUser?.uid) return;
@@ -237,7 +328,7 @@ const Logistica = () => {
           Voltar
         </Button>
 
-        <Card>
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle>Configuração de Frete</CardTitle>
           </CardHeader>
@@ -324,6 +415,84 @@ const Logistica = () => {
             <Button onClick={handleSave} disabled={loading} className="w-full">
               {loading ? "Salvando..." : "Salvar Configurações"}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>CEPs Especiais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-sm text-muted-foreground">
+              Configure valores de frete específicos para determinados CEPs.
+            </div>
+
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Label htmlFor="new-cep">CEP</Label>
+                <Input
+                  id="new-cep"
+                  type="text"
+                  value={newCep.cep}
+                  onChange={(e) => setNewCep({ ...newCep, cep: e.target.value })}
+                  placeholder="Ex: 01310-100"
+                />
+              </div>
+
+              <div className="flex-1">
+                <Label htmlFor="new-valor">Valor (R$)</Label>
+                <Input
+                  id="new-valor"
+                  type="number"
+                  step="0.01"
+                  value={newCep.valor}
+                  onChange={(e) => setNewCep({ ...newCep, valor: e.target.value })}
+                  placeholder="Ex: 10.00"
+                />
+              </div>
+
+              <Button
+                onClick={handleAddCepEspecial}
+                disabled={loadingCeps}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar
+              </Button>
+            </div>
+
+            {cepsEspeciais.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>CEP</TableHead>
+                    <TableHead>Valor (R$)</TableHead>
+                    <TableHead className="w-[80px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cepsEspeciais.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.cep}</TableCell>
+                      <TableCell>R$ {parseFloat(item.valor).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => item.id && handleRemoveCepEspecial(item.id)}
+                          disabled={loadingCeps}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum CEP especial cadastrado.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
