@@ -402,6 +402,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ceps_especiais: {
+        Row: {
+          cep: string | null
+          created_at: string
+          id: number
+          valor: number | null
+        }
+        Insert: {
+          cep?: string | null
+          created_at?: string
+          id?: number
+          valor?: number | null
+        }
+        Update: {
+          cep?: string | null
+          created_at?: string
+          id?: number
+          valor?: number | null
+        }
+        Relationships: []
+      }
       chat_status: {
         Row: {
           chat_user: string
