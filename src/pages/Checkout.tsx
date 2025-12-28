@@ -160,57 +160,47 @@ const Checkout = () => {
           setState(cepInfo.state || "");
         }
 
-        // Calcular frete automaticamente
-        if (currentUser) {
-          const { data: userData } = await supabase
-            .from("users")
-            .select("user_id")
-            .eq("firebase_id", currentUser.uid)
+        // Calcular frete automaticamente - buscar primeiro empresa disponível
+        try {
+          // Buscar CEP da empresa (primeira empresa cadastrada)
+          const { data: empresaData } = await supabase
+            .from("empresa_info")
+            .select("cep, user_id")
+            .limit(1)
             .maybeSingle();
 
-          if (userData?.user_id) {
-            // Buscar CEP da empresa
-            const { data: empresaData } = await supabase
-              .from("empresa_info")
-              .select("cep")
-              .eq("user_id", userData.user_id)
-              .maybeSingle();
-
-            if (empresaData?.cep) {
-              try {
-                const freteData = await calculateFreteByCep(
-                  value,
-                  empresaData.cep,
-                  userData.user_id
-                );
-                
-                setValorFrete(freteData.valorFrete);
-                setDistanciaKm(freteData.distanciaKm);
-                
-                // Mensagem personalizada baseada na origem do cálculo
-                let descricao = `Frete: ${formatCurrency(freteData.valorFrete)}`;
-                if (freteData.origem === 'cep_especial') {
-                  descricao = `CEP especial - Frete: ${formatCurrency(freteData.valorFrete)}`;
-                } else if (freteData.distanciaKm > 0) {
-                  descricao = `Distância: ${freteData.distanciaKm.toFixed(2)}km - Frete: ${formatCurrency(freteData.valorFrete)}`;
-                }
-                
-                toast({
-                  title: "Frete calculado!",
-                  description: descricao,
-                });
-              } catch (freteError: any) {
-                console.error("Erro ao calcular frete:", freteError);
-                toast({
-                  title: "Aviso",
-                  description: freteError.message || "Não foi possível calcular o frete",
-                  variant: "destructive",
-                });
-                setValorFrete(0);
-                setDistanciaKm(null);
-              }
+          if (empresaData?.cep && empresaData?.user_id) {
+            const freteData = await calculateFreteByCep(
+              value,
+              empresaData.cep,
+              empresaData.user_id
+            );
+            
+            setValorFrete(freteData.valorFrete);
+            setDistanciaKm(freteData.distanciaKm);
+            
+            // Mensagem personalizada baseada na origem do cálculo
+            let descricao = `Frete: ${formatCurrency(freteData.valorFrete)}`;
+            if (freteData.origem === 'cep_especial') {
+              descricao = `CEP especial - Frete: ${formatCurrency(freteData.valorFrete)}`;
+            } else if (freteData.distanciaKm > 0) {
+              descricao = `Distância: ${freteData.distanciaKm.toFixed(2)}km - Frete: ${formatCurrency(freteData.valorFrete)}`;
             }
+            
+            toast({
+              title: "Frete calculado!",
+              description: descricao,
+            });
           }
+        } catch (freteError: any) {
+          console.error("Erro ao calcular frete:", freteError);
+          toast({
+            title: "Aviso",
+            description: freteError.message || "Não foi possível calcular o frete",
+            variant: "destructive",
+          });
+          setValorFrete(0);
+          setDistanciaKm(null);
         }
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
