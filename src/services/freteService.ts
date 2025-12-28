@@ -66,7 +66,7 @@ export async function calculateFreteByCep(
 
     // 2. Chamar webhook para obter distância ou valor
     const response = await fetch(
-      "https://n8n-n8n-start.yh11mi.easypanel.host/webhook-test/consulta_cep",
+      "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/consulta_cep",
       {
         method: "POST",
         headers: {
