@@ -418,20 +418,31 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-500">
-            {(order as any).discount && (order as any).discount > 0 ? 'Total (com desconto)' : 'Total'}
+            {((order as any).discount && (order as any).discount > 0) || (order.frete && order.frete > 0) ? 'Resumo' : 'Total'}
           </h3>
           <div className="mt-1 space-y-1">
-            {(order as any).discount && (order as any).discount > 0 && (
-              <>
-                <p className="text-sm text-gray-600">
-                  Subtotal: R$ {((order.total + (order as any).discount)).toFixed(2)}
-                </p>
-                <p className="text-sm text-green-600">
-                  Desconto ({(order as any).couponCode}): - R$ {((order as any).discount).toFixed(2)}
-                </p>
-              </>
+            {/* Subtotal dos itens (sem desconto e sem frete) */}
+            {(((order as any).discount && (order as any).discount > 0) || (order.frete && order.frete > 0)) && (
+              <p className="text-sm text-gray-600">
+                Subtotal: R$ {(order.subtotal || (order.total + ((order as any).discount || 0) - (order.frete || 0))).toFixed(2)}
+              </p>
             )}
-            <p className="font-semibold text-lg">R$ {order.total.toFixed(2)}</p>
+            
+            {/* Desconto */}
+            {(order as any).discount && (order as any).discount > 0 && (
+              <p className="text-sm text-green-600">
+                Desconto ({(order as any).couponCode}): - R$ {((order as any).discount).toFixed(2)}
+              </p>
+            )}
+            
+            {/* Frete */}
+            {order.frete && order.frete > 0 && (
+              <p className="text-sm text-blue-600">
+                Frete: + R$ {order.frete.toFixed(2)}
+              </p>
+            )}
+            
+            <p className="font-semibold text-lg">Total: R$ {order.total.toFixed(2)}</p>
           </div>
         </div>
         <div>
@@ -567,6 +578,31 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
             ))}
           </TableBody>
           <TableFooter>
+            {/* Subtotal */}
+            {(order.frete && order.frete > 0) && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-right text-gray-600">
+                  Subtotal
+                </TableCell>
+                <TableCell className="text-gray-600">
+                  R$ {(order.subtotal || (order.total - order.frete)).toFixed(2)}
+                </TableCell>
+              </TableRow>
+            )}
+            
+            {/* Frete */}
+            {order.frete && order.frete > 0 && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-right text-blue-600">
+                  Frete
+                </TableCell>
+                <TableCell className="text-blue-600">
+                  + R$ {order.frete.toFixed(2)}
+                </TableCell>
+              </TableRow>
+            )}
+            
+            {/* Total */}
             <TableRow>
               <TableCell colSpan={3} className="text-right font-semibold">
                 Total
