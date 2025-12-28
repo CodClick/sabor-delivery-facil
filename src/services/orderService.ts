@@ -140,7 +140,9 @@ export const createOrder = async (
       observations: orderData.observations || "",
       items: orderItems,
       status: "pending",
-      total: orderData.total || total, // 🔥 usa o total com desconto do checkout ou calcula
+      subtotal: orderData.subtotal || total, // Subtotal sem frete
+      frete: orderData.frete || 0, // Valor do frete
+      total: orderData.total || total, // Total com desconto e frete aplicados
       discount: orderData.discount || 0,
       couponCode: orderData.couponCode || null,
       createdAt: new Date(),

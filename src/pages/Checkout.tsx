@@ -270,6 +270,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       paymentMethod,
       observations,
       items: itemsWithSubtotal,
+      subtotal: finalTotal, // Subtotal com desconto mas sem frete
+      frete: valorFrete, // Valor do frete
       total: totalComFrete, // Total com desconto e frete aplicados
       discount: discountAmount,
       couponCode: appliedCoupon?.nome || null,

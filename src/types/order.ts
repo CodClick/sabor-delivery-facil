@@ -36,6 +36,10 @@ export interface Order {
   status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid";
   paymentStatus?: "a_receber" | "recebido";
   total: number;
+  subtotal?: number;
+  frete?: number;
+  discount?: number;
+  couponCode?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   cancellationReason?: string;
@@ -59,8 +63,10 @@ export interface CreateOrderRequest {
     combination?: any;
   }[];
   total?: number;
+  subtotal?: number;
+  frete?: number;
   discount?: number;
-  couponCode?: string;
+  couponCode?: string | null;
 }
 
 export interface UpdateOrderRequest {
