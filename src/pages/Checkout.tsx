@@ -685,7 +685,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 
                 {valorFrete > 0 && (
                   <div className="flex justify-between text-md">
-                    <span>Frete {distanciaKm ? `(${distanciaKm.toFixed(2)}km)` : ''}:</span>
+                    <span>Frete:</span>
                     <span>R$ {valorFrete.toFixed(2)}</span>
                   </div>
                 )}
