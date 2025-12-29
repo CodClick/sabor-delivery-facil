@@ -84,32 +84,45 @@ export async function calculateFreteByCep(
     }
 
     const rawData = await response.json();
-    
+
     console.log("Resposta bruta do webhook consulta_cep:", JSON.stringify(rawData));
-    
-    // Se for array, pegar o primeiro elemento
-    const data = Array.isArray(rawData) ? rawData[0] : rawData;
-    
-    console.log("Data após verificar array:", JSON.stringify(data));
-    
+
+    const first = Array.isArray(rawData) ? rawData[0] : rawData;
+    // n8n pode responder no formato: [{ json: { ... } }]
+    const data =
+      first && typeof first === "object" && (first as any).json
+        ? (first as any).json
+        : first;
+
+    console.log("Data normalizada do webhook consulta_cep:", JSON.stringify(data));
+
     // Extrair distância do formato Google Maps Distance Matrix API
     let distanciaMetros = 0;
     let valorDireto: number | null = null;
-    
+
     // Verificar se é formato Google Maps Distance Matrix
-    if (data?.rows?.[0]?.elements?.[0]?.distance?.value) {
-      distanciaMetros = data.rows[0].elements[0].distance.value;
+    const dmDistanceValue = data?.rows?.[0]?.elements?.[0]?.distance?.value;
+    if (dmDistanceValue !== undefined && dmDistanceValue !== null) {
+      distanciaMetros = Number(dmDistanceValue);
       console.log("Distância extraída do Google Maps:", distanciaMetros, "metros");
-    } 
+    }
     // Formato simples com valor direto
     else if (data?.valor !== undefined && data.valor !== null) {
-      valorDireto = data.valor;
+      valorDireto = Number(data.valor);
     }
     // Formato simples com distância
-    else if (data?.distancia !== undefined) {
-      distanciaMetros = data.distancia;
+    else if (data?.distancia !== undefined && data.distancia !== null) {
+      distanciaMetros = Number(data.distancia);
     }
 
+    const hasDistanceOrValue =
+      (dmDistanceValue !== undefined && dmDistanceValue !== null) ||
+      (data?.distancia !== undefined && data.distancia !== null) ||
+      (data?.valor !== undefined && data.valor !== null);
+
+    if (!hasDistanceOrValue) {
+      throw new Error("Resposta do webhook inválida: não retornou distância nem valor");
+    }
     // Se veio valor direto, usar
     if (valorDireto !== null) {
       console.log("Usando valor direto do webhook:", valorDireto);
