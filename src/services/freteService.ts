@@ -85,11 +85,16 @@ export async function calculateFreteByCep(
 
     const data = await response.json();
     
+    console.log("Resposta bruta do webhook consulta_cep:", JSON.stringify(data));
+    
     // Verificar formato da resposta (pode ser array ou objeto)
     const webhookData: WebhookResponse = Array.isArray(data) ? data[0] : data;
+    
+    console.log("webhookData processado:", JSON.stringify(webhookData));
 
     // 3. Se veio valor direto do webhook, usar
     if (webhookData?.valor !== undefined && webhookData.valor !== null) {
+      console.log("Usando valor direto do webhook:", webhookData.valor);
       return {
         distanciaKm: 0,
         valorFrete: webhookData.valor,
@@ -100,6 +105,8 @@ export async function calculateFreteByCep(
     // 4. Se veio distância, calcular usando faixas_frete
     const distanciaMetros = webhookData?.distancia || 0;
     const distanciaKm = distanciaMetros / 1000;
+    
+    console.log("Distância em metros:", distanciaMetros, "| Em km:", distanciaKm);
 
     // Buscar faixas de frete do usuário
     const { data: faixas, error } = await supabase
