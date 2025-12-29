@@ -157,8 +157,15 @@ const Checkout = () => {
 
   const calculateFreteForCep = async (cepValue: string) => {
     const cleanCep = cepValue.replace(/\D/g, "");
-    if (cleanCep.length !== 8) return;
+    console.log("calculateFreteForCep chamado com CEP:", cepValue, "| limpo:", cleanCep);
+    
+    if (cleanCep.length !== 8) {
+      console.log("CEP inválido, saindo...");
+      return;
+    }
 
+    console.log("Buscando dados da empresa...");
+    
     // Buscar CEP da empresa (primeira empresa cadastrada)
     const { data: empresaData, error: empresaError } = await supabase
       .from("empresa_info")
@@ -166,19 +173,31 @@ const Checkout = () => {
       .limit(1)
       .maybeSingle();
 
+    console.log("empresa_info resultado:", { empresaData, empresaError });
+
     if (empresaError) {
+      console.error("Erro ao buscar empresa:", empresaError);
       throw empresaError;
     }
 
     if (!empresaData?.cep || !empresaData?.user_id) {
+      console.error("Empresa sem CEP ou user_id:", empresaData);
       throw new Error("Empresa sem CEP configurado para cálculo de frete");
     }
+
+    console.log("Chamando calculateFreteByCep com:", {
+      cepCliente: cepValue,
+      cepEmpresa: empresaData.cep,
+      userId: empresaData.user_id
+    });
 
     const freteData = await calculateFreteByCep(
       cepValue,
       empresaData.cep,
       empresaData.user_id
     );
+
+    console.log("Resultado do frete:", freteData);
 
     setValorFrete(freteData.valorFrete);
     setDistanciaKm(freteData.distanciaKm);
