@@ -87,23 +87,45 @@ export async function calculateFreteByCep(
     
     console.log("Resposta bruta do webhook consulta_cep:", JSON.stringify(data));
     
-    // Verificar formato da resposta (pode ser array ou objeto)
-    const webhookData: WebhookResponse = Array.isArray(data) ? data[0] : data;
+    // Extrair distância do formato Google Maps Distance Matrix API
+    let distanciaMetros = 0;
+    let valorDireto: number | null = null;
     
-    console.log("webhookData processado:", JSON.stringify(webhookData));
+    // Verificar se é formato Google Maps Distance Matrix
+    if (data?.rows?.[0]?.elements?.[0]?.distance?.value) {
+      distanciaMetros = data.rows[0].elements[0].distance.value;
+      console.log("Distância extraída do Google Maps:", distanciaMetros, "metros");
+    } 
+    // Formato simples com valor direto
+    else if (data?.valor !== undefined && data.valor !== null) {
+      valorDireto = data.valor;
+    }
+    // Formato array
+    else if (Array.isArray(data) && data[0]) {
+      if (data[0].rows?.[0]?.elements?.[0]?.distance?.value) {
+        distanciaMetros = data[0].rows[0].elements[0].distance.value;
+      } else if (data[0].valor !== undefined) {
+        valorDireto = data[0].valor;
+      } else if (data[0].distancia !== undefined) {
+        distanciaMetros = data[0].distancia;
+      }
+    }
+    // Formato simples com distância
+    else if (data?.distancia !== undefined) {
+      distanciaMetros = data.distancia;
+    }
 
-    // 3. Se veio valor direto do webhook, usar
-    if (webhookData?.valor !== undefined && webhookData.valor !== null) {
-      console.log("Usando valor direto do webhook:", webhookData.valor);
+    // Se veio valor direto, usar
+    if (valorDireto !== null) {
+      console.log("Usando valor direto do webhook:", valorDireto);
       return {
         distanciaKm: 0,
-        valorFrete: webhookData.valor,
+        valorFrete: valorDireto,
         origem: 'webhook_valor'
       };
     }
 
-    // 4. Se veio distância, calcular usando faixas_frete
-    const distanciaMetros = webhookData?.distancia || 0;
+    // Calcular usando faixas_frete
     const distanciaKm = distanciaMetros / 1000;
     
     console.log("Distância em metros:", distanciaMetros, "| Em km:", distanciaKm);
