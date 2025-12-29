@@ -83,9 +83,14 @@ export async function calculateFreteByCep(
       throw new Error("Erro ao consultar distância entre CEPs");
     }
 
-    const data = await response.json();
+    const rawData = await response.json();
     
-    console.log("Resposta bruta do webhook consulta_cep:", JSON.stringify(data));
+    console.log("Resposta bruta do webhook consulta_cep:", JSON.stringify(rawData));
+    
+    // Se for array, pegar o primeiro elemento
+    const data = Array.isArray(rawData) ? rawData[0] : rawData;
+    
+    console.log("Data após verificar array:", JSON.stringify(data));
     
     // Extrair distância do formato Google Maps Distance Matrix API
     let distanciaMetros = 0;
@@ -99,16 +104,6 @@ export async function calculateFreteByCep(
     // Formato simples com valor direto
     else if (data?.valor !== undefined && data.valor !== null) {
       valorDireto = data.valor;
-    }
-    // Formato array
-    else if (Array.isArray(data) && data[0]) {
-      if (data[0].rows?.[0]?.elements?.[0]?.distance?.value) {
-        distanciaMetros = data[0].rows[0].elements[0].distance.value;
-      } else if (data[0].valor !== undefined) {
-        valorDireto = data[0].valor;
-      } else if (data[0].distancia !== undefined) {
-        distanciaMetros = data[0].distancia;
-      }
     }
     // Formato simples com distância
     else if (data?.distancia !== undefined) {
