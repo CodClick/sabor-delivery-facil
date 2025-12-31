@@ -26,6 +26,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import AdminCupons from "@/pages/AdminCupons";
 import MinhaEmpresa from "@/pages/MinhaEmpresa";
 import Logistica from "@/pages/Logistica";
+import MeusPedidos from "./pages/MeusPedidos";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const AppRoutes = () => (
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/checkout" element={<Checkout />} />
+      <Route path="/meus-pedidos" element={<MeusPedidos />} />
       <Route path="/ChatAssistant" element={<ChatAssistant />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/admin-dashboard" element={
