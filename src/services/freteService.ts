@@ -121,7 +121,7 @@ export async function calculateFreteByCep(
       (data?.valor !== undefined && data.valor !== null);
 
     if (!hasDistanceOrValue) {
-      throw new Error("Não foi possível encontrar esse cep em nosso banco de dados.\nPor favor, tente novamente");
+      throw new Error("Não foi possível encontrar esse cep em nosso banco de dados. \n Por favor, tente novamente");
     }
     // Se veio valor direto, usar
     if (valorDireto !== null) {
