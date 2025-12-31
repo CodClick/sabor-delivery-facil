@@ -121,7 +121,7 @@ export async function calculateFreteByCep(
       (data?.valor !== undefined && data.valor !== null);
 
     if (!hasDistanceOrValue) {
-      throw new Error("Resposta do webhook inválida: não retornou distância nem valor");
+      throw new Error("Não foi possível encontrar esse cep em nosso banco de dados. Por favor, tente novamente");
     }
     // Se veio valor direto, usar
     if (valorDireto !== null) {
