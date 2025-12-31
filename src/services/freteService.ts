@@ -161,7 +161,7 @@ export async function calculateFreteByCep(
 
     if (!faixaCorrespondente) {
       throw new Error(
-        `Distância de ${distanciaKm.toFixed(2)}km fora das faixas de entrega configuradas`
+        `Desculpe. A sua localidade não é atendida por nosso delivery`
       );
     }
 
