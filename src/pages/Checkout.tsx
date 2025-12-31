@@ -40,6 +40,7 @@ const Checkout = () => {
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [valorFrete, setValorFrete] = useState<number>(0);
   const [distanciaKm, setDistanciaKm] = useState<number | null>(null);
+  const [freteError, setFreteError] = useState<string | null>(null);
 
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
@@ -104,7 +105,20 @@ const Checkout = () => {
 
         // Recalcular frete quando o CEP vem preenchido automaticamente
         if (customerData.cep && customerData.cep.replace(/\D/g, "").length === 8) {
-          void calculateFreteForCep(customerData.cep);
+          try {
+            await calculateFreteForCep(customerData.cep);
+          } catch (freteErr: any) {
+            console.error("Erro ao calcular frete automaticamente:", freteErr);
+            const errorMsg = freteErr.message || "Não foi possível calcular o frete";
+            setFreteError(errorMsg);
+            toast({
+              title: "Aviso",
+              description: errorMsg,
+              variant: "destructive",
+            });
+            setValorFrete(0);
+            setDistanciaKm(null);
+          }
         }
         
         toast({
@@ -139,7 +153,20 @@ const Checkout = () => {
 
           // Recalcular frete quando o CEP é preenchido via busca pelo telefone
           if (customerData.cep && customerData.cep.replace(/\D/g, "").length === 8) {
-            void calculateFreteForCep(customerData.cep);
+            try {
+              await calculateFreteForCep(customerData.cep);
+            } catch (freteErr: any) {
+              console.error("Erro ao calcular frete pelo telefone:", freteErr);
+              const errorMsg = freteErr.message || "Não foi possível calcular o frete";
+              setFreteError(errorMsg);
+              toast({
+                title: "Aviso",
+                description: errorMsg,
+                variant: "destructive",
+              });
+              setValorFrete(0);
+              setDistanciaKm(null);
+            }
           }
           
           toast({
@@ -163,6 +190,9 @@ const Checkout = () => {
       console.log("CEP inválido, saindo...");
       return;
     }
+
+    // Limpar erro anterior
+    setFreteError(null);
 
     console.log("Buscando dados da empresa...");
     
@@ -248,11 +278,13 @@ const Checkout = () => {
 
       try {
         await calculateFreteForCep(value);
-      } catch (freteError: any) {
-        console.error("Erro ao calcular frete:", freteError);
+      } catch (freteErr: any) {
+        console.error("Erro ao calcular frete:", freteErr);
+        const errorMsg = freteErr.message || "Não foi possível calcular o frete";
+        setFreteError(errorMsg);
         toast({
           title: "Aviso",
-          description: freteError.message || "Não foi possível calcular o frete",
+          description: errorMsg,
           variant: "destructive",
         });
         setValorFrete(0);
@@ -531,7 +563,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              {freteError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm text-center">
+                  {freteError}
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isLoading || !!freteError}>
                 {isLoading ? "Processando..." : `Finalizar Pedido - ${formatCurrency(finalTotal + valorFrete)}`}
               </Button>
             </form>
