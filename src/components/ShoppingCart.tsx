@@ -69,7 +69,7 @@ const ShoppingCart: React.FC = () => {
       const { data: cupom, error } = await supabase
         .from("cupons" as any)
         .select("*")
-        .eq("nome", couponCode.trim())
+        .ilike("nome", couponCode.trim())
         .maybeSingle();
 
       if (error || !cupom) {
