@@ -6,7 +6,7 @@ import RestaurantHeader from "@/components/RestaurantHeader";
 import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, LogIn, LogOut } from "lucide-react";
+import { ShoppingCart, LogIn, LogOut, ClipboardList } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -81,9 +81,19 @@ const Index = () => {
     <div>
       <RestaurantHeader />
       
-      {/* Header com botão de login/logout */}
+      {/* Header com botão de login/logout e meus pedidos */}
       <div className="bg-background border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-end">
+        <div className="container mx-auto px-4 py-4 flex justify-end gap-2">
+          {currentUser && (
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/meus-pedidos")}
+              className="flex items-center gap-2"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Meus Pedidos
+            </Button>
+          )}
           {currentUser ? (
             <Button 
               variant="outline" 
