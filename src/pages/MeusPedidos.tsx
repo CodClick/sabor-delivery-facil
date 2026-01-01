@@ -69,10 +69,19 @@ const MeusPedidos = () => {
 
         if (phone) {
           const userOrders = await getOrdersByPhone(phone);
-          // Filtrar apenas pedidos ativos (não entregues ou cancelados)
-          const activeOrders = userOrders.filter(
-            (order) => !["delivered", "cancelled"].includes(order.status)
-          );
+          
+          // Filtrar apenas pedidos do dia e não finalizados
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const activeOrders = userOrders.filter((order) => {
+            const orderDate = new Date(order.createdAt);
+            orderDate.setHours(0, 0, 0, 0);
+            const isToday = orderDate.getTime() === today.getTime();
+            const isActive = !["delivered", "cancelled"].includes(order.status);
+            return isToday && isActive;
+          });
+          
           setOrders(activeOrders);
         }
       } catch (error) {
