@@ -6,7 +6,8 @@ import RestaurantHeader from "@/components/RestaurantHeader";
 import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, LogIn, LogOut, ClipboardList } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ShoppingCart, LogIn, LogOut, ClipboardList, Search, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +16,7 @@ const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const { itemCount, isCartOpen, setIsCartOpen } = useCart();
   const { currentUser, logOut } = useAuth();
   const navigate = useNavigate();
@@ -36,14 +38,16 @@ const Index = () => {
     loadCategories();
   }, []);
 
-  // Filtrar e ordenar itens por categoria
-  const filteredItems = activeCategory === "all" 
-    ? menuItems 
-    : menuItems
-        .filter(item => item.category === activeCategory)
-        .sort((a, b) =>
-          a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
-        );
+  // Filtrar itens por busca e categoria
+  const filteredItems = menuItems.filter(item => {
+    const matchesSearch = searchTerm === "" || 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+    
+    return matchesSearch && matchesCategory;
+  }).sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }));
 
   // Agrupar e ordenar itens por categoria para exibição
   const groupedItems = categories.reduce((acc, category) => {
@@ -121,6 +125,28 @@ const Index = () => {
         activeCategory={activeCategory}
         onSelectCategory={setActiveCategory}
       />
+
+      {/* Campo de busca */}
+      <div className="container mx-auto px-4 pt-6">
+        <div className="relative max-w-md mx-auto">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Buscar por nome ou ingredientes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
       
       <div className="container mx-auto px-4 py-8">
         {activeCategory === "all" ? (
