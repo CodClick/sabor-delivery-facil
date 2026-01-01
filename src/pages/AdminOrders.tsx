@@ -77,74 +77,81 @@ const AdminOrders = () => {
   };
 
   useEffect(() => {
-    loadOrders(activeStatus, dateRange);
-
-    if (dateRange?.from) {
-      const start = new Date(dateRange.from);
-      start.setHours(0, 0, 0, 0);
-
-      const end = new Date(dateRange.to || dateRange.from);
-      end.setHours(23, 59, 59, 999);
-
-      const startTimestamp = Timestamp.fromDate(start);
-      const endTimestamp = Timestamp.fromDate(end);
-
-      const ordersRef = collection(db, "orders");
-      const ordersQuery = query(
-        ordersRef,
-        where("createdAt", ">=", startTimestamp),
-        where("createdAt", "<=", endTimestamp),
-        orderBy("createdAt", "desc")
-      );
-
-      const unsubscribe = onSnapshot(
-        ordersQuery,
-        (snapshot) => {
-          // Atualiza sempre a lista completa
-          const newOrders: Order[] = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              createdAt: data.createdAt?.toDate?.().toISOString() || data.createdAt,
-            } as Order;
-          });
-
-          // Aplicar filtro de status se não for "all"
-          const filteredOrders = activeStatus === "all" 
-            ? newOrders 
-            : newOrders.filter(order => order.status === activeStatus);
-
-          setOrders(filteredOrders);
-
-          // Mostrar toast para novos pedidos recentes
-          snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const data = change.doc.data();
-              const createdAt = data.createdAt?.toDate() || new Date();
-              const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
-
-              if (isRecent && data.status === "pending") {
-                toast({
-                  title: "Novo pedido recebido!",
-                  description: `Cliente: ${data.customerName}`,
-                });
-              }
-            }
-          });
-        },
-        (err) => {
-          console.error("Erro no listener:", err);
-          toast({
-            title: "Erro",
-            description: "Não foi possível monitorar novos pedidos.",
-            variant: "destructive",
-          });
-        }
-      );
-
-      return () => unsubscribe();
+    if (!dateRange?.from) {
+      setOrders([]);
+      setLoading(false);
+      return;
     }
+
+    setLoading(true);
+    setError(null);
+
+    const start = new Date(dateRange.from);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(dateRange.to || dateRange.from);
+    end.setHours(23, 59, 59, 999);
+
+    const startTimestamp = Timestamp.fromDate(start);
+    const endTimestamp = Timestamp.fromDate(end);
+
+    const ordersRef = collection(db, "orders");
+    const ordersQuery = query(
+      ordersRef,
+      where("createdAt", ">=", startTimestamp),
+      where("createdAt", "<=", endTimestamp),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        const newOrders: Order[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.().toISOString() || data.createdAt,
+          } as Order;
+        });
+
+        // Aplicar filtro de status se não for "all"
+        const filteredOrders = activeStatus === "all" 
+          ? newOrders 
+          : newOrders.filter(order => order.status === activeStatus);
+
+        setOrders(filteredOrders);
+        setLoading(false);
+
+        // Mostrar toast para novos pedidos recentes
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const data = change.doc.data();
+            const createdAt = data.createdAt?.toDate() || new Date();
+            const isRecent = (new Date().getTime() - createdAt.getTime()) < 10000;
+
+            if (isRecent && data.status === "pending") {
+              toast({
+                title: "Novo pedido recebido!",
+                description: `Cliente: ${data.customerName}`,
+              });
+            }
+          }
+        });
+      },
+      (err) => {
+        console.error("Erro no listener:", err);
+        setError("Não foi possível carregar os pedidos. Tente novamente.");
+        setLoading(false);
+        toast({
+          title: "Erro",
+          description: "Não foi possível monitorar novos pedidos.",
+          variant: "destructive",
+        });
+      }
+    );
+
+    return () => unsubscribe();
   }, [activeStatus, dateRange, toast]);
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
