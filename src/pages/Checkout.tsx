@@ -1,5 +1,5 @@
 //checkout.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,8 @@ const Checkout = () => {
   const [valorFrete, setValorFrete] = useState<number>(0);
   const [distanciaKm, setDistanciaKm] = useState<number | null>(null);
   const [freteError, setFreteError] = useState<string | null>(null);
+  
+  const numberInputRef = useRef<HTMLInputElement>(null);
 
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
@@ -256,6 +258,9 @@ const Checkout = () => {
       return;
     }
 
+    // Limpar número e focar no campo quando um novo CEP válido for inserido
+    setNumber("");
+
     setCepLoading(true);
     try {
       // Buscar informações do endereço pelo CEP (se falhar, ainda tentamos calcular o frete)
@@ -266,6 +271,11 @@ const Checkout = () => {
           setNeighborhood(cepInfo.neighborhood || "");
           setCity(cepInfo.city || "");
           setState(cepInfo.state || "");
+          
+          // Focar no campo de número após buscar o endereço
+          setTimeout(() => {
+            numberInputRef.current?.focus();
+          }, 100);
         }
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
@@ -495,6 +505,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <Label htmlFor="number">Número</Label>
                   <Input
                     id="number"
+                    ref={numberInputRef}
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
                     required
