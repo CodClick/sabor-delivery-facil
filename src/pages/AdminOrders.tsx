@@ -110,7 +110,12 @@ const AdminOrders = () => {
             } as Order;
           });
 
-          setOrders(newOrders);
+          // Aplicar filtro de status se não for "all"
+          const filteredOrders = activeStatus === "all" 
+            ? newOrders 
+            : newOrders.filter(order => order.status === activeStatus);
+
+          setOrders(filteredOrders);
 
           // Mostrar toast para novos pedidos recentes
           snapshot.docChanges().forEach((change) => {
