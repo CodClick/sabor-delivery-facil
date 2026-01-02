@@ -4,9 +4,9 @@ export interface FidelidadeRegra {
   id: string;
   nome: string;
   descricao: string | null;
-  criterio: "compras" | "valor";
+  criterio: "quantidade_compras" | "valor_gasto";
   meta: number;
-  premio_tipo: string;
+  premio_tipo: "cupom" | "produto";
   premio_id: string | null;
   ativo: boolean;
   criado_em: string | null;
@@ -35,7 +35,8 @@ export const getFidelidadeRegras = async (): Promise<FidelidadeRegra[]> => {
 
   return (data || []).map((regra) => ({
     ...regra,
-    criterio: regra.criterio as "compras" | "valor",
+    criterio: regra.criterio as "quantidade_compras" | "valor_gasto",
+    premio_tipo: regra.premio_tipo as "cupom" | "produto",
     ativo: regra.ativo ?? true,
   }));
 };
@@ -54,7 +55,8 @@ export const getRegrasAtivas = async (): Promise<FidelidadeRegra[]> => {
 
   return (data || []).map((regra) => ({
     ...regra,
-    criterio: regra.criterio as "compras" | "valor",
+    criterio: regra.criterio as "quantidade_compras" | "valor_gasto",
+    premio_tipo: regra.premio_tipo as "cupom" | "produto",
     ativo: regra.ativo ?? true,
   }));
 };
@@ -84,7 +86,8 @@ export const createFidelidadeRegra = async (
 
   return {
     ...data,
-    criterio: data.criterio as "compras" | "valor",
+    criterio: data.criterio as "quantidade_compras" | "valor_gasto",
+    premio_tipo: data.premio_tipo as "cupom" | "produto",
     ativo: data.ativo ?? true,
   };
 };
@@ -116,7 +119,8 @@ export const updateFidelidadeRegra = async (
 
   return {
     ...data,
-    criterio: data.criterio as "compras" | "valor",
+    criterio: data.criterio as "quantidade_compras" | "valor_gasto",
+    premio_tipo: data.premio_tipo as "cupom" | "produto",
     ativo: data.ativo ?? true,
   };
 };
@@ -147,9 +151,9 @@ export const verificarFidelidade = async (
     for (const regra of regrasAtivas) {
       let atingiuMeta = false;
 
-      if (regra.criterio === "compras" && totalCompras >= regra.meta) {
+      if (regra.criterio === "quantidade_compras" && totalCompras >= regra.meta) {
         atingiuMeta = true;
-      } else if (regra.criterio === "valor" && totalGasto >= regra.meta) {
+      } else if (regra.criterio === "valor_gasto" && totalGasto >= regra.meta) {
         atingiuMeta = true;
       }
 

@@ -56,9 +56,9 @@ const Fidelidade = () => {
   const [formData, setFormData] = useState({
     nome: "",
     descricao: "",
-    criterio: "compras" as "compras" | "valor",
+    criterio: "quantidade_compras" as "quantidade_compras" | "valor_gasto",
     meta: 0,
-    premio_tipo: "",
+    premio_tipo: "cupom" as "cupom" | "produto",
     ativo: true,
   });
 
@@ -103,9 +103,9 @@ const Fidelidade = () => {
       setFormData({
         nome: "",
         descricao: "",
-        criterio: "compras",
+        criterio: "quantidade_compras",
         meta: 0,
-        premio_tipo: "",
+        premio_tipo: "cupom",
         ativo: true,
       });
     }
@@ -249,7 +249,7 @@ const Fidelidade = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {regra.criterio === "compras" ? (
+                        {regra.criterio === "quantidade_compras" ? (
                           <>
                             <ShoppingCart className="h-4 w-4 text-blue-500" />
                             <span>Nº de Compras</span>
@@ -263,7 +263,7 @@ const Fidelidade = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {regra.criterio === "compras"
+                      {regra.criterio === "quantidade_compras"
                         ? `${regra.meta} compras`
                         : `R$ ${regra.meta.toFixed(2)}`}
                     </TableCell>
@@ -340,7 +340,7 @@ const Fidelidade = () => {
               <Label>Critério *</Label>
               <Select
                 value={formData.criterio}
-                onValueChange={(value: "compras" | "valor") =>
+                onValueChange={(value: "quantidade_compras" | "valor_gasto") =>
                   setFormData({ ...formData, criterio: value })
                 }
               >
@@ -348,13 +348,13 @@ const Fidelidade = () => {
                   <SelectValue placeholder="Selecione o critério" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="compras">
+                  <SelectItem value="quantidade_compras">
                     <div className="flex items-center gap-2">
                       <ShoppingCart className="h-4 w-4" />
                       Número de Compras
                     </div>
                   </SelectItem>
-                  <SelectItem value="valor">
+                  <SelectItem value="valor_gasto">
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
                       Valor Total Gasto
@@ -366,29 +366,37 @@ const Fidelidade = () => {
 
             <div className="space-y-2">
               <Label htmlFor="meta">
-                Meta * {formData.criterio === "compras" ? "(quantidade)" : "(R$)"}
+                Meta * {formData.criterio === "quantidade_compras" ? "(quantidade)" : "(R$)"}
               </Label>
               <Input
                 id="meta"
                 type="number"
                 min="1"
-                step={formData.criterio === "valor" ? "0.01" : "1"}
+                step={formData.criterio === "valor_gasto" ? "0.01" : "1"}
                 value={formData.meta}
                 onChange={(e) =>
                   setFormData({ ...formData, meta: parseFloat(e.target.value) || 0 })
                 }
-                placeholder={formData.criterio === "compras" ? "Ex: 10" : "Ex: 500.00"}
+                placeholder={formData.criterio === "quantidade_compras" ? "Ex: 10" : "Ex: 500.00"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="premio_tipo">Recompensa *</Label>
-              <Input
-                id="premio_tipo"
+              <Label>Tipo de Recompensa *</Label>
+              <Select
                 value={formData.premio_tipo}
-                onChange={(e) => setFormData({ ...formData, premio_tipo: e.target.value })}
-                placeholder="Ex: 10% de desconto, Sobremesa grátis"
-              />
+                onValueChange={(value: "cupom" | "produto") =>
+                  setFormData({ ...formData, premio_tipo: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cupom">Cupom de Desconto</SelectItem>
+                  <SelectItem value="produto">Produto Grátis</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center justify-between">
