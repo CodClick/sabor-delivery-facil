@@ -27,6 +27,7 @@ import AdminCupons from "@/pages/AdminCupons";
 import MinhaEmpresa from "@/pages/MinhaEmpresa";
 import Logistica from "@/pages/Logistica";
 import MeusPedidos from "./pages/MeusPedidos";
+import Fidelidade from "./pages/Fidelidade";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,11 @@ const AppRoutes = () => (
       <Route path="/logistica" element={
         <AdminRoute>
           <Logistica />
+        </AdminRoute>
+      } />
+      <Route path="/fidelidade" element={
+        <AdminRoute>
+          <Fidelidade />
         </AdminRoute>
       } />
       

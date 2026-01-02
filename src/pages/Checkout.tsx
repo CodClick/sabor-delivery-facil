@@ -16,6 +16,7 @@ import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 import { calculateFreteByCep } from "@/services/freteService";
 import { supabase } from "@/integrations/supabase/client";
+import { verificarFidelidade, getClienteHistorico } from "@/services/fidelidadeService";
 import { formatCurrency } from "@/lib/utils";
 
 const Checkout = () => {
@@ -404,6 +405,23 @@ const handleSubmit = async (e: React.FormEvent) => {
       city,
       state,
     });
+
+    // Verificar programa de fidelidade
+    try {
+      const historico = await getClienteHistorico(customerPhone);
+      const novoTotalCompras = historico.totalCompras + 1;
+      const novoTotalGasto = historico.totalGasto + (finalTotal + valorFrete);
+      
+      await verificarFidelidade(
+        customerName,
+        customerPhone,
+        novoTotalCompras,
+        novoTotalGasto
+      );
+    } catch (fidelidadeError) {
+      console.error("Erro ao verificar fidelidade:", fidelidadeError);
+      // Não bloqueia o fluxo do pedido
+    }
 
     clearCart();
 
