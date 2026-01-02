@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { ClipboardList, Settings, LogOut, Calculator, Bike, Percent, Building2, Truck } from "lucide-react";
+import { ClipboardList, Settings, LogOut, Calculator, Bike, Percent, Building2, Truck, Gift } from "lucide-react";
 
 const AdminDashboard = () => {
   const { currentUser, logOut } = useAuth();
@@ -148,6 +148,23 @@ const AdminDashboard = () => {
           <CardContent>
             <Button asChild className="w-full">
               <Link to="/logistica">Acessar</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 p-3 bg-amber-100 rounded-full w-fit">
+              <Gift className="h-8 w-8 text-amber-600" />
+            </div>
+            <CardTitle className="text-xl">Programa de Fidelidade</CardTitle>
+            <CardDescription>
+              Configure recompensas para clientes fiéis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/fidelidade">Acessar</Link>
             </Button>
           </CardContent>
         </Card>
