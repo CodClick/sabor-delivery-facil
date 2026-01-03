@@ -140,45 +140,53 @@ export const deleteFidelidadeRegra = async (id: string): Promise<void> => {
 
 // Verificar se um item é pizza de 8+ pedaços (elegível para fidelidade)
 export const isPizzaElegivel = (item: any): boolean => {
-  const nomeLower = (item.name || item.nome || '').toLowerCase();
-  const descLower = (item.description || item.descricao || '').toLowerCase();
-  
-  // Verificar nas variações (estrutura do pedido)
-  const variacoes = item.variations || item.variacoes || [];
-  let variacaoTexto = '';
-  
-  for (const variacao of variacoes) {
-    const opcoes = variacao.options || variacao.opcoes || [];
-    for (const opcao of opcoes) {
-      const opcaoNome = (opcao.name || opcao.nome || '').toLowerCase();
-      variacaoTexto += ' ' + opcaoNome;
+  const nomeLower = String(item?.name ?? item?.nome ?? "").toLowerCase();
+  const descLower = String(item?.description ?? item?.descricao ?? "").toLowerCase();
+  const tipoLower = String(item?.tipo ?? item?.type ?? "").toLowerCase();
+
+  // Estruturas possíveis:
+  // - Checkout/cart: item.selectedVariations[{ groupName, variations[{ name }] }]
+  // - Outros: item.variations / item.variacoes (legado)
+  const grupos =
+    item?.selectedVariations ?? item?.variations ?? item?.variacoes ?? ([] as any[]);
+
+  let variacaoTexto = "";
+
+  if (Array.isArray(grupos)) {
+    for (const grupo of grupos) {
+      const groupName = String(
+        grupo?.groupName ?? grupo?.group ?? grupo?.grupo ?? grupo?.name ?? ""
+      ).toLowerCase();
+
+      if (groupName) variacaoTexto += ` ${groupName}`;
+
+      // Dentro do grupo pode ser `variations` (Checkout) ou `options/opcoes` (legado)
+      const opcoes =
+        grupo?.variations ?? grupo?.options ?? grupo?.opcoes ?? ([] as any[]);
+
+      if (Array.isArray(opcoes)) {
+        for (const opcao of opcoes) {
+          const opcaoNome = String(opcao?.name ?? opcao?.nome ?? "").toLowerCase();
+          if (opcaoNome) variacaoTexto += ` ${opcaoNome}`;
+        }
+      }
     }
   }
-  
-  // Também verificar grupo de variação (ex: "Tamanho da Pizza")
-  for (const variacao of variacoes) {
-    const grupo = (variacao.group || variacao.grupo || '').toLowerCase();
-    if (grupo.includes('pizza') || grupo.includes('tamanho')) {
-      variacaoTexto += ' pizza';
-    }
-  }
-  
+
   const textoCompleto = `${nomeLower} ${descLower} ${variacaoTexto}`;
-  
-  // Verifica se é pizza (no nome, descrição, ou tem variação de tamanho de pizza)
-  const isPizza = textoCompleto.includes('pizza');
-  
+
+  // Verifica se é pizza
+  const isPizza = tipoLower === "pizza" || textoCompleto.includes("pizza");
+
   // Verifica se tem 8 ou mais pedaços
-  const tem8OuMais = 
-    textoCompleto.includes('grande') || 
-    textoCompleto.includes('gigante') || 
-    textoCompleto.includes('8 pedaços') ||
-    textoCompleto.includes('8 fatias') ||
-    textoCompleto.includes('12 pedaços') ||
-    textoCompleto.includes('12 fatias');
-  
-  console.log(`🍕 Verificando item: ${item.name || item.nome}`, { isPizza, tem8OuMais, textoCompleto });
-  
+  const tem8OuMais = /grande|gigante|\b8\s*(pedaços|pedacos|fatias)|\b12\s*(pedaços|pedacos|fatias)/.test(
+    textoCompleto
+  );
+
+  console.log(`🍕 Verificando item: ${item?.name || item?.nome || "(sem nome)"}`,
+    { isPizza, tem8OuMais, textoCompleto }
+  );
+
   return isPizza && tem8OuMais;
 };
 
@@ -263,11 +271,21 @@ export const verificarFidelidade = async (
       return;
     }
 
-    const quantidadePizzas = pizzasElegiveis.reduce((acc, item) => acc + (item.quantity || 1), 0);
+    const quantidadePizzas = pizzasElegiveis.reduce(
+      (acc, item) => acc + (item.quantity || 1),
+      0
+    );
+
     const valorPizzas = pizzasElegiveis.reduce((acc, item) => {
+      const subtotal = item?.subtotal;
+      if (typeof subtotal === "number") return acc + subtotal;
+      if (typeof subtotal === "string" && subtotal.trim() !== "" && !Number.isNaN(Number(subtotal))) {
+        return acc + Number(subtotal);
+      }
+
       const preco = item.price || item.preco || 0;
       const qtd = item.quantity || 1;
-      return acc + (preco * qtd);
+      return acc + preco * qtd;
     }, 0);
 
     // Atualizar progresso

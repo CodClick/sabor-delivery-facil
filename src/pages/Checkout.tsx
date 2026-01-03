@@ -408,7 +408,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     // Verificar programa de fidelidade (apenas pizzas de 8+ pedaços)
     try {
-      await verificarFidelidade(customerName, customerPhone, cartItems);
+      // Usar a mesma estrutura que vai para o pedido (inclui selectedVariations + subtotal)
+      await verificarFidelidade(customerName, customerPhone, itemsWithSubtotal);
     } catch (fidelidadeError) {
       console.error("Erro ao verificar fidelidade:", fidelidadeError);
     }
