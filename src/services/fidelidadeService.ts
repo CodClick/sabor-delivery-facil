@@ -138,22 +138,135 @@ export const deleteFidelidadeRegra = async (id: string): Promise<void> => {
   }
 };
 
-// Verificar se cliente atingiu meta e disparar webhook
+// Verificar se um item é pizza de 8+ pedaços (elegível para fidelidade)
+export const isPizzaElegivel = (item: any): boolean => {
+  const nomeLower = (item.name || item.nome || '').toLowerCase();
+  const descLower = (item.description || item.descricao || '').toLowerCase();
+  
+  // Verifica se é pizza
+  const isPizza = nomeLower.includes('pizza') || descLower.includes('pizza');
+  
+  // Verifica se tem 8 ou mais pedaços
+  const tem8OuMais = 
+    nomeLower.includes('grande') || 
+    nomeLower.includes('gigante') || 
+    nomeLower.includes('8 pedaços') ||
+    nomeLower.includes('8 fatias') ||
+    nomeLower.includes('12 pedaços') ||
+    nomeLower.includes('12 fatias') ||
+    descLower.includes('grande') || 
+    descLower.includes('gigante') || 
+    descLower.includes('8 pedaços') ||
+    descLower.includes('8 fatias') ||
+    descLower.includes('12 pedaços') ||
+    descLower.includes('12 fatias');
+  
+  return isPizza && tem8OuMais;
+};
+
+// Buscar ou criar progresso do cliente
+export const getClienteProgresso = async (
+  phone: string
+): Promise<{ contagem: number; valorGasto: number }> => {
+  const { data, error } = await supabase
+    .from("fidelidade_progresso")
+    .select("contagem_pizzas, valor_gasto_pizzas")
+    .eq("telefone_cliente", phone)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erro ao buscar progresso:", error);
+    return { contagem: 0, valorGasto: 0 };
+  }
+
+  return {
+    contagem: data?.contagem_pizzas || 0,
+    valorGasto: data?.valor_gasto_pizzas || 0,
+  };
+};
+
+// Atualizar progresso do cliente
+export const atualizarProgresso = async (
+  phone: string,
+  nome: string,
+  pizzasNovas: number,
+  valorNovas: number
+): Promise<void> => {
+  const { data: existing } = await supabase
+    .from("fidelidade_progresso")
+    .select("id, contagem_pizzas, valor_gasto_pizzas")
+    .eq("telefone_cliente", phone)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("fidelidade_progresso")
+      .update({
+        contagem_pizzas: existing.contagem_pizzas + pizzasNovas,
+        valor_gasto_pizzas: Number(existing.valor_gasto_pizzas) + valorNovas,
+        nome_cliente: nome,
+        ultima_atualizacao: new Date().toISOString(),
+      })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("fidelidade_progresso").insert({
+      telefone_cliente: phone,
+      nome_cliente: nome,
+      contagem_pizzas: pizzasNovas,
+      valor_gasto_pizzas: valorNovas,
+    });
+  }
+};
+
+// Zerar progresso após atingir meta
+export const zerarProgresso = async (phone: string): Promise<void> => {
+  await supabase
+    .from("fidelidade_progresso")
+    .update({
+      contagem_pizzas: 0,
+      valor_gasto_pizzas: 0,
+      ultima_atualizacao: new Date().toISOString(),
+    })
+    .eq("telefone_cliente", phone);
+};
+
+// Verificar fidelidade e disparar webhook se atingir meta
 export const verificarFidelidade = async (
   customerName: string,
   customerPhone: string,
-  totalCompras: number,
-  totalGasto: number
+  itens: any[]
 ): Promise<void> => {
   try {
+    // Filtrar apenas pizzas de 8+ pedaços
+    const pizzasElegiveis = itens.filter(isPizzaElegivel);
+    
+    if (pizzasElegiveis.length === 0) {
+      console.log("Nenhuma pizza elegível para fidelidade neste pedido");
+      return;
+    }
+
+    const quantidadePizzas = pizzasElegiveis.reduce((acc, item) => acc + (item.quantity || 1), 0);
+    const valorPizzas = pizzasElegiveis.reduce((acc, item) => {
+      const preco = item.price || item.preco || 0;
+      const qtd = item.quantity || 1;
+      return acc + (preco * qtd);
+    }, 0);
+
+    // Atualizar progresso
+    await atualizarProgresso(customerPhone, customerName, quantidadePizzas, valorPizzas);
+
+    // Buscar progresso atualizado
+    const progresso = await getClienteProgresso(customerPhone);
+    
+    // Buscar regras ativas
     const regrasAtivas = await getRegrasAtivas();
 
     for (const regra of regrasAtivas) {
       let atingiuMeta = false;
 
-      if (regra.criterio === "quantidade_compras" && totalCompras >= regra.meta) {
+      if (regra.criterio === "quantidade_compras" && progresso.contagem >= regra.meta) {
         atingiuMeta = true;
-      } else if (regra.criterio === "valor_gasto" && totalGasto >= regra.meta) {
+      } else if (regra.criterio === "valor_gasto" && progresso.valorGasto >= regra.meta) {
         atingiuMeta = true;
       }
 
@@ -173,9 +286,9 @@ export const verificarFidelidade = async (
             meta: regra.meta,
             premio_tipo: regra.premio_tipo,
           },
-          dados: {
-            total_compras: totalCompras,
-            total_gasto: totalGasto,
+          progresso: {
+            contagem_pizzas: progresso.contagem,
+            valor_gasto_pizzas: progresso.valorGasto,
           },
           timestamp: new Date().toISOString(),
         };
@@ -192,42 +305,21 @@ export const verificarFidelidade = async (
 
           if (response.ok) {
             console.log("✅ Webhook de fidelidade enviado com sucesso!");
+            // Zerar progresso após atingir meta
+            await zerarProgresso(customerPhone);
+            console.log("🔄 Progresso do cliente zerado para nova contagem");
           } else {
             console.error("❌ Falha ao enviar webhook:", await response.text());
           }
         } catch (webhookError) {
           console.error("❌ Erro ao enviar webhook de fidelidade:", webhookError);
         }
+        
+        // Sair após processar primeira meta atingida
+        break;
       }
     }
   } catch (error) {
     console.error("Erro ao verificar fidelidade:", error);
-  }
-};
-
-// Buscar histórico de compras de um cliente pelo telefone
-export const getClienteHistorico = async (
-  phone: string
-): Promise<{ totalCompras: number; totalGasto: number }> => {
-  try {
-    // Buscar pedidos do cliente no Supabase (tabela pedidos_sabor_delivery)
-    const { data, error } = await supabase
-      .from("pedidos_sabor_delivery")
-      .select("valor_total, status_atual")
-      .eq("telefone_cliente", phone)
-      .in("status_atual", ["delivered", "entregue", "completed", "finalizado"]);
-
-    if (error) {
-      console.error("Erro ao buscar histórico do cliente:", error);
-      return { totalCompras: 0, totalGasto: 0 };
-    }
-
-    const totalCompras = data?.length || 0;
-    const totalGasto = data?.reduce((acc, pedido) => acc + (pedido.valor_total || 0), 0) || 0;
-
-    return { totalCompras, totalGasto };
-  } catch (error) {
-    console.error("Erro ao buscar histórico do cliente:", error);
-    return { totalCompras: 0, totalGasto: 0 };
   }
 };
