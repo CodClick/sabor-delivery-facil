@@ -143,23 +143,41 @@ export const isPizzaElegivel = (item: any): boolean => {
   const nomeLower = (item.name || item.nome || '').toLowerCase();
   const descLower = (item.description || item.descricao || '').toLowerCase();
   
-  // Verifica se é pizza
-  const isPizza = nomeLower.includes('pizza') || descLower.includes('pizza');
+  // Verificar nas variações (estrutura do pedido)
+  const variacoes = item.variations || item.variacoes || [];
+  let variacaoTexto = '';
+  
+  for (const variacao of variacoes) {
+    const opcoes = variacao.options || variacao.opcoes || [];
+    for (const opcao of opcoes) {
+      const opcaoNome = (opcao.name || opcao.nome || '').toLowerCase();
+      variacaoTexto += ' ' + opcaoNome;
+    }
+  }
+  
+  // Também verificar grupo de variação (ex: "Tamanho da Pizza")
+  for (const variacao of variacoes) {
+    const grupo = (variacao.group || variacao.grupo || '').toLowerCase();
+    if (grupo.includes('pizza') || grupo.includes('tamanho')) {
+      variacaoTexto += ' pizza';
+    }
+  }
+  
+  const textoCompleto = `${nomeLower} ${descLower} ${variacaoTexto}`;
+  
+  // Verifica se é pizza (no nome, descrição, ou tem variação de tamanho de pizza)
+  const isPizza = textoCompleto.includes('pizza');
   
   // Verifica se tem 8 ou mais pedaços
   const tem8OuMais = 
-    nomeLower.includes('grande') || 
-    nomeLower.includes('gigante') || 
-    nomeLower.includes('8 pedaços') ||
-    nomeLower.includes('8 fatias') ||
-    nomeLower.includes('12 pedaços') ||
-    nomeLower.includes('12 fatias') ||
-    descLower.includes('grande') || 
-    descLower.includes('gigante') || 
-    descLower.includes('8 pedaços') ||
-    descLower.includes('8 fatias') ||
-    descLower.includes('12 pedaços') ||
-    descLower.includes('12 fatias');
+    textoCompleto.includes('grande') || 
+    textoCompleto.includes('gigante') || 
+    textoCompleto.includes('8 pedaços') ||
+    textoCompleto.includes('8 fatias') ||
+    textoCompleto.includes('12 pedaços') ||
+    textoCompleto.includes('12 fatias');
+  
+  console.log(`🍕 Verificando item: ${item.name || item.nome}`, { isPizza, tem8OuMais, textoCompleto });
   
   return isPizza && tem8OuMais;
 };
