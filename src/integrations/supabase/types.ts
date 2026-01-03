@@ -983,6 +983,36 @@ export type Database = {
           },
         ]
       }
+      fidelidade_progresso: {
+        Row: {
+          contagem_pizzas: number
+          criado_em: string | null
+          id: string
+          nome_cliente: string | null
+          telefone_cliente: string
+          ultima_atualizacao: string | null
+          valor_gasto_pizzas: number
+        }
+        Insert: {
+          contagem_pizzas?: number
+          criado_em?: string | null
+          id?: string
+          nome_cliente?: string | null
+          telefone_cliente: string
+          ultima_atualizacao?: string | null
+          valor_gasto_pizzas?: number
+        }
+        Update: {
+          contagem_pizzas?: number
+          criado_em?: string | null
+          id?: string
+          nome_cliente?: string | null
+          telefone_cliente?: string
+          ultima_atualizacao?: string | null
+          valor_gasto_pizzas?: number
+        }
+        Relationships: []
+      }
       fidelidade_regras: {
         Row: {
           ativo: boolean | null
