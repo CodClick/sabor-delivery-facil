@@ -244,16 +244,41 @@ export const atualizarProgresso = async (
   }
 };
 
-// Zerar progresso após atingir meta
-export const zerarProgresso = async (phone: string): Promise<void> => {
+// Ajustar progresso após atingir meta (mantém o excedente)
+export const ajustarProgressoAposMeta = async (
+  phone: string,
+  meta: number,
+  criterio: string
+): Promise<void> => {
+  const { data: existing } = await supabase
+    .from("fidelidade_progresso")
+    .select("id, contagem_pizzas, valor_gasto_pizzas")
+    .eq("telefone_cliente", phone)
+    .maybeSingle();
+
+  if (!existing) return;
+
+  let novaContagem = existing.contagem_pizzas;
+  let novoValor = Number(existing.valor_gasto_pizzas);
+
+  if (criterio === "quantidade_compras") {
+    // Ex: tinha 11 pizzas, meta 10 → fica 1
+    novaContagem = existing.contagem_pizzas % meta;
+  } else if (criterio === "valor_gasto") {
+    // Ex: gastou R$ 550, meta R$ 500 → fica R$ 50
+    novoValor = novoValor % meta;
+  }
+
   await supabase
     .from("fidelidade_progresso")
     .update({
-      contagem_pizzas: 0,
-      valor_gasto_pizzas: 0,
+      contagem_pizzas: novaContagem,
+      valor_gasto_pizzas: novoValor,
       ultima_atualizacao: new Date().toISOString(),
     })
-    .eq("telefone_cliente", phone);
+    .eq("id", existing.id);
+
+  console.log(`🔄 Progresso ajustado: ${existing.contagem_pizzas} → ${novaContagem} pizzas, R$ ${existing.valor_gasto_pizzas} → R$ ${novoValor}`);
 };
 
 // Verificar fidelidade e disparar webhook se atingir meta
@@ -341,9 +366,8 @@ export const verificarFidelidade = async (
 
           if (response.ok) {
             console.log("✅ Webhook de fidelidade enviado com sucesso!");
-            // Zerar progresso após atingir meta
-            await zerarProgresso(customerPhone);
-            console.log("🔄 Progresso do cliente zerado para nova contagem");
+            // Ajustar progresso mantendo o excedente
+            await ajustarProgressoAposMeta(customerPhone, regra.meta, regra.criterio);
           } else {
             console.error("❌ Falha ao enviar webhook:", await response.text());
           }

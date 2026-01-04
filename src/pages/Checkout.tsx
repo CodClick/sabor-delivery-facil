@@ -16,7 +16,7 @@ import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 import { calculateFreteByCep } from "@/services/freteService";
 import { supabase } from "@/integrations/supabase/client";
-import { verificarFidelidade } from "@/services/fidelidadeService";
+
 import { formatCurrency } from "@/lib/utils";
 
 const Checkout = () => {
@@ -406,13 +406,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       state,
     });
 
-    // Verificar programa de fidelidade (apenas pizzas de 8+ pedaços)
-    try {
-      // Usar a mesma estrutura que vai para o pedido (inclui selectedVariations + subtotal)
-      await verificarFidelidade(customerName, customerPhone, itemsWithSubtotal);
-    } catch (fidelidadeError) {
-      console.error("Erro ao verificar fidelidade:", fidelidadeError);
-    }
+    // Fidelidade será contabilizada apenas quando o pedido for entregue (status "delivered")
 
     clearCart();
 

@@ -13,6 +13,7 @@ import {
 import { db } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
 import { getAllVariations } from "@/services/variationService";
+import { verificarFidelidade } from "@/services/fidelidadeService";
 
 const ORDERS_COLLECTION = "orders";
 
@@ -316,12 +317,31 @@ export const updateOrder = async (
 
     if (!orderSnap.exists()) return null;
 
+    const currentOrder = orderSnap.data() as Order;
+    const previousStatus = currentOrder.status;
+
     const updateData = {
       ...updates,
       updatedAt: new Date(),
     };
 
     await updateDoc(orderRef, updateData);
+
+    // Se o status mudou para "delivered", verificar fidelidade
+    if (updates.status === "delivered" && previousStatus !== "delivered") {
+      try {
+        const customerName = currentOrder.customerName || "";
+        const customerPhone = currentOrder.customerPhone || "";
+        const items = currentOrder.items || [];
+
+        if (customerPhone && items.length > 0) {
+          console.log("🍕 Pedido entregue! Verificando fidelidade...");
+          await verificarFidelidade(customerName, customerPhone, items);
+        }
+      } catch (fidelidadeError) {
+        console.error("Erro ao verificar fidelidade na entrega:", fidelidadeError);
+      }
+    }
 
     return getOrderById(orderId);
   } catch (error) {
