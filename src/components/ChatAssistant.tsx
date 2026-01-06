@@ -137,11 +137,11 @@ const ChatAssistant = () => {
             onClick={handleTooltipClick}
             className="absolute bottom-full left-0 mb-2 cursor-pointer animate-fade-in"
           >
-            <div className="bg-white text-gray-800 text-sm px-3 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap">
+            <div className="bg-primary text-white text-sm px-3 py-2 rounded-xl shadow-lg whitespace-nowrap">
               Acompanhe seu pedido por aqui 🤖
             </div>
             {/* Arrow */}
-            <div className="absolute left-4 -bottom-1.5 w-3 h-3 bg-white border-b border-r border-gray-200 transform rotate-45" />
+            <div className="absolute left-4 -bottom-1.5 w-3 h-3 bg-primary transform rotate-45" />
           </div>
         )}
         
