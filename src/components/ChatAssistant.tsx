@@ -83,7 +83,7 @@ const ChatAssistant = () => {
       setMessages([
         {
           from: "assistant",
-          text: "text: "Olá 👋! Sou o atendente virtual da Pizzaria Oliveira ! Posso te ajudar com o cardápio, preços, promoções ou acompanhar seu pedido 😊",
+          text: "text: "Olá 👋! Sou o atendente virtual da Pizzaria Oliveira ! Posso te ajudar com informações ou acompanhar seu pedido 😊",
         },
       ]);
     }
@@ -175,6 +175,7 @@ const ChatAssistant = () => {
 };
 
 export default ChatAssistant;
+
 
 
 
