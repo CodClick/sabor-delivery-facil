@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSessionId } from "@/hooks/useSessionId";
 import { useAuth } from "@/hooks/useAuth";
-import { Bot, X, Send } from "lucide-react"; // 👈 novos ícones modernos
+import { Bot, X, Send } from "lucide-react";
+
+const TOOLTIP_STORAGE_KEY = "chatAssistant_tooltipShown";
 
 const ChatAssistant = () => {
   const sessionId = useSessionId();
@@ -12,7 +14,43 @@ const ChatAssistant = () => {
   >([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // 🔹 Tooltip logic
+  useEffect(() => {
+    if (isOpen) {
+      setShowTooltip(false);
+      return;
+    }
+
+    const hasSeenTooltip = localStorage.getItem(TOOLTIP_STORAGE_KEY);
+
+    if (!hasSeenTooltip) {
+      // First visit - show immediately
+      setShowTooltip(true);
+      localStorage.setItem(TOOLTIP_STORAGE_KEY, "true");
+      
+      // Auto-hide after 3 seconds
+      const hideTimer = setTimeout(() => setShowTooltip(false), 3000);
+      return () => clearTimeout(hideTimer);
+    } else {
+      // Returning visit - show after 3-5 seconds delay
+      const delay = 3000 + Math.random() * 2000; // 3-5 seconds
+      const showTimer = setTimeout(() => {
+        setShowTooltip(true);
+        // Auto-hide after 3 seconds
+        const hideTimer = setTimeout(() => setShowTooltip(false), 3000);
+        return () => clearTimeout(hideTimer);
+      }, delay);
+      return () => clearTimeout(showTimer);
+    }
+  }, [isOpen]);
+
+  const handleTooltipClick = () => {
+    setShowTooltip(false);
+    setIsOpen(true);
+  };
 
   // 🔹 Scroll automático
   useEffect(() => {
@@ -91,15 +129,33 @@ const ChatAssistant = () => {
 
   return (
     <>
-      {/* 🔹 Botão flutuante (lado esquerdo, alinhado com o carrinho) */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 left-6 z-50 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition flex items-center justify-center"
-        style={{ transform: "translateY(-10px)" }} // ajusta verticalmente para alinhar ao carrinho
-        title="Atendente Virtual"
-      >
-        <Bot size={22} />
-      </button>
+      {/* 🔹 Botão flutuante com tooltip */}
+      <div className="fixed bottom-4 left-6 z-50" style={{ transform: "translateY(-10px)" }}>
+        {/* Tooltip */}
+        {showTooltip && !isOpen && (
+          <div
+            onClick={handleTooltipClick}
+            className="absolute bottom-full left-0 mb-2 cursor-pointer animate-fade-in"
+          >
+            <div className="bg-white text-gray-800 text-sm px-3 py-2 rounded-xl shadow-lg border border-gray-200 whitespace-nowrap">
+              Acompanhe seu pedido por aqui 🤖
+            </div>
+            {/* Arrow */}
+            <div className="absolute left-4 -bottom-1.5 w-3 h-3 bg-white border-b border-r border-gray-200 transform rotate-45" />
+          </div>
+        )}
+        
+        <button
+          onClick={() => {
+            setShowTooltip(false);
+            setIsOpen(true);
+          }}
+          className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition flex items-center justify-center"
+          title="Atendente Virtual"
+        >
+          <Bot size={22} />
+        </button>
+      </div>
 
       {/* 🔹 Janela do Chat */}
       {isOpen && (
