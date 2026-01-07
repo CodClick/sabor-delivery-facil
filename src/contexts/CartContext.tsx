@@ -64,20 +64,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return variation?.name || "";
   };
 
-  const calculateVariationsTotal = (item: CartItem): number => {
-    let variationsTotal = 0;
-    if (item.selectedVariations?.length) {
-      item.selectedVariations.forEach(group => {
-        group.variations?.forEach(variation => {
-          const additionalPrice = variation.additionalPrice ?? getVariationPrice(variation.variationId);
-          if (additionalPrice > 0) {
-            variationsTotal += additionalPrice * (variation.quantity || 1);
-          }
-        });
-      });
-    }
-    return variationsTotal;
-  };
+  const calculateVariationsTotal = (item: CartItem): number => {
+    let variationsTotal = 0;
+    if (item.selectedVariations?.length) {
+      item.selectedVariations.forEach(group => {
+        group.variations?.forEach(variation => {
+          const additionalPrice = variation.additionalPrice ?? getVariationPrice(variation.variationId);
+          if (additionalPrice > 0) {
+            // Se é pizza meio a meio e selecionou "whole" (pizza inteira), cobra 2x
+            const multiplier = (item.isHalfPizza && variation.halfSelection === "whole") ? 2 : 1;
+            variationsTotal += additionalPrice * (variation.quantity || 1) * multiplier;
+          }
+        });
+      });
+    }
+    return variationsTotal;
+  };
 
   // recalcular totais
   useEffect(() => {

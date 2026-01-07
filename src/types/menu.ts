@@ -14,6 +14,11 @@ export interface MenuItem {
   permiteCombinacao?: boolean; // Allow half-and-half combinations for pizzas
   maxSabores?: number; // Maximum number of flavors for combinations
   isHalfPizza?: boolean; // Indicates if this is a half pizza combination
+  combination?: {
+    sabor1: { id: string; name: string };
+    sabor2: { id: string; name: string };
+    tamanho: "broto" | "grande";
+  };
 }
 
 export interface CartItem extends MenuItem {
@@ -33,12 +38,7 @@ export interface SelectedVariationGroup {
   variations: SelectedVariation[];
 }
 
-export interface SelectedVariation {
-  variationId: string;
-  quantity: number;
-  name?: string; // Added for displaying in cart
-  additionalPrice?: number; // Added for price calculation
-}
+// SelectedVariation movido para o final do arquivo após HalfSelection
 
 export interface Category {
   id: string;
@@ -64,4 +64,16 @@ export interface VariationGroup {
   variations: string[];
   customMessage?: string;
   applyToHalfPizza?: boolean; // Indica se o grupo aparece em pizzas meio a meio
+  allowPerHalf?: boolean; // Permite adicionar em cada metade da pizza
+}
+
+// Tipo para especificar em qual metade o adicional foi aplicado
+export type HalfSelection = "half1" | "half2" | "whole";
+
+export interface SelectedVariation {
+  variationId: string;
+  quantity: number;
+  name?: string;
+  additionalPrice?: number;
+  halfSelection?: HalfSelection; // Em qual metade o adicional foi aplicado
 }

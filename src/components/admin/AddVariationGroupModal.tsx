@@ -209,6 +209,35 @@ export const AddVariationGroupModal = ({
                 )}
               </div>
             </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="temp-applyToHalfPizza"
+                checked={tempVariationGroup.applyToHalfPizza || false}
+                onCheckedChange={(checked) =>
+                  setTempVariationGroup({ ...tempVariationGroup, applyToHalfPizza: checked as boolean })
+                }
+              />
+              <Label htmlFor="temp-applyToHalfPizza" className="text-sm font-normal cursor-pointer">
+                Aplicar a pizzas meio a meio
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="temp-allowPerHalf"
+                checked={tempVariationGroup.allowPerHalf || false}
+                onCheckedChange={(checked) =>
+                  setTempVariationGroup({ ...tempVariationGroup, allowPerHalf: checked as boolean })
+                }
+              />
+              <Label htmlFor="temp-allowPerHalf" className="text-sm font-normal cursor-pointer">
+                Permitir adicionar em cada metade (pizza meio a meio)
+              </Label>
+            </div>
+            <p className="text-xs text-gray-500 ml-6">
+              Quando ativo, o cliente pode escolher se o adicional vai na metade 1, metade 2 ou pizza inteira
+            </p>
           </div>
         </ScrollArea>
         

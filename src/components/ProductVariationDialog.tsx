@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, VariationGroup } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, VariationGroup, HalfSelection } from "@/types/menu";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Circle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface ProductVariationDialogProps {
   item: MenuItem;
@@ -15,6 +17,15 @@ interface ProductVariationDialogProps {
   availableVariations: Variation[];
   groupVariations: {[groupId: string]: Variation[]};
   onOpenPizzaCombination?: () => void;
+}
+
+// Tipo interno para gerenciar seleções com metade
+interface VariationSelection {
+  variationId: string;
+  quantity: number;
+  name?: string;
+  additionalPrice?: number;
+  halfSelection?: HalfSelection;
 }
 
 const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
@@ -28,6 +39,10 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 }) => {
   const [selectedVariationGroups, setSelectedVariationGroups] = useState<SelectedVariationGroup[]>([]);
   const [isValid, setIsValid] = useState<boolean>(false);
+  // Estado para controlar qual variação está tendo a metade selecionada
+  const [selectingHalfFor, setSelectingHalfFor] = useState<{groupId: string, variationId: string} | null>(null);
+
+  const isHalfPizza = item.isHalfPizza === true;
 
   useEffect(() => {
     if (isOpen && item.variationGroups) {
@@ -41,7 +56,8 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
           variationId: variation.id,
           quantity: 0,
           name: variation.name,
-          additionalPrice: variation.additionalPrice || 0
+          additionalPrice: variation.additionalPrice || 0,
+          halfSelection: undefined as HalfSelection | undefined
         }));
 
         return {
@@ -52,6 +68,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
       }).filter(Boolean) as SelectedVariationGroup[];
 
       setSelectedVariationGroups(initialGroups);
+      setSelectingHalfFor(null);
     }
   }, [isOpen, item.variationGroups, groupVariations]);
 
@@ -76,33 +93,42 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     setIsValid(allGroupsValid);
   }, [selectedVariationGroups, item.variationGroups]);
 
-  const increaseVariation = (groupId: string, variationId: string) => {
+  const getGroupDef = (groupId: string): VariationGroup | undefined => {
+    return item.variationGroups?.find(g => g?.id === groupId);
+  };
+
+  const increaseVariation = (groupId: string, variationId: string, halfSelection?: HalfSelection) => {
+    const groupDef = getGroupDef(groupId);
+    if (!groupDef) return;
+
+    // Se é pizza meio a meio e o grupo permite seleção por metade, mostrar opções
+    if (isHalfPizza && groupDef.allowPerHalf && !halfSelection) {
+      setSelectingHalfFor({ groupId, variationId });
+      return;
+    }
+
     setSelectedVariationGroups(prev => 
       prev.map(group => {
         if (group.groupId !== groupId) return group;
 
-        // Find the variation group definition to get max allowed
-        const groupDef = item.variationGroups?.find(g => g?.id === groupId);
-        if (!groupDef) return group;
-
-        // Count current total quantity (sum of all variation quantities) for this group
+        // Count current total quantity for this group
         const currentTotal = group.variations.reduce((sum, v) => sum + v.quantity, 0);
         
         // Don't allow increasing if we're already at max total quantity
         if (currentTotal >= groupDef.maxAllowed) return group;
         
-        // Update the specific variation with name and additionalPrice
+        // Update the specific variation
         return {
           ...group,
           variations: group.variations.map(variation => {
             if (variation.variationId === variationId) {
-              // Get variation details to ensure we have name and price
               const variationDetails = getVariationDetails(variationId);
               return { 
                 ...variation, 
                 quantity: variation.quantity + 1,
                 name: variationDetails?.name || variation.name,
-                additionalPrice: variationDetails?.additionalPrice || variation.additionalPrice || 0
+                additionalPrice: variationDetails?.additionalPrice || variation.additionalPrice || 0,
+                halfSelection: halfSelection || (isHalfPizza ? undefined : "whole" as HalfSelection)
               };
             }
             return variation;
@@ -110,6 +136,13 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
         };
       })
     );
+
+    setSelectingHalfFor(null);
+  };
+
+  const handleHalfSelection = (halfSelection: HalfSelection) => {
+    if (!selectingHalfFor) return;
+    increaseVariation(selectingHalfFor.groupId, selectingHalfFor.variationId, halfSelection);
   };
 
   const decreaseVariation = (groupId: string, variationId: string) => {
@@ -121,7 +154,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
           ...group,
           variations: group.variations.map(variation => 
             variation.variationId === variationId && variation.quantity > 0
-              ? { ...variation, quantity: variation.quantity - 1 } 
+              ? { ...variation, quantity: variation.quantity - 1, halfSelection: variation.quantity === 1 ? undefined : variation.halfSelection } 
               : variation
           )
         };
@@ -136,7 +169,6 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     const nonZeroGroups = selectedVariationGroups.map(group => ({
       ...group,
       variations: group.variations.filter(v => v.quantity > 0).map(v => {
-        // Ensure variation has complete data
         const variationDetails = getVariationDetails(v.variationId);
         return {
           ...v,
@@ -157,7 +189,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   };
 
   const getGroupSelectionStatus = (groupId: string) => {
-    const groupDef = item.variationGroups?.find(g => g?.id === groupId);
+    const groupDef = getGroupDef(groupId);
     if (!groupDef) return { total: 0, min: 0, max: 0, isValid: false };
 
     const selectedGroup = selectedVariationGroups.find(sg => sg.groupId === groupId);
@@ -174,9 +206,8 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     };
   };
 
-  // Generate message for a variation group
   const getVariationGroupMessage = (groupId: string) => {
-    const groupDef = item.variationGroups?.find(g => g?.id === groupId);
+    const groupDef = getGroupDef(groupId);
     if (!groupDef) return "";
 
     const { total, min, max } = getGroupSelectionStatus(groupId);
@@ -196,6 +227,29 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     } else {
       return `Selecione até ${max} unidades de ${groupDef.name.toLowerCase()} (opcional) (${total}/${max} selecionadas)`;
     }
+  };
+
+  const getHalfSelectionLabel = (halfSelection?: HalfSelection): string => {
+    if (!halfSelection) return "";
+    switch (halfSelection) {
+      case "half1": return "Metade 1";
+      case "half2": return "Metade 2";
+      case "whole": return "Pizza Inteira";
+      default: return "";
+    }
+  };
+
+  const calculateVariationPrice = (variation: SelectedVariation, groupDef: VariationGroup): number => {
+    const basePrice = variation.additionalPrice || 0;
+    
+    // Se é pizza meio a meio e o grupo permite seleção por metade
+    if (isHalfPizza && groupDef.allowPerHalf) {
+      // Uma metade = 1x preço, ambas metades / pizza inteira = 2x não se aplica aqui
+      // O preço é sempre 1x por seleção, mas mostramos para o usuário
+      return basePrice;
+    }
+    
+    return basePrice;
   };
 
   if (!item.variationGroups || item.variationGroups.length === 0) {
@@ -235,16 +289,36 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                 </Button>
               </div>
             )}
+
+            {/* Indicador de Pizza Meio a Meio */}
+            {isHalfPizza && item.combination && (
+              <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm font-medium text-primary">
+                  🍕 Pizza Meio a Meio
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Metade 1: {item.combination.sabor1.name} | Metade 2: {item.combination.sabor2.name}
+                </p>
+              </div>
+            )}
             
             {item.variationGroups.map((group, groupIndex) => {
               if (!group) return null;
               const groupStatus = getGroupSelectionStatus(group.id);
+              const showHalfOption = isHalfPizza && group.allowPerHalf;
               
               return (
                 <div key={group.id} className="mb-6">
                   {groupIndex > 0 && <Separator className="my-6" />}
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold">{group.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">{group.name}</h3>
+                      {showHalfOption && (
+                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                          Por metade
+                        </span>
+                      )}
+                    </div>
                     <span className={`text-sm px-2 py-1 rounded ${
                       groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                     }`}>
@@ -255,6 +329,13 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                   <p className="text-sm text-gray-500 mb-4">
                     {getVariationGroupMessage(group.id)}
                   </p>
+
+                  {showHalfOption && (
+                    <p className="text-xs text-orange-600 mb-3 flex items-center gap-1">
+                      <Circle className="h-3 w-3" />
+                      Você pode escolher adicionar em cada metade ou na pizza inteira
+                    </p>
+                  )}
                   
                   <div className="space-y-3">
                     {selectedVariationGroups
@@ -262,41 +343,107 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
                       .map(variation => {
                         const variationDetails = getVariationDetails(variation.variationId);
                         if (!variationDetails) return null;
+                        const price = calculateVariationPrice(variation, group);
                         
                         return (
-                          <div key={variation.variationId} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-                            <div className="flex-1">
-                              <p className="font-medium">{variationDetails.name}</p>
-                              {variationDetails.additionalPrice ? (
-                                <p className="text-sm text-gray-500">
-                                  +{formatCurrency(variationDetails.additionalPrice)}
+                          <div key={variation.variationId} className="py-3 border-b border-gray-100 last:border-b-0">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="font-medium">{variationDetails.name}</p>
+                                {price > 0 && (
+                                  <p className="text-sm text-gray-500">
+                                    +{formatCurrency(price)}
+                                    {showHalfOption && variation.quantity > 0 && variation.halfSelection && (
+                                      <span className="ml-2 text-orange-600">
+                                        ({getHalfSelectionLabel(variation.halfSelection)})
+                                      </span>
+                                    )}
+                                  </p>
+                                )}
+                                {!price && variation.quantity > 0 && showHalfOption && variation.halfSelection && (
+                                  <p className="text-sm text-orange-600">
+                                    {getHalfSelectionLabel(variation.halfSelection)}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center space-x-3 flex-shrink-0">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-9 w-9 p-0 touch-action-manipulation" 
+                                  onClick={() => decreaseVariation(group.id, variation.variationId)}
+                                  disabled={variation.quantity <= 0}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                
+                                <span className="w-8 text-center font-medium">{variation.quantity}</span>
+                                
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-9 w-9 p-0 touch-action-manipulation" 
+                                  onClick={() => increaseVariation(group.id, variation.variationId)}
+                                  disabled={groupStatus.total >= groupStatus.max}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Modal de seleção de metade */}
+                            {selectingHalfFor?.groupId === group.id && 
+                             selectingHalfFor?.variationId === variation.variationId && (
+                              <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200 animate-in fade-in slide-in-from-top-2">
+                                <p className="text-sm font-medium text-orange-800 mb-3">
+                                  Onde deseja adicionar "{variationDetails.name}"?
                                 </p>
-                              ) : null}
-                            </div>
-                            
-                            <div className="flex items-center space-x-3 flex-shrink-0">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-9 w-9 p-0 touch-action-manipulation" 
-                                onClick={() => decreaseVariation(group.id, variation.variationId)}
-                                disabled={variation.quantity <= 0}
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              
-                              <span className="w-8 text-center font-medium">{variation.quantity}</span>
-                              
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-9 w-9 p-0 touch-action-manipulation" 
-                                onClick={() => increaseVariation(group.id, variation.variationId)}
-                                disabled={groupStatus.total >= groupStatus.max}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
+                                    onClick={() => handleHalfSelection("half1")}
+                                  >
+                                    <span className="text-xs font-medium">Metade 1</span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {item.combination?.sabor1.name?.substring(0, 10)}...
+                                    </span>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
+                                    onClick={() => handleHalfSelection("half2")}
+                                  >
+                                    <span className="text-xs font-medium">Metade 2</span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {item.combination?.sabor2.name?.substring(0, 10)}...
+                                    </span>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
+                                    onClick={() => handleHalfSelection("whole")}
+                                  >
+                                    <span className="text-xs font-medium">Inteira</span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      2x preço
+                                    </span>
+                                  </Button>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full mt-2 text-xs"
+                                  onClick={() => setSelectingHalfFor(null)}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
