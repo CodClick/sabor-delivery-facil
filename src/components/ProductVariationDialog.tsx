@@ -212,9 +212,29 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto px-6 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="h-48 w-full overflow-hidden rounded-md mb-6">
+            <div className="h-48 w-full overflow-hidden rounded-md mb-4">
               <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
             </div>
+            
+            {/* Opção Pizza Meio a Meio - logo após a foto */}
+            {item.tipo === "pizza" && item.permiteCombinacao && onOpenPizzaCombination && (
+              <div className="mb-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <h4 className="font-semibold text-orange-800 mb-2">Quer fazer uma Pizza Meio a Meio?</h4>
+                <p className="text-sm text-orange-700 mb-3">
+                  Combine dois sabores diferentes em uma pizza!
+                </p>
+                <Button 
+                  onClick={() => {
+                    onClose();
+                    onOpenPizzaCombination();
+                  }}
+                  variant="outline"
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-100"
+                >
+                  Escolher Pizza Meio a Meio
+                </Button>
+              </div>
+            )}
             
             {item.variationGroups.map((group, groupIndex) => {
               if (!group) return null;
@@ -285,25 +305,6 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
               );
             })}
             
-            {/* Opção Pizza Meio a Meio */}
-            {item.tipo === "pizza" && item.permiteCombinacao && onOpenPizzaCombination && (
-              <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                <h4 className="font-semibold text-orange-800 mb-2">Quer fazer uma Pizza Meio a Meio?</h4>
-                <p className="text-sm text-orange-700 mb-3">
-                  Combine dois sabores diferentes em uma pizza!
-                </p>
-                <Button 
-                  onClick={() => {
-                    onClose();
-                    onOpenPizzaCombination();
-                  }}
-                  variant="outline"
-                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-100"
-                >
-                  Escolher Pizza Meio a Meio
-                </Button>
-              </div>
-            )}
             
             {/* Espaço extra no final para garantir acesso aos botões */}
             <div className="h-20"></div>
