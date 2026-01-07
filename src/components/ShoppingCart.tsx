@@ -248,7 +248,9 @@ const ShoppingCart: React.FC = () => {
           group.variations.forEach((variation: any) => {
             const additionalPrice = getVariationPrice(variation.variationId);
             if (additionalPrice > 0) {
-              variationsTotal += additionalPrice * (variation.quantity || 1);
+              // Se é pizza meio a meio e selecionou "whole" (pizza inteira), cobra 2x
+              const multiplier = (item.isHalfPizza && variation.halfSelection === "whole") ? 2 : 1;
+              variationsTotal += additionalPrice * (variation.quantity || 1) * multiplier;
             }
           });
         }
@@ -256,6 +258,17 @@ const ShoppingCart: React.FC = () => {
     }
     
     return variationsTotal;
+  };
+
+  // Função para obter label da metade selecionada
+  const getHalfSelectionLabel = (halfSelection?: string): string => {
+    if (!halfSelection) return "";
+    switch (halfSelection) {
+      case "half1": return "(Metade 1)";
+      case "half2": return "(Metade 2)";
+      case "whole": return "(Pizza Inteira - 2x)";
+      default: return "";
+    }
   };
 
   // Função para calcular o total do item (base + variações) x quantidade
@@ -390,10 +403,15 @@ const ShoppingCart: React.FC = () => {
                                   const variationPrice = getVariationPrice(v.variationId);
                                   return (
                                     <div key={v.variationId} className="flex justify-between pl-2 text-xs text-gray-600">
-                                      <span>{getVariationName(v.variationId)} x{v.quantity}</span>
+                                      <span>
+                                        {getVariationName(v.variationId)} x{v.quantity}
+                                        {item.isHalfPizza && v.halfSelection && (
+                                          <span className="text-orange-600 ml-1">{getHalfSelectionLabel(v.halfSelection)}</span>
+                                        )}
+                                      </span>
                                       {variationPrice > 0 && (
                                         <span className="text-green-600 font-medium">
-                                          +{formatCurrency(variationPrice * v.quantity)}
+                                          +{formatCurrency(variationPrice * v.quantity * (item.isHalfPizza && v.halfSelection === "whole" ? 2 : 1))}
                                         </span>
                                       )}
                                     </div>
