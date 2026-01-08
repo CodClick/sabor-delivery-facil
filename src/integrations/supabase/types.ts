@@ -1748,6 +1748,42 @@ export type Database = {
           },
         ]
       }
+      wi_fi_users: {
+        Row: {
+          ano: string | null
+          created_at: string
+          dia: string | null
+          email: string | null
+          felicitacoes_enviadas: boolean
+          id: number
+          mes: string | null
+          nome: string | null
+          whatsapp: string
+        }
+        Insert: {
+          ano?: string | null
+          created_at?: string
+          dia?: string | null
+          email?: string | null
+          felicitacoes_enviadas?: boolean
+          id?: number
+          mes?: string | null
+          nome?: string | null
+          whatsapp: string
+        }
+        Update: {
+          ano?: string | null
+          created_at?: string
+          dia?: string | null
+          email?: string | null
+          felicitacoes_enviadas?: boolean
+          id?: number
+          mes?: string | null
+          nome?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
