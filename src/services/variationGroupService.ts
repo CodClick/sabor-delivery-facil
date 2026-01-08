@@ -128,7 +128,8 @@ export const saveVariationGroup = async (
       maxAllowed: variationGroup.maxAllowed,
       variations: variationGroup.variations.filter(id => id && id.trim() !== ''),
       customMessage: variationGroup.customMessage?.trim() || "",
-      applyToHalfPizza: variationGroup.applyToHalfPizza || false
+      applyToHalfPizza: variationGroup.applyToHalfPizza || false,
+      allowPerHalf: variationGroup.allowPerHalf || false
     };
 
     if (variationGroup.id && variationGroup.id.trim() !== '') {
@@ -233,7 +234,8 @@ export const syncMenuItemsWithVariationGroup = async (
           return {
             ...group,
             variations: newVariations,
-            applyToHalfPizza: updatedGroup.applyToHalfPizza
+            applyToHalfPizza: updatedGroup.applyToHalfPizza,
+            allowPerHalf: updatedGroup.allowPerHalf
           };
         }
         return group;
