@@ -650,26 +650,37 @@ const handleSubmit = async (e: React.FormEvent) => {
                       )}
                     </div>
                     <div className="text-right font-semibold text-lg">
-                      R$ {(
-                        item.isHalfPizza 
-                          ? item.price * item.quantity
-                          : // Se o item tem "a partir de", o preço base é 0
-                            ((item.priceFrom ? 0 : item.price) +
-                              (item.selectedVariations
-                                ? item.selectedVariations.reduce((acc, group) => {
-                                    return (
-                                      acc +
-                                      group.variations.reduce(
-                                        (gacc, v) =>
-                                          gacc +
-                                          ((v.additionalPrice || 0) *
-                                            (v.quantity || 1)),
-                                        0
-                                      )
-                                    );
-                                  }, 0)
-                                : 0)) * item.quantity
-                      ).toFixed(2)}
+                      R$ {(() => {
+                        if (item.isHalfPizza) {
+                          // Pizza meio a meio: preço base + variações
+                          const basePrice = item.price || 0;
+                          const variationsTotal = item.selectedVariations
+                            ? item.selectedVariations.reduce((acc, group) => {
+                                return acc + group.variations.reduce((gacc, v) => {
+                                  const additionalPrice = v.additionalPrice || 0;
+                                  const quantity = v.quantity || 1;
+                                  const halfMultiplier = v.halfSelection === "whole" ? 2 : 1;
+                                  return gacc + (additionalPrice * quantity * halfMultiplier);
+                                }, 0);
+                              }, 0)
+                            : 0;
+                          return ((basePrice + variationsTotal) * item.quantity).toFixed(2);
+                        } else {
+                          // Item normal
+                          const basePrice = item.priceFrom ? 0 : (item.price || 0);
+                          const variationsTotal = item.selectedVariations
+                            ? item.selectedVariations.reduce((acc, group) => {
+                                return acc + group.variations.reduce((gacc, v) => {
+                                  const additionalPrice = v.additionalPrice || 0;
+                                  const quantity = v.quantity || 1;
+                                  const halfMultiplier = v.halfSelection === "whole" ? 2 : 1;
+                                  return gacc + (additionalPrice * quantity * halfMultiplier);
+                                }, 0);
+                              }, 0)
+                            : 0;
+                          return ((basePrice + variationsTotal) * item.quantity).toFixed(2);
+                        }
+                      })()}
                     </div>
                   </div>
 

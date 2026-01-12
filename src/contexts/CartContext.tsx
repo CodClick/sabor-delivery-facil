@@ -88,8 +88,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let itemTotal = 0;
 
         if (item.isHalfPizza) {
-          // Para pizza meio a meio, já usamos o price final
-          itemTotal = (item.price || 0) * item.quantity;
+          // Para pizza meio a meio, usamos o price final + variações (adicionais/borda)
+          const basePrice = item.price || 0;
+          const variationsTotal = calculateVariationsTotal(item);
+          itemTotal = (basePrice + variationsTotal) * item.quantity;
         } else {
           const basePrice = item.priceFrom ? 0 : (item.price || 0);
           const variationsTotal = calculateVariationsTotal(item);
