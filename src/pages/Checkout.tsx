@@ -328,7 +328,9 @@ const handleSubmit = async (e: React.FormEvent) => {
             group.variations.forEach((variation: any) => {
               const additionalPrice = variation.additionalPrice || 0;
               const quantity = variation.quantity || 1;
-              variationsTotal += additionalPrice * quantity;
+              // Para pizza meio a meio, "whole" cobra 2x o valor do adicional
+              const halfMultiplier = variation.halfSelection === "whole" ? 2 : 1;
+              variationsTotal += additionalPrice * quantity * halfMultiplier;
             });
           }
         });
