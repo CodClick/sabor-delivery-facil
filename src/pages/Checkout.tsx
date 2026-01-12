@@ -633,16 +633,23 @@ const handleSubmit = async (e: React.FormEvent) => {
                               )}
                               {group.variations
                                 .filter((v: any) => v.quantity > 0)
-                                .map((variation: any, varIndex: number) => (
-                                  <div key={varIndex} className="pl-2 flex justify-between">
-                                    <span>{variation.name || "Variação"} x{variation.quantity}</span>
-                                    {variation.additionalPrice > 0 && (
-                                      <span className="text-green-600 font-medium">
-                                        +R$ {(variation.additionalPrice * variation.quantity).toFixed(2)}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))
+                                .map((variation: any, varIndex: number) => {
+                                  // Para pizza inteira, dobra a quantidade e o preço
+                                  const halfMultiplier = variation.halfSelection === "whole" ? 2 : 1;
+                                  const displayQuantity = (variation.quantity || 1) * halfMultiplier;
+                                  const displayPrice = (variation.additionalPrice || 0) * displayQuantity;
+                                  
+                                  return (
+                                    <div key={varIndex} className="pl-2 flex justify-between">
+                                      <span>{variation.name || "Variação"} x{displayQuantity}</span>
+                                      {variation.additionalPrice > 0 && (
+                                        <span className="text-green-600 font-medium">
+                                          +R$ {displayPrice.toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })
                               }
                             </div>
                           ))}
@@ -650,37 +657,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                       )}
                     </div>
                     <div className="text-right font-semibold text-lg">
-                      R$ {(() => {
-                        if (item.isHalfPizza) {
-                          // Pizza meio a meio: preço base + variações
-                          const basePrice = item.price || 0;
-                          const variationsTotal = item.selectedVariations
-                            ? item.selectedVariations.reduce((acc, group) => {
-                                return acc + group.variations.reduce((gacc, v) => {
-                                  const additionalPrice = v.additionalPrice || 0;
-                                  const quantity = v.quantity || 1;
-                                  const halfMultiplier = v.halfSelection === "whole" ? 2 : 1;
-                                  return gacc + (additionalPrice * quantity * halfMultiplier);
-                                }, 0);
-                              }, 0)
-                            : 0;
-                          return ((basePrice + variationsTotal) * item.quantity).toFixed(2);
-                        } else {
-                          // Item normal
-                          const basePrice = item.priceFrom ? 0 : (item.price || 0);
-                          const variationsTotal = item.selectedVariations
-                            ? item.selectedVariations.reduce((acc, group) => {
-                                return acc + group.variations.reduce((gacc, v) => {
-                                  const additionalPrice = v.additionalPrice || 0;
-                                  const quantity = v.quantity || 1;
-                                  const halfMultiplier = v.halfSelection === "whole" ? 2 : 1;
-                                  return gacc + (additionalPrice * quantity * halfMultiplier);
-                                }, 0);
-                              }, 0)
-                            : 0;
-                          return ((basePrice + variationsTotal) * item.quantity).toFixed(2);
-                        }
-                      })()}
+                      {/* Exibe apenas o preço base da pizza/item */}
+                      R$ {(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
 
