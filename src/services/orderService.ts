@@ -17,6 +17,30 @@ import { verificarFidelidade } from "@/services/fidelidadeService";
 
 const ORDERS_COLLECTION = "orders";
 
+// Remove `undefined` de objetos/arrays (Firestore não aceita undefined)
+const removeUndefinedDeep = (value: any): any => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
+  if (value instanceof Date) return value;
+  if (value instanceof Timestamp) return value;
+
+  if (Array.isArray(value)) {
+    return value.map(removeUndefinedDeep).filter((v) => v !== undefined);
+  }
+
+  if (typeof value === "object") {
+    const out: Record<string, any> = {};
+    Object.entries(value).forEach(([key, val]) => {
+      const cleaned = removeUndefinedDeep(val);
+      if (cleaned !== undefined) out[key] = cleaned;
+    });
+    return out;
+  }
+
+  return value;
+};
+
 // Função para obter o preço adicional da variação
 const getVariationPrice = async (variationId: string): Promise<number> => {
   try {
@@ -47,85 +71,85 @@ export const createOrder = async (
         console.log(`\n--- PROCESSANDO ITEM: ${item.name} ---`);
         console.log("Item original:", JSON.stringify(item, null, 2));
 
-        let itemTotal = 0;
+        const itemQty = item.quantity ?? 1;
+        const isHalfPizza = !!item.isHalfPizza;
 
-        // 🔥 Caso seja pizza meio a meio
-        if (item.isHalfPizza) {
-          const halfPrice = item.price || item.combination?.price || 0;
-          itemTotal = halfPrice * (item.quantity || 1);
-          console.log(
-            `Pizza meio a meio detectada. Preço usado: R$ ${halfPrice}, subtotal: R$ ${itemTotal}`
-          );
-        } else {
-          // Itens normais
-          const basePrice = item.priceFrom ? 0 : item.price || 0;
-          itemTotal = basePrice * item.quantity;
-          console.log(
-            `Preço base: R$ ${basePrice} x ${item.quantity} = R$ ${itemTotal}`
-          );
+        // Preço base (sem adicionais/borda)
+        const baseUnitPrice = isHalfPizza
+          ? (item.combination?.price ?? item.price ?? 0)
+          : (item.priceFrom ? 0 : (item.price ?? 0));
 
-          // Processar variações selecionadas
-          let processedVariations: any[] = [];
-          if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-            for (const group of item.selectedVariations) {
-              const processedGroup = {
-                groupId: group.groupId,
-                groupName: group.groupName || group.groupId,
-                variations: [],
-              };
+        let itemTotal = baseUnitPrice * itemQty;
 
-              if (group.variations && Array.isArray(group.variations)) {
-                for (const variation of group.variations) {
-                  let additionalPrice = variation.additionalPrice;
+        console.log(
+          `Preço base: R$ ${baseUnitPrice} x ${itemQty} = R$ ${itemTotal}`
+        );
 
-                  if (additionalPrice === undefined && variation.variationId) {
-                    additionalPrice = await getVariationPrice(
-                      variation.variationId
-                    );
-                  }
+        // Processar variações (inclui adicionais/borda para meio a meio)
+        let processedVariations: any[] = [];
+        if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+          for (const group of item.selectedVariations) {
+            const processedGroup = {
+              groupId: group.groupId ?? null,
+              groupName: group.groupName || group.groupId || "",
+              variations: [] as any[],
+            };
 
-                  const processedVariation = {
-                    variationId: variation.variationId,
-                    quantity: variation.quantity || 1,
-                    name: variation.name || "",
-                    additionalPrice: additionalPrice || 0,
-                  };
+            if (group.variations && Array.isArray(group.variations)) {
+              for (const variation of group.variations) {
+                const rawVariationId =
+                  variation.variationId ??
+                  variation.id ??
+                  variation.variation_id ??
+                  null;
+                const variationId = rawVariationId ? String(rawVariationId) : null;
 
-                  const variationCost =
-                    (additionalPrice || 0) *
-                    (variation.quantity || 1) *
-                    (item.quantity || 1);
-
-                  if (variationCost > 0) {
-                    itemTotal += variationCost;
-                  }
-
-                  processedGroup.variations.push(processedVariation);
+                let additionalPrice = variation.additionalPrice;
+                if (additionalPrice === undefined && variationId) {
+                  additionalPrice = await getVariationPrice(variationId);
                 }
-              }
+                additionalPrice = additionalPrice ?? 0;
 
-              if (processedGroup.variations.length > 0) {
-                processedVariations.push(processedGroup);
+                const variationQty = variation.quantity ?? 1;
+                const halfMultiplier =
+                  isHalfPizza && variation.halfSelection === "whole" ? 2 : 1;
+
+                const variationCost =
+                  additionalPrice * variationQty * halfMultiplier * itemQty;
+
+                if (variationCost > 0) {
+                  itemTotal += variationCost;
+                }
+
+                processedGroup.variations.push({
+                  variationId,
+                  quantity: variationQty,
+                  name: variation.name || "",
+                  additionalPrice,
+                  halfSelection: variation.halfSelection ?? null,
+                });
               }
             }
-          }
 
-          item.selectedVariations = processedVariations;
+            if (processedGroup.variations.length > 0) {
+              processedVariations.push(processedGroup);
+            }
+          }
         }
 
         total += itemTotal;
 
-        return {
-          menuItemId: item.menuItemId,
+        return removeUndefinedDeep({
+          menuItemId: item.menuItemId ?? (item as any).id ?? null,
           name: item.name,
-          price: item.price || 0,
-          quantity: item.quantity,
-          selectedVariations: item.selectedVariations || [],
+          price: baseUnitPrice,
+          quantity: itemQty,
+          selectedVariations: processedVariations,
           priceFrom: item.priceFrom || false,
-          isHalfPizza: item.isHalfPizza || false,
+          isHalfPizza,
           combination: item.combination || null,
           subtotal: itemTotal, // 🔥 salva subtotal no item
-        };
+        });
       })
     );
 
@@ -133,22 +157,22 @@ export const createOrder = async (
     console.log(JSON.stringify(orderItems, null, 2));
     console.log(`Total final: R$ ${total}`);
 
-    const orderToSave = {
+    const orderToSave = removeUndefinedDeep({
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
       address: orderData.address,
       paymentMethod: orderData.paymentMethod,
-      observations: orderData.observations || "",
+      observations: orderData.observations ?? "",
       items: orderItems,
       status: "pending",
-      subtotal: orderData.subtotal || total, // Subtotal sem frete
-      frete: orderData.frete || 0, // Valor do frete
-      total: orderData.total || total, // Total com desconto e frete aplicados
-      discount: orderData.discount || 0,
-      couponCode: orderData.couponCode || null,
+      subtotal: orderData.subtotal ?? total, // Subtotal sem frete
+      frete: orderData.frete ?? 0, // Valor do frete
+      total: orderData.total ?? total, // Total com desconto e frete aplicados
+      discount: orderData.discount ?? 0,
+      couponCode: orderData.couponCode ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    });
 
     const docRef = await addDoc(collection(db, ORDERS_COLLECTION), orderToSave);
 
