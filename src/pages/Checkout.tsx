@@ -367,10 +367,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       frete: valorFrete, // Valor do frete
       total: totalComFrete, // Total com desconto e frete aplicados
       discount: discountAmount,
-      couponCode: appliedCoupon?.nome || null,
-	  firebaseId: currentUser?.uid,
-	  userName: currentUser.displayName,
-	  userEmail: currentUser.email,
+      couponCode: appliedCoupon?.nome ?? null,
+      firebaseId: currentUser?.uid ?? null,
+      userName: currentUser?.displayName ?? null,
+      userEmail: currentUser?.email ?? null,
     };
 
     console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
@@ -635,7 +635,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                                 .filter((v: any) => v.quantity > 0)
                                 .map((variation: any, varIndex: number) => {
                                   // Para pizza inteira, dobra a quantidade e o preço
-                                  const halfMultiplier = variation.halfSelection === "whole" ? 2 : 1;
+                                  const halfMultiplier = item.isHalfPizza && variation.halfSelection === "whole" ? 2 : 1;
                                   const displayQuantity = (variation.quantity || 1) * halfMultiplier;
                                   const displayPrice = (variation.additionalPrice || 0) * displayQuantity;
                                   
@@ -658,7 +658,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
                     <div className="text-right font-semibold text-lg">
                       {/* Exibe apenas o preço base da pizza/item */}
-                      R$ {(item.price * item.quantity).toFixed(2)}
+                      R$ {(() => {
+                        const baseUnitPrice = item.isHalfPizza
+                          ? (item.combination?.price ?? item.price ?? 0)
+                          : (item.priceFrom ? 0 : (item.price ?? 0));
+                        return (baseUnitPrice * item.quantity).toFixed(2);
+                      })()}
                     </div>
                   </div>
 
