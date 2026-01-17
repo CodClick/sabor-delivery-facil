@@ -631,7 +631,7 @@ export type Database = {
             foreignKeyName: "cupons_usos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

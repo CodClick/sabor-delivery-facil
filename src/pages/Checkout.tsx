@@ -379,19 +379,29 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     // Registrar uso do cupom se houver
     if (appliedCoupon && currentUser) {
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from("users" as any)
-        .select("user_id")
+        .select("id")
         .eq("firebase_id", currentUser.uid)
         .maybeSingle();
 
-      if (userData) {
-        const userDataTyped = userData as any;
-        await supabase.from("cupons_usos" as any).insert({
+      const userDataTyped = userData as unknown as { id: string } | null;
+      console.log("Registrando uso do cupom:", { userData: userDataTyped, userError, cupom: appliedCoupon.id, pedido: order.id });
+
+      if (userDataTyped && userDataTyped.id) {
+        const { error: insertError } = await supabase.from("cupons_usos" as any).insert({
           cupom_id: appliedCoupon.id,
-          user_id: userDataTyped.user_id,
+          user_id: userDataTyped.id,
           pedido_id: order.id,
         });
+        
+        if (insertError) {
+          console.error("Erro ao registrar uso do cupom:", insertError);
+        } else {
+          console.log("Uso do cupom registrado com sucesso!");
+        }
+      } else {
+        console.warn("Usuário não encontrado no Supabase, cupom não será registrado");
       }
     }
 
