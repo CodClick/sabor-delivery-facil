@@ -141,20 +141,21 @@ const ShoppingCart: React.FC = () => {
       if (currentUser && cupomData.usos_por_usuario !== null && cupomData.usos_por_usuario !== undefined) {
         const { data: userData } = await supabase
           .from("users" as any)
-          .select("user_id")
+          .select("id")
           .eq("firebase_id", currentUser.uid)
           .maybeSingle();
 
-        if (userData) {
-          const userDataTyped = userData as any;
+        const userDataTyped = userData as unknown as { id: string } | null;
+
+        if (userDataTyped && userDataTyped.id) {
           const { count, error: userCountError } = await supabase
             .from("cupons_usos" as any)
             .select("*", { count: "exact", head: true })
             .eq("cupom_id", cupomData.id)
-            .eq("user_id", userDataTyped.user_id);
+            .eq("user_id", userDataTyped.id);
 
           const usosUsuario = count ?? 0;
-          console.log("Validação limite por usuário:", { limite: cupomData.usos_por_usuario, usos: usosUsuario, userId: userDataTyped.user_id, userCountError });
+          console.log("Validação limite por usuário:", { limite: cupomData.usos_por_usuario, usos: usosUsuario, userId: userDataTyped.id, userCountError });
           
           if (usosUsuario >= cupomData.usos_por_usuario) {
             toast({
