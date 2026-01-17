@@ -660,7 +660,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       {/* Exibe apenas o preço base da pizza/item */}
                       R$ {(() => {
                         const baseUnitPrice = item.isHalfPizza
-                          ? (item.combination?.price ?? item.price ?? 0)
+                          ? (item.price ?? 0)
                           : (item.priceFrom ? 0 : (item.price ?? 0));
                         return (baseUnitPrice * item.quantity).toFixed(2);
                       })()}

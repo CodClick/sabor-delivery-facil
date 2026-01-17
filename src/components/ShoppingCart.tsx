@@ -118,13 +118,16 @@ const ShoppingCart: React.FC = () => {
       }
 
       // Validar limite total de uso
-      if (cupomData.limite_uso) {
-        const { count } = await supabase
+      if (cupomData.limite_uso !== null && cupomData.limite_uso !== undefined) {
+        const { count, error: countError } = await supabase
           .from("cupons_usos" as any)
           .select("*", { count: "exact", head: true })
           .eq("cupom_id", cupomData.id);
 
-        if (count && count >= cupomData.limite_uso) {
+        const totalUsos = count ?? 0;
+        console.log("Validação limite total:", { limite: cupomData.limite_uso, usos: totalUsos, countError });
+        
+        if (totalUsos >= cupomData.limite_uso) {
           toast({
             title: "Cupom esgotado",
             description: "Este cupom atingiu o limite de uso",
@@ -135,7 +138,7 @@ const ShoppingCart: React.FC = () => {
       }
 
       // Validar usos por usuário (se estiver logado)
-      if (currentUser && cupomData.usos_por_usuario) {
+      if (currentUser && cupomData.usos_por_usuario !== null && cupomData.usos_por_usuario !== undefined) {
         const { data: userData } = await supabase
           .from("users" as any)
           .select("user_id")
@@ -144,13 +147,16 @@ const ShoppingCart: React.FC = () => {
 
         if (userData) {
           const userDataTyped = userData as any;
-          const { count } = await supabase
+          const { count, error: userCountError } = await supabase
             .from("cupons_usos" as any)
             .select("*", { count: "exact", head: true })
             .eq("cupom_id", cupomData.id)
             .eq("user_id", userDataTyped.user_id);
 
-          if (count && count >= cupomData.usos_por_usuario) {
+          const usosUsuario = count ?? 0;
+          console.log("Validação limite por usuário:", { limite: cupomData.usos_por_usuario, usos: usosUsuario, userId: userDataTyped.user_id, userCountError });
+          
+          if (usosUsuario >= cupomData.usos_por_usuario) {
             toast({
               title: "Limite de uso atingido",
               description: "Você já usou este cupom o máximo de vezes permitido",

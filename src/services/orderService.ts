@@ -97,10 +97,11 @@ export const createOrder = async (
 
             if (group.variations && Array.isArray(group.variations)) {
               for (const variation of group.variations) {
+                const variationAny = variation as any;
                 const rawVariationId =
                   variation.variationId ??
-                  variation.id ??
-                  variation.variation_id ??
+                  variationAny.id ??
+                  variationAny.variation_id ??
                   null;
                 const variationId = rawVariationId ? String(rawVariationId) : null;
 
@@ -111,8 +112,9 @@ export const createOrder = async (
                 additionalPrice = additionalPrice ?? 0;
 
                 const variationQty = variation.quantity ?? 1;
+                const halfSel = variationAny.halfSelection ?? null;
                 const halfMultiplier =
-                  isHalfPizza && variation.halfSelection === "whole" ? 2 : 1;
+                  isHalfPizza && halfSel === "whole" ? 2 : 1;
 
                 const variationCost =
                   additionalPrice * variationQty * halfMultiplier * itemQty;
@@ -126,7 +128,7 @@ export const createOrder = async (
                   quantity: variationQty,
                   name: variation.name || "",
                   additionalPrice,
-                  halfSelection: variation.halfSelection ?? null,
+                  halfSelection: halfSel,
                 });
               }
             }

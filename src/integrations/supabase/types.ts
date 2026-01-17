@@ -559,6 +559,7 @@ export type Database = {
           id: string
           limite_uso: number | null
           nome: string
+          origem: string | null
           tipo: string
           usos_por_usuario: number | null
           valor: number
@@ -573,6 +574,7 @@ export type Database = {
           id?: string
           limite_uso?: number | null
           nome: string
+          origem?: string | null
           tipo: string
           usos_por_usuario?: number | null
           valor: number
@@ -587,6 +589,7 @@ export type Database = {
           id?: string
           limite_uso?: number | null
           nome?: string
+          origem?: string | null
           tipo?: string
           usos_por_usuario?: number | null
           valor?: number
