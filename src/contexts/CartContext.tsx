@@ -13,7 +13,7 @@ interface AppliedCoupon {
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => void;
+  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[]; quantity?: number }) => void;
   addToCart: (item: MenuItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -137,45 +137,46 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
-  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[] }) => {
-    const { selectedVariations, ...item } = menuItem;
+  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[]; quantity?: number }) => {
+    const { selectedVariations, quantity: inputQuantity, ...item } = menuItem;
+    const quantityToAdd = inputQuantity ?? 1;
 
-    const enrichedVariations = enrichSelectedVariations(selectedVariations);
-    const itemId = item.id;
+    const enrichedVariations = enrichSelectedVariations(selectedVariations);
+    const itemId = item.id;
 
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(
-        i =>
-          i.id === itemId &&
-          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
-      );
+    setCartItems(prevItems => {
+      const existingItem = prevItems.find(
+        i =>
+          i.id === itemId &&
+          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
+      );
 
-      if (existingItem) {
-        return prevItems.map(i =>
-          i.id === itemId &&
-          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
-        );
-      } else {
-        const newItem: CartItem = {
-          ...item,
-          quantity: 1,
-          selectedVariations: enrichedVariations,
-        };
-        return [...prevItems, newItem];
-      }
-    });
+      if (existingItem) {
+        return prevItems.map(i =>
+          i.id === itemId &&
+          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
+            ? { ...i, quantity: i.quantity + quantityToAdd }
+            : i
+        );
+      } else {
+        const newItem: CartItem = {
+          ...item,
+          quantity: quantityToAdd,
+          selectedVariations: enrichedVariations,
+        };
+        return [...prevItems, newItem];
+      }
+    });
 
-    toast({
-      title: "Item adicionado",
-      description: `${item.name} foi adicionado ao carrinho`,
-      duration: 2000,
-    });
+    toast({
+      title: "Item adicionado",
+      description: `${quantityToAdd}x ${item.name} foi adicionado ao carrinho`,
+      duration: 2000,
+    });
     
 // --- INÍCIO DO CÓDIGO DE RASTREAMENTO (ATUALIZADO) ---
     try {
-      const itemParaCalculo: CartItem = { ...menuItem, quantity: 1, selectedVariations: enrichedVariations };
+      const itemParaCalculo: CartItem = { ...menuItem, quantity: quantityToAdd, selectedVariations: enrichedVariations };
       let finalPrice = 0;
 
       if (itemParaCalculo.isHalfPizza) {
@@ -191,7 +192,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: item.id,
         name: item.name,
         price: finalPrice,
-        quantity: 1,
+        quantity: quantityToAdd,
         category: item.category,
         // Mapeando as variações para um formato mais simples para o rastreamento
         variations: enrichedVariations?.flatMap(group => 
@@ -206,7 +207,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     // --- FIM DO CÓDIGO DE RASTREAMENTO ---
 
-  };
+  };
 
   const addToCart = (item: MenuItem) => addItem(item);
 
