@@ -371,7 +371,7 @@ export const verificarFidelidade = async (
 
         try {
           const response = await fetch(
-            "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/fidelidade",
+            "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/cupons_e_fidelidade",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
