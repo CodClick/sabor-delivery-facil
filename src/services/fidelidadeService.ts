@@ -288,6 +288,8 @@ export const verificarFidelidade = async (
   itens: any[]
 ): Promise<void> => {
   try {
+    console.log("🔍 [FIDELIDADE] Itens recebidos:", JSON.stringify(itens, null, 2));
+    
     // Filtrar apenas pizzas de 8+ pedaços
     const pizzasElegiveis = itens.filter(isPizzaElegivel);
     
@@ -296,8 +298,19 @@ export const verificarFidelidade = async (
       return;
     }
 
+    console.log("🍕 [FIDELIDADE] Pizzas elegíveis:", pizzasElegiveis.map(p => ({
+      name: p.name || p.nome,
+      quantity: p.quantity,
+      price: p.price || p.preco,
+      subtotal: p.subtotal
+    })));
+
     const quantidadePizzas = pizzasElegiveis.reduce(
-      (acc, item) => acc + (item.quantity || 1),
+      (acc, item) => {
+        const qty = Number(item.quantity) || 1;
+        console.log(`  ➡️ Item "${item.name || item.nome}": quantity=${item.quantity} (parsed: ${qty})`);
+        return acc + qty;
+      },
       0
     );
 
@@ -309,9 +322,11 @@ export const verificarFidelidade = async (
       }
 
       const preco = item.price || item.preco || 0;
-      const qtd = item.quantity || 1;
+      const qtd = Number(item.quantity) || 1;
       return acc + preco * qtd;
     }, 0);
+
+    console.log(`🍕 [FIDELIDADE] Total: ${quantidadePizzas} pizzas, R$ ${valorPizzas}`);
 
     // Atualizar progresso
     await atualizarProgresso(customerPhone, customerName, quantidadePizzas, valorPizzas);
