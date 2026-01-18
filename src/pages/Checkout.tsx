@@ -399,6 +399,58 @@ const handleSubmit = async (e: React.FormEvent) => {
           console.error("Erro ao registrar uso do cupom:", insertError);
         } else {
           console.log("Uso do cupom registrado com sucesso!");
+          
+          // Incrementar contador de usos do cupom
+          const novosUsos = (appliedCoupon.usos || 0) + 1;
+          const { error: updateError } = await supabase
+            .from("cupons" as any)
+            .update({ usos: novosUsos })
+            .eq("id", appliedCoupon.id);
+          
+          if (updateError) {
+            console.error("Erro ao incrementar usos do cupom:", updateError);
+          } else {
+            console.log("Usos do cupom incrementado para:", novosUsos);
+            
+            // Verificar se atingiu o limite e desativar
+            if (appliedCoupon.limite_uso && novosUsos >= appliedCoupon.limite_uso) {
+              const { error: desativarError } = await supabase
+                .from("cupons" as any)
+                .update({ ativo: false })
+                .eq("id", appliedCoupon.id);
+              
+              if (desativarError) {
+                console.error("Erro ao desativar cupom:", desativarError);
+              } else {
+                console.log("Cupom desativado por atingir limite de usos");
+                
+                // Enviar alerta para webhook
+                try {
+                  await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/cupons_e_fidelidade", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      tipo: "limite_cupom_alcancado",
+                      cupom: {
+                        id: appliedCoupon.id,
+                        nome: appliedCoupon.nome,
+                        tipo: appliedCoupon.tipo,
+                        valor: appliedCoupon.valor,
+                        limite_uso: appliedCoupon.limite_uso,
+                        usos: novosUsos,
+                        data_inicio: appliedCoupon.data_inicio,
+                        data_fim: appliedCoupon.data_fim,
+                      },
+                      data_alerta: new Date().toISOString(),
+                    }),
+                  });
+                  console.log("Alerta de limite de cupom enviado ao webhook");
+                } catch (webhookError) {
+                  console.error("Erro ao enviar alerta de limite de cupom:", webhookError);
+                }
+              }
+            }
+          }
         }
       } else {
         console.warn("Usuário não encontrado no Supabase, cupom não será registrado");

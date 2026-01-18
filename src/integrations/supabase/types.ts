@@ -561,6 +561,7 @@ export type Database = {
           nome: string
           origem: string | null
           tipo: string
+          usos: number | null
           usos_por_usuario: number | null
           valor: number
           valor_minimo_pedido: number | null
@@ -576,6 +577,7 @@ export type Database = {
           nome: string
           origem?: string | null
           tipo: string
+          usos?: number | null
           usos_por_usuario?: number | null
           valor: number
           valor_minimo_pedido?: number | null
@@ -591,6 +593,7 @@ export type Database = {
           nome?: string
           origem?: string | null
           tipo?: string
+          usos?: number | null
           usos_por_usuario?: number | null
           valor?: number
           valor_minimo_pedido?: number | null
