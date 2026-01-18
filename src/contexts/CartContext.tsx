@@ -9,6 +9,10 @@ interface AppliedCoupon {
   nome: string;
   tipo: "percentual" | "fixo";
   valor: number;
+  usos?: number | null;
+  limite_uso?: number | null;
+  data_inicio?: string;
+  data_fim?: string;
 }
 
 interface CartContextType {

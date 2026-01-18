@@ -174,6 +174,10 @@ const ShoppingCart: React.FC = () => {
         nome: cupomData.nome,
         tipo: cupomData.tipo,
         valor: cupomData.valor,
+        usos: cupomData.usos,
+        limite_uso: cupomData.limite_uso,
+        data_inicio: cupomData.data_inicio,
+        data_fim: cupomData.data_fim,
       });
 
       toast({
