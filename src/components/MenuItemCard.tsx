@@ -64,11 +64,11 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   };
 
   const handleAddItemWithVariations = (
-    item: MenuItem,
+    itemWithQty: MenuItem & { quantity?: number },
     selectedVariationGroups: SelectedVariationGroup[]
   ) => {
     addItem({
-      ...item,
+      ...itemWithQty,
       selectedVariations: selectedVariationGroups,
     });
     setTempCombinedItem(null);
