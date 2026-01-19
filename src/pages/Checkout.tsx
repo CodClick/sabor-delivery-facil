@@ -378,82 +378,96 @@ const handleSubmit = async (e: React.FormEvent) => {
     const order = await createOrder(orderData);
 
     // Registrar uso do cupom se houver
-    if (appliedCoupon && currentUser) {
-      const { data: userData, error: userError } = await supabase
-        .from("users" as any)
-        .select("id")
-        .eq("firebase_id", currentUser.uid)
-        .maybeSingle();
+    if (appliedCoupon) {
+      // Sempre incrementar contador de usos do cupom (independente de usuário logado)
+      const { data: cupomAtual, error: cupomError } = await supabase
+        .from("cupons" as any)
+        .select("usos, limite_uso")
+        .eq("id", appliedCoupon.id)
+        .single();
 
-      const userDataTyped = userData as unknown as { id: string } | null;
-      console.log("Registrando uso do cupom:", { userData: userDataTyped, userError, cupom: appliedCoupon.id, pedido: order.id });
+      const cupomAtualTyped = cupomAtual as unknown as { usos: number | null; limite_uso: number | null } | null;
+      console.log("Dados atuais do cupom:", { cupomAtual: cupomAtualTyped, cupomError });
 
-      if (userDataTyped && userDataTyped.id) {
-        const { error: insertError } = await supabase.from("cupons_usos" as any).insert({
-          cupom_id: appliedCoupon.id,
-          user_id: userDataTyped.id,
-          pedido_id: order.id,
-        });
-        
-        if (insertError) {
-          console.error("Erro ao registrar uso do cupom:", insertError);
+      if (cupomAtualTyped) {
+        const novosUsos = (cupomAtualTyped.usos || 0) + 1;
+        const { error: updateError } = await supabase
+          .from("cupons" as any)
+          .update({ usos: novosUsos })
+          .eq("id", appliedCoupon.id);
+
+        if (updateError) {
+          console.error("Erro ao incrementar usos do cupom:", updateError);
         } else {
-          console.log("Uso do cupom registrado com sucesso!");
-          
-          // Incrementar contador de usos do cupom
-          const novosUsos = (appliedCoupon.usos || 0) + 1;
-          const { error: updateError } = await supabase
-            .from("cupons" as any)
-            .update({ usos: novosUsos })
-            .eq("id", appliedCoupon.id);
-          
-          if (updateError) {
-            console.error("Erro ao incrementar usos do cupom:", updateError);
-          } else {
-            console.log("Usos do cupom incrementado para:", novosUsos);
-            
-            // Verificar se atingiu o limite e desativar
-            if (appliedCoupon.limite_uso && novosUsos >= appliedCoupon.limite_uso) {
-              const { error: desativarError } = await supabase
-                .from("cupons" as any)
-                .update({ ativo: false })
-                .eq("id", appliedCoupon.id);
-              
-              if (desativarError) {
-                console.error("Erro ao desativar cupom:", desativarError);
-              } else {
-                console.log("Cupom desativado por atingir limite de usos");
-                
-                // Enviar alerta para webhook
-                try {
-                  await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/cupons_e_fidelidade", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      tipo: "limite_cupom_alcancado",
-                      cupom: {
-                        id: appliedCoupon.id,
-                        nome: appliedCoupon.nome,
-                        tipo: appliedCoupon.tipo,
-                        valor: appliedCoupon.valor,
-                        limite_uso: appliedCoupon.limite_uso,
-                        usos: novosUsos,
-                        data_inicio: appliedCoupon.data_inicio,
-                        data_fim: appliedCoupon.data_fim,
-                      },
-                      data_alerta: new Date().toISOString(),
-                    }),
-                  });
-                  console.log("Alerta de limite de cupom enviado ao webhook");
-                } catch (webhookError) {
-                  console.error("Erro ao enviar alerta de limite de cupom:", webhookError);
-                }
+          console.log("Usos do cupom incrementado para:", novosUsos);
+
+          // Verificar se atingiu o limite e desativar
+          if (cupomAtualTyped.limite_uso && novosUsos >= cupomAtualTyped.limite_uso) {
+            const { error: desativarError } = await supabase
+              .from("cupons" as any)
+              .update({ ativo: false })
+              .eq("id", appliedCoupon.id);
+
+            if (desativarError) {
+              console.error("Erro ao desativar cupom:", desativarError);
+            } else {
+              console.log("Cupom desativado por atingir limite de usos");
+
+              // Enviar alerta para webhook
+              try {
+                await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/cupons_e_fidelidade", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    tipo: "limite_cupom_alcancado",
+                    cupom: {
+                      id: appliedCoupon.id,
+                      nome: appliedCoupon.nome,
+                      tipo: appliedCoupon.tipo,
+                      valor: appliedCoupon.valor,
+                      limite_uso: cupomAtualTyped.limite_uso,
+                      usos: novosUsos,
+                      data_inicio: appliedCoupon.data_inicio,
+                      data_fim: appliedCoupon.data_fim,
+                    },
+                    data_alerta: new Date().toISOString(),
+                  }),
+                });
+                console.log("Alerta de limite de cupom enviado ao webhook");
+              } catch (webhookError) {
+                console.error("Erro ao enviar alerta de limite de cupom:", webhookError);
               }
             }
           }
         }
-      } else {
-        console.warn("Usuário não encontrado no Supabase, cupom não será registrado");
+      }
+
+      // Registrar uso por usuário (se logado)
+      if (currentUser) {
+        const { data: userData, error: userError } = await supabase
+          .from("users" as any)
+          .select("id")
+          .eq("firebase_id", currentUser.uid)
+          .maybeSingle();
+
+        const userDataTyped = userData as unknown as { id: string } | null;
+        console.log("Registrando uso do cupom por usuário:", { userData: userDataTyped, userError, cupom: appliedCoupon.id, pedido: order.id });
+
+        if (userDataTyped && userDataTyped.id) {
+          const { error: insertError } = await supabase.from("cupons_usos" as any).insert({
+            cupom_id: appliedCoupon.id,
+            user_id: userDataTyped.id,
+            pedido_id: order.id,
+          });
+
+          if (insertError) {
+            console.error("Erro ao registrar uso do cupom:", insertError);
+          } else {
+            console.log("Uso do cupom registrado com sucesso para o usuário!");
+          }
+        } else {
+          console.warn("Usuário não encontrado no Supabase, registro individual não será feito");
+        }
       }
     }
 
