@@ -595,6 +595,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
               )}
 
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-9 bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                onClick={() => navigate("/")}
+              >
+                🍕 Adicionar mais itens
+              </Button>
+
               <Button type="submit" className="w-full" disabled={isLoading || !!freteError}>
                 {isLoading ? "Processando..." : `Finalizar Pedido - ${formatCurrency(finalTotal + valorFrete)}`}
               </Button>
