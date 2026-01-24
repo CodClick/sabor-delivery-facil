@@ -124,10 +124,6 @@ const Checkout = () => {
           }
         }
         
-        toast({
-          title: "Dados carregados!",
-          description: "Seus dados foram preenchidos automaticamente.",
-        });
       }
     } catch (error) {
       console.error("Erro ao buscar dados do cliente:", error);
@@ -172,10 +168,6 @@ const Checkout = () => {
             }
           }
           
-          toast({
-            title: "Dados carregados!",
-            description: "Seus dados foram preenchidos automaticamente.",
-          });
         }
       } catch (error) {
         console.error("Erro ao buscar dados do cliente:", error);
@@ -243,10 +235,6 @@ const Checkout = () => {
       descricao = `Distância: ${freteData.distanciaKm.toFixed(2)}km - Frete: ${formatCurrency(freteData.valorFrete)}`;
     }
 
-    toast({
-      title: "Frete calculado!",
-      description: descricao,
-    });
   };
 
   const handleCepChange = async (value: string) => {
