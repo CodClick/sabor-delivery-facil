@@ -1,1 +1,4 @@
 project_id = "ypsfoumafbfgcvrxylmw"
+
+[functions.registrar-uso-cupom]
+verify_jwt = false
