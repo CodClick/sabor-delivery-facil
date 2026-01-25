@@ -201,8 +201,8 @@ const Fidelidade = () => {
         <CardContent className="text-amber-700">
           <ul className="list-disc list-inside space-y-1">
             <li>Configure regras baseadas em <strong>número de compras</strong> ou <strong>valor total gasto</strong></li>
-            <li>Quando um cliente atingir a meta, o webhook é acionado automaticamente</li>
-            <li>O webhook envia o nome, WhatsApp do cliente e os dados da regra atingida</li>
+            <li>Quando um cliente atingir a meta, ele será avisado automaticamente</li>
+            <li>Um código de cupom será gerado e enviado automaticamente</li>
           </ul>
         </CardContent>
       </Card>
