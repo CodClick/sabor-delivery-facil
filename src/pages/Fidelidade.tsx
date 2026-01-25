@@ -202,7 +202,7 @@ const Fidelidade = () => {
           <ul className="list-disc list-inside space-y-1">
             <li>Configure regras baseadas em <strong>número de compras</strong> ou <strong>valor total gasto</strong></li>
             <li>Quando um cliente atingir a meta, ele será avisado automaticamente</li>
-            <li>Um código de cupom será gerado e enviado automaticamente</li>
+            <li>Um código de cupom será gerado e enviado para o cliente, com a recompensa escolhida</li>
           </ul>
         </CardContent>
       </Card>
