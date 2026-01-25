@@ -124,7 +124,8 @@ const Entregador = () => {
       delivered: "Entrega finalizada",
       cancelled: "Cancelado",
       to_deduct: "A descontar",
-      paid: "Pago"
+      paid: "Pago",
+      completed: "Finalizado"
     };
     return statusMap[status] || status;
   };

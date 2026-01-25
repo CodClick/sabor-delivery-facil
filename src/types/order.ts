@@ -33,7 +33,7 @@ export interface Order {
   paymentMethod: "card" | "cash" | "pix" | "payroll_discount";
   observations?: string;
   items: OrderItem[];
-  status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid";
+  status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid" | "completed";
   paymentStatus?: "a_receber" | "recebido";
   total: number;
   subtotal?: number;
@@ -51,6 +51,7 @@ export interface CreateOrderRequest {
   address: string;
   paymentMethod: "card" | "cash" | "pix" | "payroll_discount";
   observations?: string;
+  status?: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid" | "completed";
   items: {
     menuItemId: string;
     name: string;
@@ -70,6 +71,6 @@ export interface CreateOrderRequest {
 }
 
 export interface UpdateOrderRequest {
-  status?: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid";
+  status?: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid" | "completed";
   paymentStatus?: "a_receber" | "recebido";
 }

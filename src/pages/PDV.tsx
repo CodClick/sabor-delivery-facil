@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,11 +18,12 @@ import { getAllVariations } from "@/services/variationService";
 import { getAllVariationGroups } from "@/services/variationGroupService";
 import { createOrder } from "@/services/orderService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
-import { CreateOrderRequest } from "@/types/order";
-import { Trash2, Plus, Minus, User, UserPlus, ClipboardList, Check, ChevronsUpDown } from "lucide-react";
+import { CreateOrderRequest, Order } from "@/types/order";
+import { Trash2, Plus, Minus, User, UserPlus, ClipboardList, Check, ChevronsUpDown, Printer, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
 import { cn } from "@/lib/utils";
+import { printOrder } from "@/utils/printUtils";
 
 interface Customer {
   id: string;
@@ -60,6 +61,10 @@ const PDV = () => {
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "pix" | "payroll_discount">("cash");
   const [observations, setObservations] = useState("");
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+  
+  // Estado para modal de sucesso
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
   
   // Estados para variações
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -194,7 +199,7 @@ const PDV = () => {
     });
   };
 
-  // Processar pedido
+  // Processar pedido - PDV finaliza direto sem status intermediários
   const processOrder = async () => {
     if (cartItems.length === 0) {
       toast({
@@ -223,6 +228,7 @@ const PDV = () => {
         address: selectedCustomer.address,
         paymentMethod: paymentMethod,
         observations,
+        status: "completed", // PDV já finaliza o pedido direto
         items: cartItems.map(item => ({
           menuItemId: item.id,
           name: item.name,
@@ -235,10 +241,9 @@ const PDV = () => {
 
       const order = await createOrder(orderData);
       
-      toast({
-        title: "Pedido criado",
-        description: `Pedido #${order.id.substring(0, 6)} criado com sucesso!`
-      });
+      // Salvar o pedido para possível impressão
+      setLastOrder(order);
+      setShowSuccessModal(true);
       
       // Limpar formulário
       clearCart();
@@ -256,6 +261,19 @@ const PDV = () => {
     } finally {
       setIsProcessingOrder(false);
     }
+  };
+  
+  // Função para imprimir e fechar modal
+  const handlePrintOrder = () => {
+    if (lastOrder) {
+      printOrder(lastOrder);
+    }
+  };
+  
+  // Fechar modal de sucesso
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    setLastOrder(null);
   };
 
   if (loading) {
@@ -608,6 +626,46 @@ const PDV = () => {
           groupVariations={groupVariations}
         />
       )}
+      
+      {/* Modal de Sucesso */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="h-6 w-6" />
+              Pedido Finalizado!
+            </DialogTitle>
+            <DialogDescription>
+              Pedido #{lastOrder?.id.substring(0, 6)} criado com sucesso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {lastOrder && (
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <p><strong>Cliente:</strong> {lastOrder.customerName}</p>
+                <p><strong>Total:</strong> R$ {lastOrder.total.toFixed(2)}</p>
+                <p><strong>Itens:</strong> {lastOrder.items.length}</p>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCloseSuccessModal}
+              className="flex-1"
+            >
+              Fechar
+            </Button>
+            <Button
+              onClick={handlePrintOrder}
+              className="flex-1"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
