@@ -557,6 +557,15 @@ const PDV = () => {
                   <ClipboardList className="h-4 w-4 mr-2" />
                   Ver Pedidos
                 </Button>
+
+                <Button
+                  onClick={() => navigate('/admin-dashboard')}
+                  variant="outline"
+                  className="w-full text-sm border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
+                  size="lg"
+                >
+                  Painel de Administração
+                </Button>
               </div>
             </CardContent>
           </Card>
