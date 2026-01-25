@@ -101,12 +101,27 @@ const PDV = () => {
     loadData();
   }, [toast]);
 
-  // Filtrar itens do menu
-  const filteredItems = menuItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Filtrar e ordenar itens do menu por categoria e ordem alfabética
+  const filteredItems = menuItems
+    .filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      // Primeiro, ordenar por categoria (usando a ordem da categoria)
+      const categoryA = categories.find(c => c.id === a.category);
+      const categoryB = categories.find(c => c.id === b.category);
+      const orderA = categoryA?.order ?? 999;
+      const orderB = categoryB?.order ?? 999;
+      
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      
+      // Depois, ordenar alfabeticamente pelo nome
+      return a.name.localeCompare(b.name, 'pt-BR');
+    });
 
   // Criar mapeamento de variações por grupo
   const groupVariations = React.useMemo(() => {
