@@ -288,7 +288,7 @@ const PDV = () => {
   }
 
   return (
-    
+<div className="container mx-auto p-4 max-w-7xl">   
 <div className="grid grid-cols-1 md:grid-cols-3 items-center mb-6 gap-4 text-center md:text-left">
   <h1 className="text-xl md:text-3xl font-bold md:justify-self-start">
     PDV - Ponto de Venda
