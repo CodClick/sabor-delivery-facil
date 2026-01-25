@@ -298,7 +298,7 @@ const PDV = () => {
     onClick={() => navigate('/admin-dashboard')}
     variant="outline"
     size="sm"
-    className="className="w-full md:w-auto mx-auto md:justify-self-center px-6 border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
+    className="w-full md:w-auto mx-auto md:justify-self-center px-6 border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
   >
     Painel de Administração
   </Button>
