@@ -290,8 +290,8 @@ const PDV = () => {
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">PDV - Ponto de Venda</h1>
-        <Badge variant="outline" className="text-lg px-3 py-1">
+        <h1 className="text-xl md:text-3xl font-bold">PDV - Ponto de Venda</h1>
+        <Badge variant="outline" className="text-sm md:text-lg px-2 md:px-3 py-1">
           Total: R$ {cartTotal.toFixed(2)}
         </Badge>
       </div>
