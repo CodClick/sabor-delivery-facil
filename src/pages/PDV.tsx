@@ -288,21 +288,29 @@ const PDV = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-7xl">
-      <div className="grid grid-cols-3 items-center mb-6 gap-4">
-        <h1 className="text-xl md:text-3xl font-bold justify-self-start">PDV - Ponto de Venda</h1>
+    
+<div className="grid grid-cols-1 md:grid-cols-3 items-center mb-6 gap-4 text-center md:text-left">
+  <h1 className="text-xl md:text-3xl font-bold md:justify-self-start">
+    PDV - Ponto de Venda
+  </h1>
+
   <Button
-  onClick={() => navigate('/admin-dashboard')}
-  variant="outline"
-  size="sm"
-  className="justify-self-center px-6 border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
->
-  Painel de Administração
+    onClick={() => navigate('/admin-dashboard')}
+    variant="outline"
+    size="sm"
+    className="mx-auto md:justify-self-center px-6 border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
+  >
+    Painel de Administração
   </Button>
-        <Badge variant="outline" className="text-sm md:text-lg px-2 md:px-3 py-1">
-          Total: R$ {cartTotal.toFixed(2)}
-        </Badge>
-      </div>
+
+  <Badge
+    variant="outline"
+    className="text-sm md:text-lg px-3 py-1 mx-auto md:justify-self-end"
+  >
+    Total: R$ {cartTotal.toFixed(2)}
+  </Badge>
+</div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Painel de Produtos */}
