@@ -166,7 +166,7 @@ export const createOrder = async (
       paymentMethod: orderData.paymentMethod,
       observations: orderData.observations ?? "",
       items: orderItems,
-      status: "pending",
+      status: orderData.status ?? "pending", // Usa o status enviado ou "pending" como padrão
       subtotal: orderData.subtotal ?? total, // Subtotal sem frete
       frete: orderData.frete ?? 0, // Valor do frete
       total: orderData.total ?? total, // Total com desconto e frete aplicados
