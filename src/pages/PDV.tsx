@@ -347,7 +347,7 @@ const PDV = () => {
       </CardHeader>
 
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[32rem] lg:max-h-[40rem] overflow-y-auto">
                 {filteredItems.map(item => (
                   <Card key={item.id} className="cursor-pointer hover:bg-gray-50">
                     <CardContent className="p-4">
