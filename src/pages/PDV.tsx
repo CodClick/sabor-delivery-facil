@@ -291,6 +291,14 @@ const PDV = () => {
     <div className="container mx-auto p-4 max-w-7xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl md:text-3xl font-bold">PDV - Ponto de Venda</h1>
+                        <Button
+                  onClick={() => navigate('/admin-dashboard')}
+                  variant="outline"
+                  className="w-full text-sm border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
+                  size="lg"
+                >
+                  Painel de Administração
+                </Button>
         <Badge variant="outline" className="text-sm md:text-lg px-2 md:px-3 py-1">
           Total: R$ {cartTotal.toFixed(2)}
         </Badge>
@@ -558,14 +566,7 @@ const PDV = () => {
                   Ver Pedidos
                 </Button>
 
-                <Button
-                  onClick={() => navigate('/admin-dashboard')}
-                  variant="outline"
-                  className="w-full text-sm border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
-                  size="lg"
-                >
-                  Painel de Administração
-                </Button>
+
               </div>
             </CardContent>
           </Card>
