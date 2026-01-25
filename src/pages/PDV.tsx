@@ -298,14 +298,14 @@ const PDV = () => {
     onClick={() => navigate('/admin-dashboard')}
     variant="outline"
     size="sm"
-    className="mx-auto md:justify-self-center px-6 border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
+    className="className="w-full md:w-auto mx-auto md:justify-self-center px-6 border-[#fa6500] text-[#fa6500] hover:bg-[#fa6500] hover:text-white transition-colors"
   >
     Painel de Administração
   </Button>
 
   <Badge
     variant="outline"
-    className="text-sm md:text-lg px-3 py-1 mx-auto md:justify-self-end"
+    className="text-base font-semibold md:text-lg px-3 py-1 mx-auto md:justify-self-end"
   >
     Total: R$ {cartTotal.toFixed(2)}
   </Badge>
