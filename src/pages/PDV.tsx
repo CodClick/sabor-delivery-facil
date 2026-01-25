@@ -312,36 +312,40 @@ const PDV = () => {
 </div>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Painel de Produtos */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Produtos</CardTitle>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Buscar produtos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  {/* Painel de Produtos */}
+  <div className="lg:col-span-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Produtos</CardTitle>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Buscar produtos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-48">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+      </CardHeader>
+
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
                 {filteredItems.map(item => (
