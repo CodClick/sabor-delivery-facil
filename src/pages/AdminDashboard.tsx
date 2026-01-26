@@ -40,7 +40,7 @@ const AdminDashboard = () => {
             </div>
             <CardTitle className="text-xl">Ver Pedidos</CardTitle>
             <CardDescription>
-              Visualize e gerencie todos os pedidos do restaurante
+              Visualize e gerencie todos os pedidos
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -57,7 +57,7 @@ const AdminDashboard = () => {
             </div>
             <CardTitle className="text-xl">Gerenciamento do Cardápio</CardTitle>
             <CardDescription>
-              Gerencie categorias, itens do menu, grupos e variações
+              Categorias, Itens, Variações e Grupos
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
             </div>
             <CardTitle className="text-xl">Cupons de Desconto</CardTitle>
             <CardDescription>
-              Crie, Edite e Exclua os cupons de desconto da sua loja
+              Crie, Edite e Exclua os cupons de desconto
             </CardDescription>
           </CardHeader>
           <CardContent>
