@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,73 +43,92 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/checkout" element={<Checkout />} />
-      <Route path="/meus-pedidos" element={<MeusPedidos />} />
-      <Route path="/ChatAssistant" element={<ChatAssistant />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/admin-dashboard" element={
-        <AdminRoute>
-          <AdminDashboard />
-        </AdminRoute>
-      } />
-      <Route path="/admin" element={
-        <AdminRoute>
-          <Admin />
-        </AdminRoute>
-      } />
-      <Route path="/orders" element={<Orders />} />
-      <Route path="/admin-orders" element={
-        <AdminRoute>
-          <AdminOrders />
-        </AdminRoute>
-      } />
-      <Route path="/entregador" element={
-        <AdminRoute>
-          <Entregador />
-        </AdminRoute>
-      } />
-      <Route path="/pdv" element={
-        <AdminRoute>
-          <PDV />
-        </AdminRoute>
-      } />
+const AppRoutes = () => {
+  const location = useLocation();
+  
+  // Routes where ShoppingCart and ChatAssistant should be hidden
+  const adminRoutes = [
+    '/admin-dashboard',
+    '/admin',
+    '/admin-orders',
+    '/entregador',
+    '/pdv',
+    '/admin-cupons',
+    '/minha-empresa',
+    '/logistica',
+    '/fidelidade'
+  ];
+  
+  const isAdminPage = adminRoutes.some(route => location.pathname.startsWith(route));
 
-      <Route path="/admin-cupons" element={
-        <AdminRoute>
-          <AdminCupons />
-        </AdminRoute>
-      } />
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/meus-pedidos" element={<MeusPedidos />} />
+        <Route path="/ChatAssistant" element={<ChatAssistant />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin-dashboard" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
+        <Route path="/admin" element={
+          <AdminRoute>
+            <Admin />
+          </AdminRoute>
+        } />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/admin-orders" element={
+          <AdminRoute>
+            <AdminOrders />
+          </AdminRoute>
+        } />
+        <Route path="/entregador" element={
+          <AdminRoute>
+            <Entregador />
+          </AdminRoute>
+        } />
+        <Route path="/pdv" element={
+          <AdminRoute>
+            <PDV />
+          </AdminRoute>
+        } />
 
-      <Route path="/minha-empresa" element={
-        <AdminRoute>
-          <MinhaEmpresa />
-        </AdminRoute>
-      } />
+        <Route path="/admin-cupons" element={
+          <AdminRoute>
+            <AdminCupons />
+          </AdminRoute>
+        } />
 
-      <Route path="/logistica" element={
-        <AdminRoute>
-          <Logistica />
-        </AdminRoute>
-      } />
-      <Route path="/fidelidade" element={
-        <AdminRoute>
-          <Fidelidade />
-        </AdminRoute>
-      } />
-      
-      <Route path="/api/*" element={<Api />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-    <ShoppingCart />
-    <ChatAssistant /> 
-  </BrowserRouter>
-);
+        <Route path="/minha-empresa" element={
+          <AdminRoute>
+            <MinhaEmpresa />
+          </AdminRoute>
+        } />
+
+        <Route path="/logistica" element={
+          <AdminRoute>
+            <Logistica />
+          </AdminRoute>
+        } />
+        <Route path="/fidelidade" element={
+          <AdminRoute>
+            <Fidelidade />
+          </AdminRoute>
+        } />
+        
+        <Route path="/api/*" element={<Api />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {!isAdminPage && <ShoppingCart />}
+      {!isAdminPage && <ChatAssistant />}
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -118,7 +137,9 @@ const App = () => (
         <CartProvider>
           <Toaster />
           <Sonner />
-          <AppRoutes />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>
