@@ -74,7 +74,7 @@ const AdminDashboard = () => {
             </div>
             <CardTitle className="text-xl">Ponto de Venda</CardTitle>
             <CardDescription>
-              Acesse o sistema de ponto de venda para registrar pedidos
+              Acesse o PDV para registrar pedidos
             </CardDescription>
           </CardHeader>
           <CardContent>
