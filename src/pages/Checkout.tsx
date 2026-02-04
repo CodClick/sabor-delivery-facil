@@ -628,39 +628,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                           )}
                         </p>
                       )}
-                      
-                      {/* Mostrar variações selecionadas */}
-                      {item.selectedVariations && item.selectedVariations.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-600 space-y-1">
-                          {item.selectedVariations.map((group: any, groupIndex: number) => (
-                            <div key={groupIndex}>
-                              {group.groupName && (
-                                <p className="font-medium text-gray-700">{group.groupName}:</p>
-                              )}
-                              {group.variations
-                                .filter((v: any) => v.quantity > 0)
-                                .map((variation: any, varIndex: number) => {
-                                  // Para pizza inteira, dobra a quantidade e o preço
-                                  const halfMultiplier = item.isHalfPizza && variation.halfSelection === "whole" ? 2 : 1;
-                                  const displayQuantity = (variation.quantity || 1) * halfMultiplier;
-                                  const displayPrice = (variation.additionalPrice || 0) * displayQuantity;
-                                  
-                                  return (
-                                    <div key={varIndex} className="pl-2 flex justify-between">
-                                      <span>{variation.name || "Variação"} x{displayQuantity}</span>
-                                      {variation.additionalPrice > 0 && (
-                                        <span className="text-green-600 font-medium">
-                                          +R$ {displayPrice.toFixed(2)}
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              }
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="text-right font-semibold text-lg">
@@ -683,18 +650,20 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
                   </div>
 
-                  {/* Exibir grupos de variações e suas quantidades/subtotais (apenas para itens que não são pizza meio a meio) */}
-                  {!item.isHalfPizza && item.selectedVariations && item.selectedVariations.length > 0 && (
+                  {/* Exibir grupos de variações e suas quantidades/subtotais */}
+                  {item.selectedVariations && item.selectedVariations.length > 0 && (
                     <div className="mt-2 ml-1 text-sm">
                       {item.selectedVariations.map((group, groupIndex) => (
                         <div key={groupIndex} className="mb-2">
-                          <div className="font-semibold text-gray-700">{group.groupName}:</div>
-                          <div className="ml-2 text-gray-700 flex flex-col gap-0.5">
+                          <div className="font-semibold text-muted-foreground">{group.groupName}:</div>
+                          <div className="ml-2 text-muted-foreground flex flex-col gap-0.5">
                             {group.variations.map((variation, varIndex) => {
-                              // Subtotal de cada variação multiplicado pela quantidade selecionada
+                              // Para pizza meio a meio com "whole", multiplica por 2
+                              const halfMultiplier = item.isHalfPizza && variation.halfSelection === "whole" ? 2 : 1;
+                              const displayQuantity = (variation.quantity || 1) * halfMultiplier;
                               const variationTotal =
                                 (variation.additionalPrice || 0) *
-                                (variation.quantity || 1) *
+                                displayQuantity *
                                 item.quantity;
 
                               // Mostrar quantidade sempre, mesmo se for 1
@@ -702,12 +671,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                                 return (
                                   <div key={varIndex} className="flex items-center justify-between">
                                     <span>
-                                      <span className="inline-block w-7">{variation.quantity}x</span>
+                                      <span className="inline-block w-7">{displayQuantity}x</span>
                                       {variation.name || "Variação"}
                                       {variation.additionalPrice && variation.additionalPrice > 0 ? (
                                         <>
                                           {" "}
-                                          <span className="text-gray-500">
+                                          <span className="text-muted-foreground/70">
                                             (+R$ {variation.additionalPrice.toFixed(2)})
                                           </span>
                                         </>
