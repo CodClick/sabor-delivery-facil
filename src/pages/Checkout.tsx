@@ -16,11 +16,11 @@ import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 import { calculateFreteByCep } from "@/services/freteService";
 import { supabase } from "@/integrations/supabase/client";
-
+import { Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const Checkout = () => {
-  const { cartItems, cartTotal, clearCart, appliedCoupon, discountAmount, finalTotal } = useCart();
+  const { cartItems, cartTotal, clearCart, removeFromCart, appliedCoupon, discountAmount, finalTotal } = useCart();
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -595,8 +595,8 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="space-y-6">
               {cartItems.map((item, index) => (
                 <div
-                  key={index}
-                  className="flex flex-col gap-0 border-b pb-4 mb-2 last:border-b-0 last:pb-0"
+                  key={item.id}
+                  className="flex flex-col gap-0 border-b pb-4 mb-2 last:border-b-0 last:pb-0 relative group"
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -651,14 +651,24 @@ const handleSubmit = async (e: React.FormEvent) => {
                         </div>
                       )}
                     </div>
-                    <div className="text-right font-semibold text-lg">
-                      {/* Exibe apenas o preço base da pizza/item */}
-                      R$ {(() => {
-                        const baseUnitPrice = item.isHalfPizza
-                          ? (item.price ?? 0)
-                          : (item.priceFrom ? 0 : (item.price ?? 0));
-                        return (baseUnitPrice * item.quantity).toFixed(2);
-                      })()}
+                    <div className="flex items-start gap-2">
+                      <div className="text-right font-semibold text-lg">
+                        {/* Exibe apenas o preço base da pizza/item */}
+                        R$ {(() => {
+                          const baseUnitPrice = item.isHalfPizza
+                            ? (item.price ?? 0)
+                            : (item.priceFrom ? 0 : (item.price ?? 0));
+                          return (baseUnitPrice * item.quantity).toFixed(2);
+                        })()}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        title="Remover item"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 
