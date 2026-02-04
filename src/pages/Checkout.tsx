@@ -698,6 +698,31 @@ const handleSubmit = async (e: React.FormEvent) => {
                       ))}
                     </div>
                   )}
+
+                  {/* Subtotal do item */}
+                  <div className="flex justify-end mt-2 pt-2 border-t border-dashed">
+                    <span className="text-sm font-semibold">
+                      Subtotal: R$ {(() => {
+                        const basePrice = item.isHalfPizza
+                          ? (item.price ?? 0)
+                          : (item.priceFrom ? 0 : (item.price ?? 0));
+                        
+                        let variationsTotal = 0;
+                        if (item.selectedVariations && item.selectedVariations.length > 0) {
+                          item.selectedVariations.forEach((group) => {
+                            group.variations.forEach((variation) => {
+                              const halfMultiplier = item.isHalfPizza && variation.halfSelection === "whole" ? 2 : 1;
+                              const additionalPrice = variation.additionalPrice || 0;
+                              const quantity = variation.quantity || 1;
+                              variationsTotal += additionalPrice * quantity * halfMultiplier;
+                            });
+                          });
+                        }
+                        
+                        return ((basePrice + variationsTotal) * item.quantity).toFixed(2);
+                      })()}
+                    </span>
+                  </div>
                 </div>
               ))}
               
