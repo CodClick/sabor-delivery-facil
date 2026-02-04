@@ -9,6 +9,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { createOrder } from "@/services/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +52,7 @@ const Checkout = () => {
   const [valorFrete, setValorFrete] = useState<number>(0);
   const [distanciaKm, setDistanciaKm] = useState<number | null>(null);
   const [freteError, setFreteError] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   
   const numberInputRef = useRef<HTMLInputElement>(null);
 
@@ -663,7 +674,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => setItemToDelete(item.id)}
                         className="text-gray-400 hover:text-red-500 transition-colors p-1"
                         title="Remover item"
                       >
@@ -775,6 +786,32 @@ const handleSubmit = async (e: React.FormEvent) => {
           </Button>
         </div>
       </div>
+
+      {/* Dialog de confirmação para deletar item */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover item do pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este item do seu pedido?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (itemToDelete) {
+                  removeFromCart(itemToDelete);
+                  setItemToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
