@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw } from "lucide-react";
+import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteMenuItem, cleanupPopularItems } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
@@ -117,6 +117,22 @@ export const MenuItemsTab = ({
       isHalfPizza: item.isHalfPizza ?? false,
     };
     setEditItem(itemToEdit);
+  };
+
+  const handleDuplicateItem = (item: MenuItem & { isHalfPizza?: boolean }) => {
+    const duplicatedItem: MenuItem & { isHalfPizza?: boolean } = {
+      ...item,
+      id: `temp-${Date.now()}`,
+      name: `${item.name} (Cópia)`,
+      hasVariations: !!item.variationGroups?.length,
+      variationGroups: item.variationGroups || [],
+      isHalfPizza: item.isHalfPizza ?? false,
+    };
+    setEditItem(duplicatedItem);
+    toast({
+      title: "Duplicando item",
+      description: "Edite as informações e salve para criar a cópia.",
+    });
   };
 
   const handleDeleteItem = async (item: MenuItem) => {
@@ -304,14 +320,24 @@ export const MenuItemsTab = ({
                                   )}
                                 </div>
                               </div>
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-col gap-1">
                                 <Button 
                                   size="sm" 
                                   variant="ghost" 
                                   onClick={() => handleEditItem(item)}
                                   disabled={isDeleting}
+                                  title="Editar"
                                 >
                                   <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleDuplicateItem(item)}
+                                  disabled={isDeleting}
+                                  title="Duplicar"
+                                >
+                                  <Copy className="h-4 w-4 text-blue-500" />
                                 </Button>
                                 <Button 
                                   size="sm" 
@@ -319,6 +345,7 @@ export const MenuItemsTab = ({
                                   onClick={() => handleDeleteItem(item)}
                                   className={isDuplicate ? 'text-red-600 hover:text-red-700' : ''}
                                   disabled={isDeleting}
+                                  title="Excluir"
                                 >
                                   <Trash2 className={`h-4 w-4 ${isDeleting ? 'text-gray-400' : 'text-red-500'}`} />
                                 </Button>
