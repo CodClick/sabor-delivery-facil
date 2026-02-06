@@ -5,6 +5,7 @@ import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
 import { getAllVariations } from "@/services/variationService";
 import { getAllVariationGroups } from "@/services/variationGroupService";
+import { getAllPizzaBorders, PizzaBorder } from "@/services/pizzaBorderService";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,7 @@ import { MenuItemsTab } from "@/components/admin/MenuItemsTab";
 import { CategoriesTab } from "@/components/admin/CategoriesTab";
 import { VariationsTab } from "@/components/admin/VariationsTab";
 import { VariationGroupsTab } from "@/components/admin/VariationGroupsTab";
+import { PizzaBordersTab } from "@/components/admin/PizzaBordersTab";
 import { Database } from "lucide-react";
 import { SeedDataButton } from "@/components/admin/SeedDataButton";
 import { categories as localCategories, menuItems as localMenuItems } from "@/data/menuData";
@@ -26,6 +28,7 @@ const Admin = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([]);
+  const [pizzaBorders, setPizzaBorders] = useState<PizzaBorder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("menu");
 
@@ -42,7 +45,7 @@ const Admin = () => {
       setLoading(true);
       console.log("=== ADMIN: CARREGANDO DADOS ===");
       
-      const [items, cats, vars, groups] = await Promise.all([
+      const [items, cats, vars, groups, borders] = await Promise.all([
         getAllMenuItems().catch(() => {
           console.log("Using local menu items as fallback");
           return localMenuItems;
@@ -57,6 +60,10 @@ const Admin = () => {
         }),
         getAllVariationGroups().catch(() => {
           console.log("No variation groups found, using empty array");
+          return [];
+        }),
+        getAllPizzaBorders().catch(() => {
+          console.log("No pizza borders found, using empty array");
           return [];
         })
       ]);
@@ -88,6 +95,7 @@ const Admin = () => {
       setCategories(validCategories);
       setVariations(validVariations);
       setVariationGroups(validVariationGroups);
+      setPizzaBorders(borders);
 
       console.log("=== DADOS CARREGADOS E ESTADO ATUALIZADO ===");
     } catch (error) {
@@ -100,6 +108,7 @@ const Admin = () => {
       setCategories(validLocalCategories.sort((a, b) => a.name.localeCompare(b.name)));
       setVariations([]);
       setVariationGroups([]);
+      setPizzaBorders([]);
 
       toast({
         title: "Aviso",
@@ -187,11 +196,12 @@ const Admin = () => {
         )}
 
         <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-4 h-auto p-1">
             <TabsTrigger value="menu" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Itens</TabsTrigger>
             <TabsTrigger value="categories" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Categorias</TabsTrigger>
             <TabsTrigger value="variations" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Variações</TabsTrigger>
             <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Grupos</TabsTrigger>
+            <TabsTrigger value="borders" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Bordas</TabsTrigger>
           </TabsList>
 
           <div className="w-full overflow-x-hidden">
@@ -228,6 +238,14 @@ const Admin = () => {
               <VariationGroupsTab 
                 variationGroups={variationGroups}
                 variations={variations}
+                loading={loading}
+                onDataChange={loadData}
+              />
+            </TabsContent>
+
+            <TabsContent value="borders" className="mt-0">
+              <PizzaBordersTab 
+                pizzaBorders={pizzaBorders}
                 loading={loading}
                 onDataChange={loadData}
               />
