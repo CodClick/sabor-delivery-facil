@@ -41,16 +41,11 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   const [isValid, setIsValid] = useState<boolean>(false);
   // Estado para controlar qual variação está tendo a metade selecionada
   const [selectingHalfFor, setSelectingHalfFor] = useState<{groupId: string, variationId: string} | null>(null);
-  // Estado para quantidade do item
-  const [itemQuantity, setItemQuantity] = useState<number>(1);
 
   const isHalfPizza = item.isHalfPizza === true;
 
   useEffect(() => {
     if (isOpen && item.variationGroups) {
-      // Reset quantity when dialog opens
-      setItemQuantity(1);
-      
       // Initialize selected variations for each group
       const initialGroups = item.variationGroups.map(group => {
         if (!group) return null;
@@ -183,10 +178,9 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
       })
     })).filter(group => group.variations.length > 0);
     
-    console.log("Enviando variações para o carrinho:", nonZeroGroups, "Quantidade:", itemQuantity);
+    console.log("Enviando variações para o carrinho:", nonZeroGroups);
     
-    // Pass quantity along with the item
-    onAddToCart({ ...item, quantity: itemQuantity } as any, nonZeroGroups);
+    onAddToCart(item, nonZeroGroups);
     onClose();
   };
 
@@ -463,45 +457,17 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
             <div className="h-20"></div>
           </div>
           
-          <div className="flex flex-col gap-3 p-6 border-t flex-shrink-0 bg-white">
-            {/* Seletor de Quantidade */}
-            <div className="flex items-center justify-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground">Quantidade:</span>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setItemQuantity(q => Math.max(1, q - 1))}
-                  disabled={itemQuantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-8 text-center font-semibold text-lg">{itemQuantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setItemQuantity(q => q + 1)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Botões de ação */}
-            <div className="flex justify-between gap-3">
-              <Button variant="outline" onClick={onClose} className="flex-1">
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleAddToCart} 
-                disabled={!isValid}
-                className="bg-food-green hover:bg-opacity-90 flex-1"
-              >
-                Adicionar {itemQuantity > 1 ? `(${itemQuantity})` : ""} ao carrinho
-              </Button>
-            </div>
+          <div className="flex justify-between gap-3 p-6 border-t flex-shrink-0 bg-white">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAddToCart} 
+              disabled={!isValid}
+              className="bg-food-green hover:bg-opacity-90 flex-1"
+            >
+              Adicionar ao carrinho
+            </Button>
           </div>
         </div>
       </DialogContent>
