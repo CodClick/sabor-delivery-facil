@@ -211,6 +211,7 @@ const Admin = () => {
                 categories={categories}
                 variations={variations}
                 variationGroups={variationGroups}
+                pizzaBorders={pizzaBorders}
                 loading={loading}
                 onDataChange={loadData}
               />

@@ -1,3 +1,11 @@
+export interface PizzaBorder {
+  id: string;
+  name: string;
+  description?: string;
+  additionalPrice: number;
+  available: boolean;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -19,6 +27,7 @@ export interface MenuItem {
     sabor2: { id: string; name: string };
     tamanho: "broto" | "grande";
   };
+  pizzaBorders?: PizzaBorder[]; // Bordas disponíveis para esta pizza
 }
 
 export interface CartItem extends MenuItem {
