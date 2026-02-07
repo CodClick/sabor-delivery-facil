@@ -1,5 +1,5 @@
 import React from "react";
-import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
+import { MenuItem, Category, Variation, VariationGroup, PizzaBorder } from "@/types/menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ import { saveMenuItem } from "@/services/menuItemService";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VariationGroupsSection } from "./VariationGroupsSection";
+import { PizzaBordersSection } from "./PizzaBordersSection";
 
 interface EditMenuItemModalProps {
   editItem: MenuItem;
@@ -26,6 +27,7 @@ interface EditMenuItemModalProps {
   categories: Category[];
   variations: Variation[];
   variationGroups: VariationGroup[];
+  pizzaBorders?: PizzaBorder[];
   onSuccess: () => void;
 }
 
@@ -36,6 +38,7 @@ export const EditMenuItemModal = ({
   categories,
   variations,
   variationGroups,
+  pizzaBorders = [],
   onSuccess,
 }: EditMenuItemModalProps) => {
   const { toast } = useToast();
@@ -407,6 +410,15 @@ export const EditMenuItemModal = ({
             variationGroups={variationGroups}
             onDataChange={onSuccess}
           />
+
+          {/* Seção de Bordas - apenas para pizzas */}
+          {editItem.tipo === "pizza" && (
+            <PizzaBordersSection
+              editItem={editItem}
+              setEditItem={setEditItem}
+              pizzaBorders={pizzaBorders}
+            />
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setEditItem(null)}>

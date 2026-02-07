@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { MenuItem, Category, VariationGroup } from "@/types/menu";
+import { MenuItem, Category, VariationGroup, PizzaBorder } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy } from "lucide-react";
@@ -12,6 +12,7 @@ interface MenuItemsTabProps {
   categories: Category[];
   variations: any[];
   variationGroups: VariationGroup[];
+  pizzaBorders?: PizzaBorder[];
   loading: boolean;
   onDataChange: () => void;
 }
@@ -21,6 +22,7 @@ export const MenuItemsTab = ({
   categories,
   variations,
   variationGroups,
+  pizzaBorders = [],
   loading,
   onDataChange,
 }: MenuItemsTabProps) => {
@@ -371,6 +373,7 @@ export const MenuItemsTab = ({
           categories={categories}
           variations={variations}
           variationGroups={variationGroups}
+          pizzaBorders={pizzaBorders}
           onSuccess={onDataChange}
         />
       )}
