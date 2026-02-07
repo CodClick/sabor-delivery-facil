@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { MenuItem, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Edit } from "lucide-react";
+import { Trash2, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { AddVariationGroupModal } from "./AddVariationGroupModal";
@@ -13,7 +12,7 @@ interface VariationGroupsSectionProps {
   setEditItem: (item: MenuItem) => void;
   variations: Variation[];
   variationGroups: VariationGroup[];
-  onDataChange?: () => void; // Added optional callback
+  onDataChange?: () => void;
 }
 
 export const VariationGroupsSection = ({
@@ -21,7 +20,7 @@ export const VariationGroupsSection = ({
   setEditItem,
   variations,
   variationGroups,
-  onDataChange, // Added to props
+  onDataChange,
 }: VariationGroupsSectionProps) => {
   const [tempVariationGroup, setTempVariationGroup] = useState<VariationGroup | null>(null);
 
@@ -40,7 +39,6 @@ export const VariationGroupsSection = ({
     const selectedGroup = variationGroups.find(group => group.id === groupId);
     
     if (selectedGroup) {
-      // Check if this group is already added to the item
       const isAlreadyAdded = editItem.variationGroups?.some(g => g.id === selectedGroup.id);
       
       if (!isAlreadyAdded) {
@@ -61,6 +59,22 @@ export const VariationGroupsSection = ({
         variationGroups: []
       });
     }
+  };
+
+  const handleMoveGroup = (index: number, direction: 'up' | 'down') => {
+    if (!editItem.variationGroups) return;
+    
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (newIndex < 0 || newIndex >= editItem.variationGroups.length) return;
+    
+    const newGroups = [...editItem.variationGroups];
+    [newGroups[index], newGroups[newIndex]] = [newGroups[newIndex], newGroups[index]];
+    
+    setEditItem({
+      ...editItem,
+      variationGroups: newGroups
+    });
   };
 
   const getVariationName = (variationId: string): string => {
@@ -107,41 +121,68 @@ export const VariationGroupsSection = ({
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um grupo existente" />
             </SelectTrigger>
-<SelectContent>
-  {variationGroups
-    .filter(group => !editItem.variationGroups?.some(g => g.id === group.id))
-    .map(group => (
-      <SelectItem key={group.id} value={group.id}>
-        {group.name} ({group.minRequired}-{group.maxAllowed}) 
-        {group.internalName ? ` — ${group.internalName}` : ""}
-      </SelectItem>
-    ))}
-</SelectContent>
-
+            <SelectContent>
+              {variationGroups
+                .filter(group => !editItem.variationGroups?.some(g => g.id === group.id))
+                .map(group => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name} ({group.minRequired}-{group.maxAllowed}) 
+                    {group.internalName ? ` — ${group.internalName}` : ""}
+                  </SelectItem>
+                ))}
+            </SelectContent>
           </Select>
         </div>
       </div>
       
       <div className="mt-4 space-y-4">
         {editItem.variationGroups && editItem.variationGroups.length > 0 ? (
-          editItem.variationGroups.map(group => (
+          editItem.variationGroups.map((group, index) => (
             <div key={group.id} className="p-4 border rounded-md bg-gray-50">
               <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-bold">{group.name}</h4>
-                  <p className="text-sm text-gray-600">
-                    {group.minRequired === group.maxAllowed
-                      ? `Exatamente ${group.minRequired} seleção(ões) necessária(s)`
-                      : `De ${group.minRequired} até ${group.maxAllowed} seleções`
-                    }
-                  </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleMoveGroup(index, 'up')}
+                      disabled={index === 0}
+                      className="h-6 w-6 p-0"
+                      title="Mover para cima"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleMoveGroup(index, 'down')}
+                      disabled={index === editItem.variationGroups!.length - 1}
+                      className="h-6 w-6 p-0"
+                      title="Mover para baixo"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                        #{index + 1}
+                      </span>
+                      <h4 className="font-bold">{group.name}</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {group.minRequired === group.maxAllowed
+                        ? `Exatamente ${group.minRequired} seleção(ões) necessária(s)`
+                        : `De ${group.minRequired} até ${group.maxAllowed} seleções`
+                      }
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button 
                     size="sm" 
                     variant="ghost" 
                     onClick={() => {
-                      // Remove this group from the item's variationGroups array
                       setEditItem({
                         ...editItem,
                         variationGroups: editItem.variationGroups?.filter(g => g.id !== group.id) || []
@@ -199,7 +240,7 @@ export const VariationGroupsSection = ({
           setEditItem={setEditItem}
           variations={variations}
           variationGroups={variationGroups}
-          onDataChange={onDataChange} // Pass the callback
+          onDataChange={onDataChange}
         />
       )}
     </div>
