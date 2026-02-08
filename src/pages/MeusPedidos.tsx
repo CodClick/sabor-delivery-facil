@@ -167,19 +167,50 @@ const MeusPedidos = () => {
                   {/* Itens */}
                   <div className="mb-4">
                     <div className="text-sm font-medium mb-2">Itens:</div>
-                    <ul className="space-y-1">
+                    <ul className="space-y-2">
                       {order.items.map((item, index) => (
-                        <li key={index} className="text-sm text-muted-foreground">
-                          • {item.quantity}x {item.name}
-                          {item.selectedVariations && item.selectedVariations.length > 0 && (
-                            <span className="text-xs">
-                              {" "}
-                              +{" "}
-                              {item.selectedVariations
-                                .flatMap((g) => g.variations.map((v) => v.name))
-                                .filter(Boolean)
-                                .join(", ")}
+                        <li key={index} className="text-sm text-muted-foreground border-b border-dashed pb-2 last:border-0">
+                          <div className="flex justify-between items-start">
+                            <span className="font-medium text-foreground">
+                              {item.quantity}x {item.name}
                             </span>
+                            <span className="text-green-600 font-semibold">
+                              R$ {(item.price * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          {/* Variações/Adicionais */}
+                          {item.selectedVariations && item.selectedVariations.length > 0 && (
+                            <div className="ml-3 mt-1 space-y-0.5">
+                              {item.selectedVariations.flatMap((group) =>
+                                group.variations.map((v, vIndex) => (
+                                  <div key={`${group.groupId}-${vIndex}`} className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">
+                                      + {v.name} {v.quantity && v.quantity > 1 ? `(x${v.quantity})` : ""}
+                                    </span>
+                                    {v.additionalPrice && v.additionalPrice > 0 && (
+                                      <span className="text-green-600">
+                                        +R$ {((v.additionalPrice || 0) * (v.quantity || 1) * item.quantity).toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Borda recheada */}
+                          {(item as any).selectedBorder && (
+                            <div className="ml-3 mt-1 flex justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                + Borda: {(item as any).selectedBorder.name}
+                              </span>
+                              {(item as any).selectedBorder.additionalPrice > 0 && (
+                                <span className="text-green-600">
+                                  +R$ {((item as any).selectedBorder.additionalPrice * item.quantity).toFixed(2)}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </li>
                       ))}
