@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MenuItem, Variation, SelectedVariationGroup } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -65,11 +65,16 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
 
   const handleAddItemWithVariations = (
     itemWithQty: MenuItem & { quantity?: number },
-    selectedVariationGroups: SelectedVariationGroup[]
+    selectedVariationGroups: SelectedVariationGroup[],
+    selectedBorder?: PizzaBorder | null
   ) => {
+    const finalPrice = itemWithQty.price + (selectedBorder?.additionalPrice || 0);
+    
     addItem({
       ...itemWithQty,
+      price: finalPrice,
       selectedVariations: selectedVariationGroups,
+      selectedBorder: selectedBorder || undefined,
     });
     setTempCombinedItem(null);
   };

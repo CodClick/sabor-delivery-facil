@@ -33,6 +33,7 @@ export interface MenuItem {
 export interface CartItem extends MenuItem {
   quantity: number;
   selectedVariations?: SelectedVariationGroup[];
+  selectedBorder?: PizzaBorder; // Borda selecionada para pizza
   isHalfPizza?: boolean; // Indicates if this is a half pizza combination
   combination?: {
     sabor1: { id: string; name: string };
