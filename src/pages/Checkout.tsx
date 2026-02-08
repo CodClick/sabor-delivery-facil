@@ -699,6 +699,28 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
                   )}
 
+                  {/* Exibir borda recheada selecionada */}
+                  {item.selectedBorder && (
+                    <div className="mt-2 ml-1 text-sm">
+                      <div className="font-semibold text-muted-foreground">Borda:</div>
+                      <div className="ml-2 text-muted-foreground flex items-center justify-between">
+                        <span>
+                          {item.selectedBorder.name}
+                          {item.selectedBorder.additionalPrice > 0 && (
+                            <span className="text-muted-foreground/70 ml-1">
+                              (+R$ {item.selectedBorder.additionalPrice.toFixed(2)})
+                            </span>
+                          )}
+                        </span>
+                        {item.selectedBorder.additionalPrice > 0 && (
+                          <span className="text-green-600 font-semibold tabular-nums">
+                            +R$ {(item.selectedBorder.additionalPrice * item.quantity).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Subtotal do item */}
                   <div className="flex justify-end mt-2 pt-2 border-t border-dashed">
                     <span className="text-sm font-semibold">
@@ -719,7 +741,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                           });
                         }
                         
-                        return ((basePrice + variationsTotal) * item.quantity).toFixed(2);
+                        // Adicionar valor da borda selecionada
+                        const borderPrice = item.selectedBorder?.additionalPrice || 0;
+                        
+                        return ((basePrice + variationsTotal + borderPrice) * item.quantity).toFixed(2);
                       })()}
                     </span>
                   </div>
