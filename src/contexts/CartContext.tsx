@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { CartItem, MenuItem, SelectedVariationGroup } from "@/types/menu";
+import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
 import { getAllVariations } from "@/services/variationService";
 import { trackAddToCart } from "@/utils/trackingEvents"; // <--- 1. IMPORTAÇÃO ADICIONADA
@@ -17,7 +17,7 @@ interface AppliedCoupon {
 
 interface CartContextType {
   cartItems: CartItem[];
-  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[]; quantity?: number }) => void;
+  addItem: (item: MenuItem & { selectedVariations?: SelectedVariationGroup[]; selectedBorder?: PizzaBorder; quantity?: number }) => void;
   addToCart: (item: MenuItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -82,6 +82,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       });
     }
+    // Adicionar preço da borda selecionada
+    if (item.selectedBorder?.additionalPrice) {
+      variationsTotal += item.selectedBorder.additionalPrice;
+    }
     return variationsTotal;
   };
 
@@ -141,8 +145,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
-  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[]; quantity?: number }) => {
-    const { selectedVariations, quantity: inputQuantity, ...item } = menuItem;
+  const addItem = (menuItem: MenuItem & { selectedVariations?: SelectedVariationGroup[]; selectedBorder?: PizzaBorder; quantity?: number }) => {
+    const { selectedVariations, selectedBorder, quantity: inputQuantity, ...item } = menuItem;
     const quantityToAdd = inputQuantity ?? 1;
 
     const enrichedVariations = enrichSelectedVariations(selectedVariations);
@@ -152,13 +156,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const existingItem = prevItems.find(
         i =>
           i.id === itemId &&
-          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
+          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations) &&
+          i.selectedBorder?.id === selectedBorder?.id
       );
 
       if (existingItem) {
         return prevItems.map(i =>
           i.id === itemId &&
-          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations)
+          JSON.stringify(i.selectedVariations) === JSON.stringify(enrichedVariations) &&
+          i.selectedBorder?.id === selectedBorder?.id
             ? { ...i, quantity: i.quantity + quantityToAdd }
             : i
         );
@@ -167,6 +173,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...item,
           quantity: quantityToAdd,
           selectedVariations: enrichedVariations,
+          selectedBorder: selectedBorder,
         };
         return [...prevItems, newItem];
       }

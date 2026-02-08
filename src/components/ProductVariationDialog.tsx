@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, VariationGroup, HalfSelection } from "@/types/menu";
+import { MenuItem, Variation, SelectedVariation, SelectedVariationGroup, VariationGroup, HalfSelection, PizzaBorder } from "@/types/menu";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Minus, Circle } from "lucide-react";
+import { Plus, Minus, Circle, Check } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ interface ProductVariationDialogProps {
   item: MenuItem;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, selectedVariationGroups: SelectedVariationGroup[]) => void;
+  onAddToCart: (item: MenuItem, selectedVariationGroups: SelectedVariationGroup[], selectedBorder?: PizzaBorder | null) => void;
   availableVariations: Variation[];
   groupVariations: {[groupId: string]: Variation[]};
   onOpenPizzaCombination?: () => void;
@@ -41,8 +41,11 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   const [isValid, setIsValid] = useState<boolean>(false);
   // Estado para controlar qual variação está tendo a metade selecionada
   const [selectingHalfFor, setSelectingHalfFor] = useState<{groupId: string, variationId: string} | null>(null);
+  // Estado para borda selecionada
+  const [selectedBorder, setSelectedBorder] = useState<PizzaBorder | null>(null);
 
   const isHalfPizza = item.isHalfPizza === true;
+  const hasBorders = item.tipo === "pizza" && item.pizzaBorders && item.pizzaBorders.length > 0;
 
   useEffect(() => {
     if (isOpen && item.variationGroups) {
@@ -69,6 +72,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 
       setSelectedVariationGroups(initialGroups);
       setSelectingHalfFor(null);
+      setSelectedBorder(null);
     }
   }, [isOpen, item.variationGroups, groupVariations]);
 
@@ -179,8 +183,9 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     })).filter(group => group.variations.length > 0);
     
     console.log("Enviando variações para o carrinho:", nonZeroGroups);
+    console.log("Borda selecionada:", selectedBorder);
     
-    onAddToCart(item, nonZeroGroups);
+    onAddToCart(item, nonZeroGroups, selectedBorder);
     onClose();
   };
 
@@ -452,6 +457,73 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
               );
             })}
             
+            {/* Seção de Bordas */}
+            {hasBorders && (
+              <div className="mt-6">
+                <Separator className="my-6" />
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">Escolha a Borda</h3>
+                  <span className="text-sm px-2 py-1 rounded bg-muted text-muted-foreground">
+                    Opcional
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Selecione uma borda recheada para sua pizza
+                </p>
+                
+                <div className="space-y-2">
+                  {/* Opção sem borda */}
+                  <div 
+                    className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedBorder === null 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => setSelectedBorder(null)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        selectedBorder === null ? 'border-primary bg-primary' : 'border-muted-foreground'
+                      }`}>
+                        {selectedBorder === null && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </div>
+                      <span className="font-medium">Sem borda recheada</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">Grátis</span>
+                  </div>
+                  
+                  {/* Opções de bordas */}
+                  {item.pizzaBorders?.filter(b => b.available !== false).map(border => (
+                    <div 
+                      key={border.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedBorder?.id === border.id 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => setSelectedBorder(border)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          selectedBorder?.id === border.id ? 'border-primary bg-primary' : 'border-muted-foreground'
+                        }`}>
+                          {selectedBorder?.id === border.id && <Check className="h-3 w-3 text-primary-foreground" />}
+                        </div>
+                        <div>
+                          <span className="font-medium">{border.name}</span>
+                          {border.description && (
+                            <p className="text-xs text-muted-foreground">{border.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-green-600">
+                        {border.additionalPrice > 0 ? `+${formatCurrency(border.additionalPrice)}` : 'Grátis'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {/* Espaço extra no final para garantir acesso aos botões */}
             <div className="h-20"></div>

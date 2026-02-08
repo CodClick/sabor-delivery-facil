@@ -268,6 +268,11 @@ const ShoppingCart: React.FC = () => {
       });
     }
     
+    // Adicionar preço da borda selecionada
+    if (item.selectedBorder?.additionalPrice) {
+      variationsTotal += item.selectedBorder.additionalPrice;
+    }
+    
     return variationsTotal;
   };
 
@@ -433,8 +438,30 @@ const ShoppingCart: React.FC = () => {
                           ))}
                           
                           {/* Total das variações */}
-                          {variationsTotal > 0 && (
+                          {variationsTotal > 0 && !item.selectedBorder && (
                             <div className="text-xs text-green-600 font-medium border-t border-gray-200 pt-1">
+                              Complementos/Adicionais: {formatCurrency(variationsTotal)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Borda selecionada */}
+                      {item.selectedBorder && (
+                        <div className="mt-2 text-sm">
+                          <p className="font-medium text-xs text-gray-700">Borda:</p>
+                          <div className="flex justify-between pl-2 text-xs text-gray-600">
+                            <span>{item.selectedBorder.name}</span>
+                            {item.selectedBorder.additionalPrice > 0 && (
+                              <span className="text-green-600 font-medium">
+                                +{formatCurrency(item.selectedBorder.additionalPrice)}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Total das variações incluindo borda */}
+                          {variationsTotal > 0 && (
+                            <div className="text-xs text-green-600 font-medium border-t border-gray-200 pt-1 mt-1">
                               Complementos/Adicionais: {formatCurrency(variationsTotal)}
                             </div>
                           )}
