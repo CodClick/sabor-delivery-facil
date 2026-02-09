@@ -9,6 +9,11 @@ export interface OrderItem {
   subtotal?: number;
   isHalfPizza?: boolean;
   combination?: any;
+  selectedBorder?: {
+    id: string;
+    name: string;
+    additionalPrice: number;
+  };
 }
 
 export interface SelectedVariationGroup {
