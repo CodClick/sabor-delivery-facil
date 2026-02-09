@@ -139,8 +139,6 @@ export const createOrder = async (
           }
         }
 
-        total += itemTotal;
-
         // Processar borda recheada
         const selectedBorder = (item as any).selectedBorder;
         if (selectedBorder && selectedBorder.additionalPrice > 0) {
