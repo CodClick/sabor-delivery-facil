@@ -188,7 +188,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
       });
     }
 
-    return basePrice + variationsTotal;
+    // Incluir preço da borda recheada
+    const borderPrice = item.selectedBorder?.additionalPrice || 0;
+
+    return basePrice + variationsTotal + (borderPrice * item.quantity);
   };
 
 const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: string }) => {
@@ -557,6 +560,21 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
                       </div>
                     ) : (
                       <div className="text-xs text-gray-500 italic mt-1">Sem variações</div>
+                    )}
+                    
+                    {/* Borda Recheada */}
+                    {item.selectedBorder && (
+                      <div className="mt-1 pl-2 border-l-2 border-amber-300">
+                        <div className="text-xs text-amber-700 font-medium">Borda Recheada:</div>
+                        <div className="flex justify-between text-xs">
+                          <span>{item.selectedBorder.name}</span>
+                          {item.selectedBorder.additionalPrice > 0 && (
+                            <span className="text-green-600 ml-2">
+                              +R$ {(item.selectedBorder.additionalPrice * item.quantity).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </TableCell>
 
