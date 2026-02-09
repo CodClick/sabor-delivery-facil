@@ -235,7 +235,10 @@ const PDV = () => {
           price: item.price,
           quantity: item.quantity,
           selectedVariations: item.selectedVariations || [],
-          priceFrom: item.priceFrom || false
+          selectedBorder: item.selectedBorder || null,
+          priceFrom: item.priceFrom || false,
+          isHalfPizza: item.isHalfPizza || false,
+          combination: item.combination || null,
         }))
       };
 

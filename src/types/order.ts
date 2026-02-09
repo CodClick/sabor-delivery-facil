@@ -63,6 +63,11 @@ export interface CreateOrderRequest {
     price: number;
     quantity: number;
     selectedVariations?: SelectedVariationGroup[];
+    selectedBorder?: {
+      id: string;
+      name: string;
+      additionalPrice: number;
+    } | null;
     priceFrom?: boolean;
     subtotal?: number;
     isHalfPizza?: boolean;

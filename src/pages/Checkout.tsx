@@ -345,6 +345,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       price: item.price,
       quantity: item.quantity,
       selectedVariations: item.selectedVariations || [],
+      selectedBorder: item.selectedBorder || null,
       priceFrom: item.priceFrom || false,
       isHalfPizza: item.isHalfPizza || false,
       combination: item.combination || null,
