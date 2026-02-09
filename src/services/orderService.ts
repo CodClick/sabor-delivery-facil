@@ -141,6 +141,16 @@ export const createOrder = async (
 
         total += itemTotal;
 
+        // Processar borda recheada
+        const selectedBorder = (item as any).selectedBorder;
+        if (selectedBorder && selectedBorder.additionalPrice > 0) {
+          const borderCost = selectedBorder.additionalPrice * itemQty;
+          itemTotal += borderCost;
+          console.log(`Borda recheada: ${selectedBorder.name} +R$ ${borderCost}`);
+        }
+
+        total += itemTotal;
+
         return removeUndefinedDeep({
           menuItemId: item.menuItemId ?? (item as any).id ?? null,
           name: item.name,
@@ -150,6 +160,7 @@ export const createOrder = async (
           priceFrom: item.priceFrom || false,
           isHalfPizza,
           combination: item.combination || null,
+          selectedBorder: selectedBorder || null, // 🔥 salva borda recheada no item
           subtotal: itemTotal, // 🔥 salva subtotal no item
         });
       })
