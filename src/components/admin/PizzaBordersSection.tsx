@@ -108,6 +108,23 @@ export const PizzaBordersSection = ({
               )}
             </SelectContent>
           </Select>
+          {availableBorders.filter(border => !editItem.pizzaBorders?.some(b => b.id === border.id)).length > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => {
+                const remaining = availableBorders.filter(border => !editItem.pizzaBorders?.some(b => b.id === border.id));
+                setEditItem({
+                  ...editItem,
+                  pizzaBorders: [...(editItem.pizzaBorders || []), ...remaining]
+                });
+              }}
+            >
+              Adicionar Todas
+            </Button>
+          )}
         </div>
         {availableBorders.length === 0 && allBorders.length > 0 && (
           <p className="text-xs text-amber-600">
