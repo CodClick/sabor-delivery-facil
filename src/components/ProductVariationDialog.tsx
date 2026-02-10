@@ -307,223 +307,252 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
               </div>
             )}
             
-            {item.variationGroups.map((group, groupIndex) => {
-              if (!group) return null;
-              const groupStatus = getGroupSelectionStatus(group.id);
-              const showHalfOption = isHalfPizza && group.allowPerHalf;
-              
-              return (
-                <div key={group.id} className="mb-6">
-                  {groupIndex > 0 && <Separator className="my-6" />}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">{group.name}</h3>
-                      {showHalfOption && (
-                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                          Por metade
-                        </span>
-                      )}
-                    </div>
-                    <span className={`text-sm px-2 py-1 rounded ${
-                      groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {groupStatus.total} / {groupStatus.max} unidades
-                    </span>
-                  </div>
-                  
-                  <p className="text-sm text-gray-500 mb-4">
-                    {getVariationGroupMessage(group.id)}
-                  </p>
+            {(() => {
+              // Build ordered sections: variation groups + borders
+              type Section = { type: "group"; group: VariationGroup; groupIndex: number } | { type: "borders" };
+              const groups: Section[] = (item.variationGroups || []).map((group, idx) => ({
+                type: "group" as const,
+                group,
+                groupIndex: idx,
+              }));
 
-                  {showHalfOption && (
-                    <p className="text-xs text-orange-600 mb-3 flex items-center gap-1">
-                      <Circle className="h-3 w-3" />
-                      Você pode escolher adicionar em cada metade ou na pizza inteira
-                    </p>
-                  )}
-                  
-                  <div className="space-y-3">
-                    {selectedVariationGroups
-                      .find(sg => sg.groupId === group.id)?.variations
-                      .map(variation => {
-                        const variationDetails = getVariationDetails(variation.variationId);
-                        if (!variationDetails) return null;
-                        const price = calculateVariationPrice(variation, group);
+              const sections: Section[] = [];
+              if (hasBorders) {
+                const bordersPos = item.bordersPosition ?? groups.length;
+                const clampedPos = Math.max(0, Math.min(bordersPos, groups.length));
+                let inserted = false;
+                for (let i = 0; i <= groups.length; i++) {
+                  if (i === clampedPos && !inserted) {
+                    sections.push({ type: "borders" });
+                    inserted = true;
+                  }
+                  if (i < groups.length) sections.push(groups[i]);
+                }
+                if (!inserted) sections.push({ type: "borders" });
+              } else {
+                sections.push(...groups);
+              }
+
+              let sectionCounter = 0;
+              return sections.map((section, sIdx) => {
+                if (section.type === "borders") {
+                  return (
+                    <div key="borders-section" className="mb-6">
+                      {sIdx > 0 && <Separator className="my-6" />}
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold">Escolha a Borda</h3>
+                        <span className="text-sm px-2 py-1 rounded bg-muted text-muted-foreground">
+                          Opcional
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Selecione uma borda recheada para sua pizza
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <div 
+                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedBorder === null 
+                              ? 'border-primary bg-primary/5' 
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                          onClick={() => setSelectedBorder(null)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              selectedBorder === null ? 'border-primary bg-primary' : 'border-muted-foreground'
+                            }`}>
+                              {selectedBorder === null && <Check className="h-3 w-3 text-primary-foreground" />}
+                            </div>
+                            <span className="font-medium">Sem borda recheada</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">Grátis</span>
+                        </div>
                         
-                        return (
-                          <div key={variation.variationId} className="py-3 border-b border-gray-100 last:border-b-0">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <p className="font-medium">{variationDetails.name}</p>
-                                {price > 0 && (
-                                  <p className="text-sm text-gray-500">
-                                    +{formatCurrency(price)}
-                                    {showHalfOption && variation.quantity > 0 && variation.halfSelection && (
-                                      <span className="ml-2 text-orange-600">
-                                        ({getHalfSelectionLabel(variation.halfSelection)})
-                                      </span>
-                                    )}
-                                  </p>
-                                )}
-                                {!price && variation.quantity > 0 && showHalfOption && variation.halfSelection && (
-                                  <p className="text-sm text-orange-600">
-                                    {getHalfSelectionLabel(variation.halfSelection)}
-                                  </p>
-                                )}
+                        {item.pizzaBorders?.filter(b => b.available !== false).map(border => (
+                          <div 
+                            key={border.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                              selectedBorder?.id === border.id 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                            onClick={() => setSelectedBorder(border)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                selectedBorder?.id === border.id ? 'border-primary bg-primary' : 'border-muted-foreground'
+                              }`}>
+                                {selectedBorder?.id === border.id && <Check className="h-3 w-3 text-primary-foreground" />}
                               </div>
-                              
-                              <div className="flex items-center space-x-3 flex-shrink-0">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-9 w-9 p-0 touch-action-manipulation" 
-                                  onClick={() => decreaseVariation(group.id, variation.variationId)}
-                                  disabled={variation.quantity <= 0}
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </Button>
-                                
-                                <span className="w-8 text-center font-medium">{variation.quantity}</span>
-                                
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-9 w-9 p-0 touch-action-manipulation" 
-                                  onClick={() => increaseVariation(group.id, variation.variationId)}
-                                  disabled={groupStatus.total >= groupStatus.max}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
+                              <div>
+                                <span className="font-medium">{border.name}</span>
+                                {border.description && (
+                                  <p className="text-xs text-muted-foreground">{border.description}</p>
+                                )}
                               </div>
                             </div>
-
-                            {/* Modal de seleção de metade */}
-                            {selectingHalfFor?.groupId === group.id && 
-                             selectingHalfFor?.variationId === variation.variationId && (
-                              <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200 animate-in fade-in slide-in-from-top-2">
-                                <p className="text-sm font-medium text-orange-800 mb-3">
-                                  Onde deseja adicionar "{variationDetails.name}"?
-                                </p>
-                                <div className="grid grid-cols-3 gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
-                                    onClick={() => handleHalfSelection("half1")}
-                                  >
-                                    <span className="text-xs font-medium">Metade 1</span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {item.combination?.sabor1.name?.substring(0, 10)}...
-                                    </span>
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
-                                    onClick={() => handleHalfSelection("half2")}
-                                  >
-                                    <span className="text-xs font-medium">Metade 2</span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {item.combination?.sabor2.name?.substring(0, 10)}...
-                                    </span>
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
-                                    onClick={() => handleHalfSelection("whole")}
-                                  >
-                                    <span className="text-xs font-medium">Inteira</span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      2x preço
-                                    </span>
-                                  </Button>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full mt-2 text-xs"
-                                  onClick={() => setSelectingHalfFor(null)}
-                                >
-                                  Cancelar
-                                </Button>
-                              </div>
-                            )}
+                            <span className="text-sm font-semibold text-green-600">
+                              {border.additionalPrice > 0 ? `+${formatCurrency(border.additionalPrice)}` : 'Grátis'}
+                            </span>
                           </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              );
-            })}
-            
-            {/* Seção de Bordas */}
-            {hasBorders && (
-              <div className="mt-6">
-                <Separator className="my-6" />
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">Escolha a Borda</h3>
-                  <span className="text-sm px-2 py-1 rounded bg-muted text-muted-foreground">
-                    Opcional
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Selecione uma borda recheada para sua pizza
-                </p>
-                
-                <div className="space-y-2">
-                  {/* Opção sem borda */}
-                  <div 
-                    className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedBorder === null 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    onClick={() => setSelectedBorder(null)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        selectedBorder === null ? 'border-primary bg-primary' : 'border-muted-foreground'
-                      }`}>
-                        {selectedBorder === null && <Check className="h-3 w-3 text-primary-foreground" />}
+                        ))}
                       </div>
-                      <span className="font-medium">Sem borda recheada</span>
                     </div>
-                    <span className="text-sm text-muted-foreground">Grátis</span>
-                  </div>
-                  
-                  {/* Opções de bordas */}
-                  {item.pizzaBorders?.filter(b => b.available !== false).map(border => (
-                    <div 
-                      key={border.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedBorder?.id === border.id 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      onClick={() => setSelectedBorder(border)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          selectedBorder?.id === border.id ? 'border-primary bg-primary' : 'border-muted-foreground'
-                        }`}>
-                          {selectedBorder?.id === border.id && <Check className="h-3 w-3 text-primary-foreground" />}
-                        </div>
-                        <div>
-                          <span className="font-medium">{border.name}</span>
-                          {border.description && (
-                            <p className="text-xs text-muted-foreground">{border.description}</p>
-                          )}
-                        </div>
+                  );
+                }
+
+                const { group, groupIndex } = section;
+                if (!group) return null;
+                const groupStatus = getGroupSelectionStatus(group.id);
+                const showHalfOption = isHalfPizza && group.allowPerHalf;
+                const currentSectionIndex = sIdx;
+                
+                return (
+                  <div key={group.id} className="mb-6">
+                    {currentSectionIndex > 0 && <Separator className="my-6" />}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold">{group.name}</h3>
+                        {showHalfOption && (
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                            Por metade
+                          </span>
+                        )}
                       </div>
-                      <span className="text-sm font-semibold text-green-600">
-                        {border.additionalPrice > 0 ? `+${formatCurrency(border.additionalPrice)}` : 'Grátis'}
+                      <span className={`text-sm px-2 py-1 rounded ${
+                        groupStatus.isValid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {groupStatus.total} / {groupStatus.max} unidades
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    
+                    <p className="text-sm text-gray-500 mb-4">
+                      {getVariationGroupMessage(group.id)}
+                    </p>
+
+                    {showHalfOption && (
+                      <p className="text-xs text-orange-600 mb-3 flex items-center gap-1">
+                        <Circle className="h-3 w-3" />
+                        Você pode escolher adicionar em cada metade ou na pizza inteira
+                      </p>
+                    )}
+                    
+                    <div className="space-y-3">
+                      {selectedVariationGroups
+                        .find(sg => sg.groupId === group.id)?.variations
+                        .map(variation => {
+                          const variationDetails = getVariationDetails(variation.variationId);
+                          if (!variationDetails) return null;
+                          const price = calculateVariationPrice(variation, group);
+                          
+                          return (
+                            <div key={variation.variationId} className="py-3 border-b border-gray-100 last:border-b-0">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium">{variationDetails.name}</p>
+                                  {price > 0 && (
+                                    <p className="text-sm text-gray-500">
+                                      +{formatCurrency(price)}
+                                      {showHalfOption && variation.quantity > 0 && variation.halfSelection && (
+                                        <span className="ml-2 text-orange-600">
+                                          ({getHalfSelectionLabel(variation.halfSelection)})
+                                        </span>
+                                      )}
+                                    </p>
+                                  )}
+                                  {!price && variation.quantity > 0 && showHalfOption && variation.halfSelection && (
+                                    <p className="text-sm text-orange-600">
+                                      {getHalfSelectionLabel(variation.halfSelection)}
+                                    </p>
+                                  )}
+                                </div>
+                                
+                                <div className="flex items-center space-x-3 flex-shrink-0">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-9 w-9 p-0 touch-action-manipulation" 
+                                    onClick={() => decreaseVariation(group.id, variation.variationId)}
+                                    disabled={variation.quantity <= 0}
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  
+                                  <span className="w-8 text-center font-medium">{variation.quantity}</span>
+                                  
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-9 w-9 p-0 touch-action-manipulation" 
+                                    onClick={() => increaseVariation(group.id, variation.variationId)}
+                                    disabled={groupStatus.total >= groupStatus.max}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Modal de seleção de metade */}
+                              {selectingHalfFor?.groupId === group.id && 
+                               selectingHalfFor?.variationId === variation.variationId && (
+                                <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200 animate-in fade-in slide-in-from-top-2">
+                                  <p className="text-sm font-medium text-orange-800 mb-3">
+                                    Onde deseja adicionar "{variationDetails.name}"?
+                                  </p>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
+                                      onClick={() => handleHalfSelection("half1")}
+                                    >
+                                      <span className="text-xs font-medium">Metade 1</span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {item.combination?.sabor1.name?.substring(0, 10)}...
+                                      </span>
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
+                                      onClick={() => handleHalfSelection("half2")}
+                                    >
+                                      <span className="text-xs font-medium">Metade 2</span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {item.combination?.sabor2.name?.substring(0, 10)}...
+                                      </span>
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex flex-col h-auto py-2 border-orange-300 hover:bg-orange-100"
+                                      onClick={() => handleHalfSelection("whole")}
+                                    >
+                                      <span className="text-xs font-medium">Inteira</span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        2x preço
+                                      </span>
+                                    </Button>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full mt-2 text-xs"
+                                    onClick={() => setSelectingHalfFor(null)}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
             
             {/* Espaço extra no final para garantir acesso aos botões */}
             <div className="h-20"></div>
