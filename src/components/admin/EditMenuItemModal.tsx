@@ -408,17 +408,9 @@ export const EditMenuItemModal = ({
             setEditItem={setEditItem}
             variations={variations}
             variationGroups={variationGroups}
+            pizzaBorders={pizzaBorders}
             onDataChange={onSuccess}
           />
-
-          {/* Seção de Bordas - apenas para pizzas */}
-          {editItem.tipo === "pizza" && (
-            <PizzaBordersSection
-              editItem={editItem}
-              setEditItem={setEditItem}
-              pizzaBorders={pizzaBorders}
-            />
-          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setEditItem(null)}>
@@ -440,12 +432,14 @@ const VariationGroupsSectionWithPrices = ({
   setEditItem,
   variations,
   variationGroups,
+  pizzaBorders = [],
   onDataChange,
 }: {
   editItem: MenuItem;
   setEditItem: (item: MenuItem) => void;
   variations: Variation[];
   variationGroups: VariationGroup[];
+  pizzaBorders?: PizzaBorder[];
   onDataChange?: () => void;
 }) => {
   return (
@@ -454,6 +448,7 @@ const VariationGroupsSectionWithPrices = ({
       setEditItem={setEditItem}
       variations={variations}
       variationGroups={variationGroups}
+      pizzaBorders={pizzaBorders}
       onDataChange={onDataChange}
     />
   );

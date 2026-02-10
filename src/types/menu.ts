@@ -28,6 +28,7 @@ export interface MenuItem {
     tamanho: "broto" | "grande";
   };
   pizzaBorders?: PizzaBorder[]; // Bordas disponíveis para esta pizza
+  bordersPosition?: number; // Posição da seção de bordas entre os grupos de variação
 }
 
 export interface CartItem extends MenuItem {
