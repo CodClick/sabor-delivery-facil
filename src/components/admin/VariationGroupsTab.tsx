@@ -23,9 +23,9 @@ export const VariationGroupsTab = ({
   const { toast } = useToast();
   const [editVariationGroup, setEditVariationGroup] = useState<VariationGroup | null>(null);
 
-  // Detectar duplicatas e criar versão limpa
+  // Detectar duplicatas, limpar e ordenar alfabeticamente
   const cleanVariationGroups = React.useMemo(() => {
-    console.log("=== LIMPANDO DUPLICATAS NA INTERFACE ===");
+    console.log("=== PROCESSANDO GRUPOS (LIMPEZA E ORDENAÇÃO) ===");
     console.log("Grupos recebidos:", variationGroups.length);
 
     const uniqueGroups = new Map<string, VariationGroup>();
@@ -40,12 +40,15 @@ export const VariationGroupsTab = ({
       }
     });
 
-    const cleanGroups = Array.from(uniqueGroups.values());
-    console.log("Grupos após limpeza:", cleanGroups.length);
-    console.log("IDs duplicados removidos:", Array.from(duplicateIds));
+    // Converte para array e ordena por nome
+    const sortedGroups = Array.from(uniqueGroups.values()).sort((a, b) => {
+      return (a.name || "").localeCompare(b.name || "", "pt-BR", { sensitivity: 'base' });
+    });
+
+    console.log("Grupos após processamento:", sortedGroups.length);
 
     return {
-      groups: cleanGroups,
+      groups: sortedGroups,
       duplicateIds: duplicateIds
     };
   }, [variationGroups]);
@@ -58,7 +61,7 @@ export const VariationGroupsTab = ({
       maxAllowed: 1,
       variations: [],
       customMessage: "",
-      internalName: "" // garantindo campo vazio no novo grupo
+      internalName: "" 
     });
   };
 
@@ -88,8 +91,7 @@ export const VariationGroupsTab = ({
       try {
         console.log("Confirmação recebida, deletando grupo:", group.id);
         await deleteVariationGroup(group.id);
-        console.log("Grupo deletado com sucesso");
-
+        
         toast({
           title: "Sucesso",
           description: isDuplicate 
@@ -97,7 +99,6 @@ export const VariationGroupsTab = ({
             : "Grupo de variação excluído com sucesso",
         });
 
-        console.log("Recarregando dados...");
         onDataChange();
       } catch (error: any) {
         console.error("Erro ao excluir grupo de variação:", error);
@@ -140,7 +141,7 @@ export const VariationGroupsTab = ({
           </div>
           <p className="text-sm text-orange-700">
             {cleanVariationGroups.duplicateIds.size} grupo(s) tinham duplicatas na interface que foram automaticamente removidas.
-            A lista abaixo mostra apenas grupos únicos.
+            A lista abaixo mostra apenas grupos únicos em ordem alfabética.
           </p>
         </div>
       )}
