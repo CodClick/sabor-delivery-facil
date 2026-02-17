@@ -20,7 +20,7 @@ const RestaurantHeader: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center">
             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md mr-0 sm:mr-6 mb-4 sm:mb-0">
               <img
-                src="https://ypsfoumafbfgcvrxylmw.supabase.co/storage/v1/object/sign/pratos-df-pizzaria/logo_oliveira_pizzaria.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zOTM1MGJmOS03YWJiLTQwOGItYThhNy0zMGVkMzQ1ZjkyZTUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwcmF0b3MtZGYtcGl6emFyaWEvbG9nb19vbGl2ZWlyYV9waXp6YXJpYS5wbmciLCJpYXQiOjE3NTg1ODgzODMsImV4cCI6MTc5MDEyNDM4M30.HmLVwgr7y2PbpfcIAhGWsid_CZJW64SVDSLZBTuKkHk"
+                src="https://ypsfoumafbfgcvrxylmw.supabase.co/storage/v1/object/public/pratos-df-pizzaria/logo_oliveira_pizzaria.png"
                 alt="Logo"
                 className="w-full h-full object-cover"
                 onError={(e) => {
