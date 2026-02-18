@@ -29,6 +29,7 @@ export interface MenuItem {
   };
   pizzaBorders?: PizzaBorder[]; // Bordas disponíveis para esta pizza
   bordersPosition?: number; // Posição da seção de bordas entre os grupos de variação
+  freteGratis?: boolean; // Indica se o item concede frete grátis ao pedido
 }
 
 export interface CartItem extends MenuItem {
