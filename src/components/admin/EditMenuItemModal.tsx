@@ -403,6 +403,19 @@ export const EditMenuItemModal = ({
             </Label>
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="freteGratis"
+              checked={editItem.freteGratis || false}
+              onCheckedChange={(checked) =>
+                setEditItem({ ...editItem, freteGratis: checked === true })
+              }
+            />
+            <Label htmlFor="freteGratis">
+              🚚 Frete grátis (pedidos com este item terão frete grátis)
+            </Label>
+          </div>
+
           <VariationGroupsSectionWithPrices
             editItem={editItem}
             setEditItem={setEditItem}
