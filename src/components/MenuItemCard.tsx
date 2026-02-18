@@ -110,6 +110,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
         </div>
         <div className="flex justify-between items-center mt-2">
           <div className="flex flex-col">
+            {item.freteGratis && <span className="text-xs font-semibold text-green-600 mb-1">🚚 Frete Grátis</span>}
             {item.priceFrom && <span className="text-xs text-gray-500 mb-1">a partir de</span>}
             <span className="text-lg font-bold text-brand">{formatCurrency(item.price)}</span>
           </div>
