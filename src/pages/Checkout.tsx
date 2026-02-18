@@ -53,6 +53,9 @@ const Checkout = () => {
   const [distanciaKm, setDistanciaKm] = useState<number | null>(null);
   const [freteError, setFreteError] = useState<string | null>(null);
   const [freteCalculado, setFreteCalculado] = useState(false);
+  
+  // Verificar se algum item do carrinho tem frete grátis
+  const hasFreteGratis = cartItems.some(item => item.freteGratis === true);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   
   const numberInputRef = useRef<HTMLInputElement>(null);
@@ -773,16 +776,21 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </div>
                 )}
                 
-                {valorFrete > 0 && (
+                {hasFreteGratis ? (
+                  <div className="flex justify-between text-md text-green-600">
+                    <span>Frete:</span>
+                    <span>🚚 Grátis!</span>
+                  </div>
+                ) : valorFrete > 0 ? (
                   <div className="flex justify-between text-md">
                     <span>Frete:</span>
                     <span>R$ {valorFrete.toFixed(2)}</span>
                   </div>
-                )}
+                ) : null}
                 
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>R$ {(finalTotal + valorFrete).toFixed(2)}</span>
+                  <span>R$ {(finalTotal + (hasFreteGratis ? 0 : valorFrete)).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -801,14 +809,14 @@ const handleSubmit = async (e: React.FormEvent) => {
 
           <Button 
             className="w-full" 
-            disabled={isLoading || !!freteError || !freteCalculado}
+            disabled={isLoading || !!freteError || (!freteCalculado && !hasFreteGratis)}
             onClick={(e) => {
               e.preventDefault();
               const form = document.querySelector('form');
               if (form) form.requestSubmit();
             }}
           >
-            {isLoading ? "Processando..." : !freteCalculado ? "Informe o CEP para calcular o frete" : `Finalizar Pedido - ${formatCurrency(finalTotal + valorFrete)}`}
+            {isLoading ? "Processando..." : (!freteCalculado && !hasFreteGratis) ? "Informe o CEP para calcular o frete" : `Finalizar Pedido - ${formatCurrency(finalTotal + (hasFreteGratis ? 0 : valorFrete))}`}
           </Button>
         </div>
       </div>
