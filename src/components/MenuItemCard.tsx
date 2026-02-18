@@ -68,11 +68,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
     selectedVariationGroups: SelectedVariationGroup[],
     selectedBorder?: PizzaBorder | null
   ) => {
-    const finalPrice = itemWithQty.price + (selectedBorder?.additionalPrice || 0);
-    
     addItem({
       ...itemWithQty,
-      price: finalPrice,
       selectedVariations: selectedVariationGroups,
       selectedBorder: selectedBorder || undefined,
     });
