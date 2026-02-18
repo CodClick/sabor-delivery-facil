@@ -52,6 +52,7 @@ const Checkout = () => {
   const [valorFrete, setValorFrete] = useState<number>(0);
   const [distanciaKm, setDistanciaKm] = useState<number | null>(null);
   const [freteError, setFreteError] = useState<string | null>(null);
+  const [freteCalculado, setFreteCalculado] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   
   const numberInputRef = useRef<HTMLInputElement>(null);
@@ -132,6 +133,7 @@ const Checkout = () => {
             });
             setValorFrete(0);
             setDistanciaKm(null);
+            setFreteCalculado(false);
           }
         }
         
@@ -176,6 +178,7 @@ const Checkout = () => {
               });
               setValorFrete(0);
               setDistanciaKm(null);
+              setFreteCalculado(false);
             }
           }
           
@@ -237,6 +240,7 @@ const Checkout = () => {
 
     setValorFrete(freteData.valorFrete);
     setDistanciaKm(freteData.distanciaKm);
+    setFreteCalculado(true);
 
     // Mensagem personalizada baseada na origem do cálculo
     let descricao = `Frete: ${formatCurrency(freteData.valorFrete)}`;
@@ -255,6 +259,7 @@ const Checkout = () => {
     if (cleanCep.length !== 8) {
       setValorFrete(0);
       setDistanciaKm(null);
+      setFreteCalculado(false);
       return;
     }
 
@@ -299,6 +304,7 @@ const Checkout = () => {
         });
         setValorFrete(0);
         setDistanciaKm(null);
+        setFreteCalculado(false);
       }
     } finally {
       setCepLoading(false);
@@ -795,14 +801,14 @@ const handleSubmit = async (e: React.FormEvent) => {
 
           <Button 
             className="w-full" 
-            disabled={isLoading || !!freteError}
+            disabled={isLoading || !!freteError || !freteCalculado}
             onClick={(e) => {
               e.preventDefault();
               const form = document.querySelector('form');
               if (form) form.requestSubmit();
             }}
           >
-            {isLoading ? "Processando..." : `Finalizar Pedido - ${formatCurrency(finalTotal + valorFrete)}`}
+            {isLoading ? "Processando..." : !freteCalculado ? "Informe o CEP para calcular o frete" : `Finalizar Pedido - ${formatCurrency(finalTotal + valorFrete)}`}
           </Button>
         </div>
       </div>
