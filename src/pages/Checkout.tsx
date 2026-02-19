@@ -55,7 +55,14 @@ const Checkout = () => {
   const [freteCalculado, setFreteCalculado] = useState(false);
   
   // Verificar se algum item do carrinho tem frete grátis
-  const hasFreteGratis = cartItems.some(item => item.freteGratis === true);
+  // Para pizza meio a meio, ambos os sabores precisam ter freteGratis
+  const hasFreteGratis = cartItems.some(item => {
+    if (item.isHalfPizza) {
+      // Para meio a meio, o freteGratis já é calculado como AND dos dois sabores no PizzaCombinationDialog
+      return item.freteGratis === true;
+    }
+    return item.freteGratis === true;
+  });
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   
   const numberInputRef = useRef<HTMLInputElement>(null);
