@@ -368,9 +368,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       subtotal: calculateItemSubtotal(item), // 🔥 agora salva
     }));
 
-    // Calcular total do pedido (incluindo frete)
+    // Calcular total do pedido (incluindo frete, respeitando frete grátis)
     const subtotalPedido = itemsWithSubtotal.reduce((acc, item) => acc + item.subtotal, 0);
-    const totalComFrete = finalTotal + valorFrete;
+    const freteEfetivo = hasFreteGratis ? 0 : valorFrete;
+    const totalComFrete = finalTotal + freteEfetivo;
 
     const orderData = {
       customerName,
@@ -380,7 +381,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       observations,
       items: itemsWithSubtotal,
       subtotal: finalTotal, // Subtotal com desconto mas sem frete
-      frete: valorFrete, // Valor do frete
+      frete: freteEfetivo, // Valor do frete (0 se frete grátis)
       total: totalComFrete, // Total com desconto e frete aplicados
       discount: discountAmount,
       couponCode: appliedCoupon?.nome ?? null,
