@@ -440,11 +440,15 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
             )}
             
             {/* Frete */}
-            {order.frete && order.frete > 0 && (
+            {order.frete !== undefined && order.frete !== null && order.frete === 0 ? (
+              <p className="text-sm text-green-600">
+                Frete: 🚚 Grátis!
+              </p>
+            ) : order.frete && order.frete > 0 ? (
               <p className="text-sm text-blue-600">
                 Frete: + R$ {order.frete.toFixed(2)}
               </p>
-            )}
+            ) : null}
             
             <p className="font-semibold text-lg">Total: R$ {order.total.toFixed(2)}</p>
           </div>
