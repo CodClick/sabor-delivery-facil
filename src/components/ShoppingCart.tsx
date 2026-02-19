@@ -304,17 +304,16 @@ const ShoppingCart: React.FC = () => {
     <>
       {/* Cart Trigger Button */}
       <button
-        className="fixed bottom-6 right-6 z-30 bg-brand p-4 rounded-full shadow-lg hover:bg-brand-600 transition-all duration-300"
+        className="fixed bottom-6 right-6 z-30 bg-brand w-[40%] py-3 px-4 rounded-xl shadow-lg hover:bg-brand-600 transition-all duration-300 flex items-center justify-center gap-2"
         onClick={() => setIsCartOpen(true)}
       >
-        <div className="relative">
-          <ShoppingBag className="h-6 w-6 text-white" />
-          {itemCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-food-green text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {itemCount}
-            </span>
-          )}
-        </div>
+        <ShoppingBag className="h-5 w-5 text-primary-foreground" />
+        <span className="text-primary-foreground font-semibold text-sm">Carrinho</span>
+        {itemCount > 0 && (
+          <span className="bg-food-green text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {itemCount}
+          </span>
+        )}
       </button>
 
       {/* Cart Overlay */}
