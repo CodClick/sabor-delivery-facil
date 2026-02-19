@@ -18,6 +18,7 @@ interface PizzaOption {
   id: string;
   name: string;
   precoGrande?: number;
+  freteGratis?: boolean;
 }
 
 const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
@@ -62,7 +63,8 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
             return {
               id: pizza.id,
               name: pizza.name,
-              precoGrande
+              precoGrande,
+              freteGratis: pizza.freteGratis || false
             };
           });
 
@@ -118,6 +120,7 @@ const PizzaCombinationDialog: React.FC<PizzaCombinationDialogProps> = ({
       isHalfPizza: true,
       hasVariations: halfPizzaVariationGroups.length > 0,
       variationGroups: halfPizzaVariationGroups,
+      freteGratis: pizza1.freteGratis && pizza2.freteGratis,
       combination: {
         sabor1: { id: sabor1, name: pizza1.name },
         sabor2: { id: sabor2, name: pizza2.name },
