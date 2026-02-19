@@ -305,6 +305,11 @@ export const MenuItemsTab = ({
                                   ID: {item.id}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mt-2">
+                                  {item.available === false && (
+                                    <span className="inline-block bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold">
+                                      Produto Indisponível
+                                    </span>
+                                  )}
                                   {item.popular && (
                                     <span className="inline-block bg-food-green text-white text-xs px-2 py-1 rounded">
                                       Popular
