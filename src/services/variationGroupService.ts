@@ -227,13 +227,18 @@ export const syncMenuItemsWithVariationGroup = async (
       throw new Error(`Grupo de variações ${groupId} não encontrado`);
     }
     
-    // Atualizar cada item
+    // Atualizar cada item com TODOS os campos do grupo
     for (const item of itemsWithGroup) {
       const updatedVariationGroups = item.variationGroups!.map(group => {
         if (group.id === groupId) {
           return {
-            ...group,
-            variations: newVariations,
+            id: groupId,
+            name: updatedGroup.name,
+            internalName: updatedGroup.internalName,
+            minRequired: updatedGroup.minRequired,
+            maxAllowed: updatedGroup.maxAllowed,
+            variations: updatedGroup.variations,
+            customMessage: updatedGroup.customMessage,
             applyToHalfPizza: updatedGroup.applyToHalfPizza,
             allowPerHalf: updatedGroup.allowPerHalf
           };
