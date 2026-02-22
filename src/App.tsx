@@ -28,6 +28,7 @@ import MinhaEmpresa from "@/pages/MinhaEmpresa";
 import Logistica from "@/pages/Logistica";
 import MeusPedidos from "./pages/MeusPedidos";
 import Fidelidade from "./pages/Fidelidade";
+import Marketing from "./pages/Marketing";
 
 const queryClient = new QueryClient();
 
@@ -56,7 +57,8 @@ const AppRoutes = () => {
     '/admin-cupons',
     '/minha-empresa',
     '/logistica',
-    '/fidelidade'
+    '/fidelidade',
+    '/marketing'
   ];
   
   const isAdminPage = adminRoutes.some(route => location.pathname.startsWith(route));
@@ -118,6 +120,11 @@ const AppRoutes = () => {
         <Route path="/fidelidade" element={
           <AdminRoute>
             <Fidelidade />
+          </AdminRoute>
+        } />
+        <Route path="/marketing" element={
+          <AdminRoute>
+            <Marketing />
           </AdminRoute>
         } />
         
