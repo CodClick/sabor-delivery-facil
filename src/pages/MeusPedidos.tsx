@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { getOrdersByPhone } from "@/services/orderService";
 import { Order } from "@/types/order";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -40,14 +42,16 @@ const MeusPedidos = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!currentUser) {
-        setLoading(false);
-        return;
-      }
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
 
+    let unsubscribe: (() => void) | null = null;
+
+    const setupRealtimeListener = async () => {
       try {
-        // Tentar buscar o telefone do usuário no Supabase
+        // Buscar telefone do usuário
         const { data: userData } = await supabase
           .from("users")
           .select("phone")
@@ -56,42 +60,63 @@ const MeusPedidos = () => {
 
         let phone = userData?.phone || currentUser.phoneNumber;
 
-        // Se não encontrar, tentar buscar em customer_data pelo email
         if (!phone && currentUser.email) {
           const { data: customerData } = await supabase
             .from("customer_data")
             .select("phone")
             .eq("name", currentUser.displayName || currentUser.email)
             .maybeSingle();
-          
           phone = customerData?.phone;
         }
 
-        if (phone) {
-          const userOrders = await getOrdersByPhone(phone);
-          
-          // Filtrar apenas pedidos do dia e não finalizados
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          const activeOrders = userOrders.filter((order) => {
-            const orderDate = new Date(order.createdAt);
-            orderDate.setHours(0, 0, 0, 0);
-            const isToday = orderDate.getTime() === today.getTime();
-            const isActive = !["delivered", "cancelled"].includes(order.status);
-            return isToday && isActive;
-          });
-          
-          setOrders(activeOrders);
+        if (!phone) {
+          setLoading(false);
+          return;
         }
+
+        // Criar query para pedidos de hoje
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTimestamp = Timestamp.fromDate(today);
+
+        const ordersQuery = query(
+          collection(db, "orders"),
+          where("customerPhone", "==", phone),
+          where("createdAt", ">=", todayTimestamp),
+          orderBy("createdAt", "desc")
+        );
+
+        // Listener em tempo real
+        unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+          const activeOrders = snapshot.docs
+            .map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+              } as Order;
+            })
+            .filter((order) => !["delivered", "cancelled"].includes(order.status));
+
+          setOrders(activeOrders);
+          setLoading(false);
+        }, (error) => {
+          console.error("Erro no listener de pedidos:", error);
+          setLoading(false);
+        });
       } catch (error) {
-        console.error("Erro ao buscar pedidos:", error);
-      } finally {
+        console.error("Erro ao configurar listener:", error);
         setLoading(false);
       }
     };
 
-    fetchOrders();
+    setupRealtimeListener();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [currentUser]);
 
   const formatDate = (dateString: string | Date) => {
@@ -153,9 +178,14 @@ const MeusPedidos = () => {
                     <span>{formatDate(order.createdAt)}</span>
                   </div>
 
-                  {/* ID do Pedido */}
-                  <div className="font-semibold text-lg mb-3">
-                    ID Pedido: {formatOrderId(order.id)}
+                  {/* ID do Pedido + Status */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-semibold text-lg">
+                      ID Pedido: {formatOrderId(order.id)}
+                    </div>
+                    <Badge className={statusColors[order.status] || "bg-muted text-muted-foreground"}>
+                      {statusLabels[order.status] || order.status}
+                    </Badge>
                   </div>
 
                   {/* Endereço */}
@@ -217,14 +247,11 @@ const MeusPedidos = () => {
                     </ul>
                   </div>
 
-                  {/* Total e Status */}
-                  <div className="flex items-center justify-between pt-3 border-t">
+                  {/* Total */}
+                  <div className="pt-3 border-t">
                     <div className="font-bold text-lg">
                       Total: R$ {order.total.toFixed(2)}
                     </div>
-                    <Badge className={statusColors[order.status] || "bg-gray-100"}>
-                      {statusLabels[order.status] || order.status}
-                    </Badge>
                   </div>
                 </CardContent>
               </Card>
