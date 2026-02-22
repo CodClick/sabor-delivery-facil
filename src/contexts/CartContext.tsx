@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
 import { getAllVariations } from "@/services/variationService";
-import { trackAddToCart } from "@/utils/trackingEvents"; // <--- 1. IMPORTAÇÃO ADICIONADA
+import { getAllMenuItems } from "@/services/menuItemService";
+import { trackAddToCart } from "@/utils/trackingEvents";
 
 interface AppliedCoupon {
   id: string;
@@ -35,6 +36,33 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const CART_STORAGE_KEY = "cart_items_backup";
+
+const saveCartToStorage = (items: CartItem[]) => {
+  try {
+    const minimal = items.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      selectedVariations: item.selectedVariations,
+      selectedBorder: item.selectedBorder ? { id: item.selectedBorder.id } : undefined,
+      isHalfPizza: item.isHalfPizza,
+      combination: item.combination,
+    }));
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(minimal));
+  } catch (e) {
+    console.error("Erro ao salvar carrinho no localStorage:", e);
+  }
+};
+
+const loadCartFromStorage = (): any[] => {
+  try {
+    const data = localStorage.getItem(CART_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -44,19 +72,73 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
+  const hasRestoredCart = useRef(false);
 
-  // carregar variações
-  useEffect(() => {
-    const loadVariations = async () => {
-      try {
-        const allVariations = await getAllVariations();
-        setVariations(allVariations);
-      } catch (error) {
-        console.error("Erro ao carregar variações:", error);
-      }
-    };
-    loadVariations();
-  }, []);
+  // carregar variações
+  useEffect(() => {
+    const loadVariations = async () => {
+      try {
+        const allVariations = await getAllVariations();
+        setVariations(allVariations);
+      } catch (error) {
+        console.error("Erro ao carregar variações:", error);
+      }
+    };
+    loadVariations();
+  }, []);
+
+  // Restaurar carrinho do localStorage com preços atualizados
+  useEffect(() => {
+    if (hasRestoredCart.current) return;
+    hasRestoredCart.current = true;
+
+    const restoreCart = async () => {
+      const savedItems = loadCartFromStorage();
+      if (!savedItems.length) return;
+
+      try {
+        const allItems = await getAllMenuItems();
+        const itemsMap = new Map(allItems.map(i => [i.id, i]));
+
+        const restoredItems: CartItem[] = [];
+        for (const saved of savedItems) {
+          const fresh = itemsMap.get(saved.id);
+          if (!fresh || fresh.available === false) continue;
+
+          // Restaurar borda com preço atualizado
+          let restoredBorder: PizzaBorder | undefined;
+          if (saved.selectedBorder?.id && fresh.pizzaBorders) {
+            restoredBorder = fresh.pizzaBorders.find((b: PizzaBorder) => b.id === saved.selectedBorder.id);
+          }
+
+          restoredItems.push({
+            ...fresh,
+            quantity: saved.quantity,
+            selectedVariations: saved.selectedVariations,
+            selectedBorder: restoredBorder,
+            isHalfPizza: saved.isHalfPizza,
+            combination: saved.combination,
+          });
+        }
+
+        if (restoredItems.length > 0) {
+          setCartItems(restoredItems);
+        }
+        if (restoredItems.length < savedItems.length) {
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]));
+        }
+      } catch (error) {
+        console.error("Erro ao restaurar carrinho:", error);
+      }
+    };
+
+    restoreCart();
+  }, []);
+
+  // Salvar carrinho no localStorage quando mudar
+  useEffect(() => {
+    saveCartToStorage(cartItems);
+  }, [cartItems]);
 
   const getVariationPrice = (variationId: string): number => {
     const variation = variations.find(v => v.id === variationId);
