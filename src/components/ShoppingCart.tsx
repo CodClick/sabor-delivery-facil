@@ -560,6 +560,14 @@ const ShoppingCart: React.FC = () => {
                 <span>{formatCurrency(finalTotal)}</span>
               </div>
               
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-9 bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                onClick={() => setIsCartOpen(false)}
+              >
+                🍕 Adicionar mais itens
+              </Button>
               <Button 
                 className="w-full text-center py-3 bg-food-green hover:bg-opacity-90"
                 onClick={handleCheckout}
