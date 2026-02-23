@@ -220,6 +220,7 @@ const ShoppingCart: React.FC = () => {
     
     setIsCartOpen(false);
     navigate("/checkout");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Determine if we're on the checkout page to adjust the cart button position
