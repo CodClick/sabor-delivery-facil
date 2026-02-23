@@ -26,11 +26,14 @@ import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 import { calculateFreteByCep } from "@/services/freteService";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import ProductVariationDialog from "@/components/ProductVariationDialog";
+import { getAllVariations } from "@/services/variationService";
+import { CartItem, MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
 
 const Checkout = () => {
-  const { cartItems, cartTotal, clearCart, removeFromCart, appliedCoupon, discountAmount, finalTotal } = useCart();
+  const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, discountAmount, finalTotal } = useCart();
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,6 +67,12 @@ const Checkout = () => {
     return item.freteGratis === true;
   });
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  
+  // Estado para edição de item
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editAvailableVariations, setEditAvailableVariations] = useState<Variation[]>([]);
+  const [editGroupVariations, setEditGroupVariations] = useState<{ [groupId: string]: Variation[] }>({});
   
   const numberInputRef = useRef<HTMLInputElement>(null);
 
@@ -458,6 +467,47 @@ const handleSubmit = async (e: React.FormEvent) => {
 };
 
 
+  const handleEditItem = async (index: number) => {
+    const item = cartItems[index];
+    if (!item.hasVariations || !item.variationGroups?.length) return;
+
+    try {
+      const allVariations = await getAllVariations();
+      setEditAvailableVariations(allVariations);
+
+      const groupVars: { [groupId: string]: Variation[] } = {};
+      for (const group of item.variationGroups!) {
+        groupVars[group.id] = allVariations.filter(
+          (v) => v.available && group.variations.includes(v.id) && v.categoryIds.includes(item.category)
+        );
+      }
+      setEditGroupVariations(groupVars);
+      setEditingItemIndex(index);
+      setEditDialogOpen(true);
+    } catch (error) {
+      console.error("Erro ao carregar variações para edição:", error);
+    }
+  };
+
+  const handleEditConfirm = (
+    _item: MenuItem & { quantity?: number },
+    selectedVariationGroups: SelectedVariationGroup[],
+    selectedBorder?: PizzaBorder | null
+  ) => {
+    if (editingItemIndex === null) return;
+    updateCartItemByIndex(editingItemIndex, {
+      selectedVariations: selectedVariationGroups,
+      selectedBorder: selectedBorder || undefined,
+    });
+    setEditDialogOpen(false);
+    setEditingItemIndex(null);
+    toast({
+      title: "Item atualizado",
+      description: "As alterações foram aplicadas ao seu pedido.",
+      duration: 2000,
+    });
+  };
+
   if (cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -657,10 +707,20 @@ const handleSubmit = async (e: React.FormEvent) => {
                           return (baseUnitPrice * item.quantity).toFixed(2);
                         })()}
                       </div>
+                      {item.hasVariations && item.variationGroups && item.variationGroups.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleEditItem(index)}
+                          className="text-muted-foreground hover:text-primary transition-colors p-1"
+                          title="Editar item"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setItemToDelete(item.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
                         title="Remover item"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -854,6 +914,24 @@ const handleSubmit = async (e: React.FormEvent) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog de edição de item */}
+      {editingItemIndex !== null && cartItems[editingItemIndex] && (
+        <ProductVariationDialog
+          item={cartItems[editingItemIndex]}
+          isOpen={editDialogOpen}
+          onClose={() => {
+            setEditDialogOpen(false);
+            setEditingItemIndex(null);
+          }}
+          onAddToCart={handleEditConfirm}
+          availableVariations={editAvailableVariations}
+          groupVariations={editGroupVariations}
+          initialSelections={cartItems[editingItemIndex].selectedVariations}
+          initialBorder={cartItems[editingItemIndex].selectedBorder}
+          confirmLabel="Atualizar item"
+        />
+      )}
     </div>
   );
 };
