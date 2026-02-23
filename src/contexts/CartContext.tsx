@@ -23,6 +23,7 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
+  updateCartItemByIndex: (index: number, updatedItem: Partial<CartItem>) => void;
   clearCart: () => void;
   cartTotal: number;
   itemCount: number;
@@ -328,6 +329,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  const updateCartItemByIndex = (index: number, updatedFields: Partial<CartItem>) => {
+    setCartItems(prevItems =>
+      prevItems.map((item, i) => (i === index ? { ...item, ...updatedFields } : item))
+    );
+  };
+
   const clearCart = () => {
     setCartItems([]);
     setAppliedCoupon(null);
@@ -342,6 +349,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeFromCart,
         increaseQuantity,
         decreaseQuantity,
+        updateCartItemByIndex,
         clearCart,
         cartTotal,
         itemCount,
