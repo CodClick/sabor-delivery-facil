@@ -13,10 +13,13 @@ interface ProductVariationDialogProps {
   item: MenuItem;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, selectedVariationGroups: SelectedVariationGroup[], selectedBorder?: PizzaBorder | null) => void;
+  onAddToCart: (item: MenuItem & { quantity?: number }, selectedVariationGroups: SelectedVariationGroup[], selectedBorder?: PizzaBorder | null) => void;
   availableVariations: Variation[];
   groupVariations: {[groupId: string]: Variation[]};
   onOpenPizzaCombination?: () => void;
+  initialSelections?: SelectedVariationGroup[];
+  initialBorder?: PizzaBorder | null;
+  confirmLabel?: string;
 }
 
 // Tipo interno para gerenciar seleções com metade
@@ -35,7 +38,10 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   onAddToCart,
   availableVariations,
   groupVariations,
-  onOpenPizzaCombination
+  onOpenPizzaCombination,
+  initialSelections,
+  initialBorder,
+  confirmLabel,
 }) => {
   const [selectedVariationGroups, setSelectedVariationGroups] = useState<SelectedVariationGroup[]>([]);
   const [isValid, setIsValid] = useState<boolean>(false);
@@ -49,30 +55,59 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
 
   useEffect(() => {
     if (isOpen && item.variationGroups) {
-      // Initialize selected variations for each group
-      const initialGroups = item.variationGroups.map(group => {
-        if (!group) return null;
-        
-        // Get available variations for this group
-        const groupVars = groupVariations[group.id] || [];
-        const variations = groupVars.map(variation => ({
-          variationId: variation.id,
-          quantity: 0,
-          name: variation.name,
-          additionalPrice: variation.additionalPrice || 0,
-          halfSelection: undefined as HalfSelection | undefined
-        }));
+      // If we have initial selections (edit mode), use them
+      if (initialSelections && initialSelections.length > 0) {
+        // Merge initial selections with all available variations (to show unselected ones too)
+        const mergedGroups = item.variationGroups.map(group => {
+          if (!group) return null;
+          const groupVars = groupVariations[group.id] || [];
+          const existingGroup = initialSelections.find(sg => sg.groupId === group.id);
+          
+          const variations = groupVars.map(variation => {
+            const existingVar = existingGroup?.variations.find(v => v.variationId === variation.id);
+            return {
+              variationId: variation.id,
+              quantity: existingVar?.quantity || 0,
+              name: variation.name,
+              additionalPrice: variation.additionalPrice || 0,
+              halfSelection: existingVar?.halfSelection,
+            };
+          });
 
-        return {
-          groupId: group.id,
-          groupName: group.name,
-          variations: variations
-        };
-      }).filter(Boolean) as SelectedVariationGroup[];
+          return {
+            groupId: group.id,
+            groupName: group.name,
+            variations,
+          };
+        }).filter(Boolean) as SelectedVariationGroup[];
 
-      setSelectedVariationGroups(initialGroups);
+        setSelectedVariationGroups(mergedGroups);
+        setSelectedBorder(initialBorder ?? null);
+      } else {
+        // Initialize selected variations for each group
+        const initialGroups = item.variationGroups.map(group => {
+          if (!group) return null;
+          
+          const groupVars = groupVariations[group.id] || [];
+          const variations = groupVars.map(variation => ({
+            variationId: variation.id,
+            quantity: 0,
+            name: variation.name,
+            additionalPrice: variation.additionalPrice || 0,
+            halfSelection: undefined as HalfSelection | undefined
+          }));
+
+          return {
+            groupId: group.id,
+            groupName: group.name,
+            variations: variations
+          };
+        }).filter(Boolean) as SelectedVariationGroup[];
+
+        setSelectedVariationGroups(initialGroups);
+        setSelectedBorder(null);
+      }
       setSelectingHalfFor(null);
-      setSelectedBorder(null);
     }
   }, [isOpen, item.variationGroups, groupVariations]);
 
@@ -567,7 +602,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
               disabled={!isValid}
               className="bg-food-green hover:bg-opacity-90 flex-1"
             >
-              Adicionar ao carrinho
+              {confirmLabel || "Adicionar ao carrinho"}
             </Button>
           </div>
         </div>
