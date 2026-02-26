@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import ProductVariationDialog from "./ProductVariationDialog";
-import PizzaCombinationDialog from "./PizzaCombinationDialog"; // novo
+import PizzaCombinationDialog from "./PizzaCombinationDialog";
 import { getAllVariations } from "@/services/variationService";
+import { trackViewContent } from "@/utils/trackingEvents";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -54,11 +55,19 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   }, [item]);
 
   const handleButtonClick = () => {
+    // Track ViewContent on every product interaction
+    trackViewContent({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      category: item.category,
+      tipo: item.tipo,
+      permiteCombinacao: item.permiteCombinacao,
+    });
+
     if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
-      // fluxo de produto com variações normais
       setIsVariationDialogOpen(true);
     } else {
-      // produto simples
       addToCart(item);
     }
   };
