@@ -31,6 +31,7 @@ import { formatCurrency } from "@/lib/utils";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
 import { getAllVariations } from "@/services/variationService";
 import { CartItem, MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
+import { trackPurchase } from "@/utils/trackingEvents";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, discountAmount, finalTotal } = useCart();
@@ -446,6 +447,22 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     // Fidelidade será contabilizada apenas quando o pedido for entregue (status "delivered")
 
+    // Track Purchase event
+    try {
+      trackPurchase({
+        orderId: order.id,
+        cartItems: [...cartItems], // copy before clearing
+        total: totalComFrete,
+        subtotal: subtotalPedido,
+        frete: freteEfetivo,
+        discount: discountAmount,
+        couponCode: appliedCoupon?.nome ?? null,
+        paymentMethod,
+      });
+    } catch (e) {
+      console.error("Erro ao rastrear Purchase:", e);
+    }
+
     clearCart();
 
     toast({
@@ -478,7 +495,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       const groupVars: { [groupId: string]: Variation[] } = {};
       for (const group of item.variationGroups!) {
         groupVars[group.id] = allVariations.filter(
-          (v) => v.available && group.variations.includes(v.id) && v.categoryIds.includes(item.category)
+          (v) => v.available && group.variations.includes(v.id)
         );
       }
       setEditGroupVariations(groupVars);
