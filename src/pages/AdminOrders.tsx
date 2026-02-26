@@ -19,6 +19,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { updateOrder, getOrdersByDateRange } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
 import {
@@ -39,6 +41,8 @@ const AdminOrders = () => {
   const [activeStatus, setActiveStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchField, setSearchField] = useState("orderNumber");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -274,8 +278,29 @@ const AdminOrders = () => {
     loadOrders(activeStatus, dateRange);
   };
 
-  const totalOrders = orders.length;
-  const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
+  const searchOptions = [
+    { value: "orderNumber", label: "Nº do Pedido" },
+    { value: "customerName", label: "Nome do Cliente" },
+    { value: "customerPhone", label: "Telefone" },
+  ];
+
+  const filteredOrders = orders.filter((order) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    switch (searchField) {
+      case "orderNumber":
+        return order.id.toLowerCase().includes(term);
+      case "customerName":
+        return order.customerName?.toLowerCase().includes(term);
+      case "customerPhone":
+        return order.customerPhone?.toLowerCase().includes(term);
+      default:
+        return true;
+    }
+  });
+
+  const totalOrders = filteredOrders.length;
+  const totalSales = filteredOrders.reduce((sum, order) => sum + order.total, 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -289,7 +314,32 @@ const AdminOrders = () => {
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Buscar por:</label>
+            <div className="flex gap-2">
+              <Select value={searchField} onValueChange={setSearchField}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {searchOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Digite para buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="text-sm font-medium mb-2 block">Filtrar por status:</label>
             <Select value={activeStatus} onValueChange={setActiveStatus}>
@@ -318,7 +368,7 @@ const AdminOrders = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <Card key={order.id} className="overflow-hidden">
             <CardHeader className="bg-gray-50 py-4">
               <div className="flex justify-between">
