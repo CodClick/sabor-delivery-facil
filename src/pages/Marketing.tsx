@@ -5,59 +5,99 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Facebook, BarChart3, Code2 } from "lucide-react";
+import { ArrowLeft, Save, Facebook, BarChart3, Code2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const STORAGE_KEY = "marketing_config";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MarketingConfig {
-  metaPixelId: string;
-  metaAccessToken: string;
-  metaTestEventCode: string;
-  gtmContainerId: string;
+  meta_pixel_id: string;
+  meta_access_token: string;
+  meta_test_event_code: string;
+  gtm_container_id: string;
 }
-
-const defaultConfig: MarketingConfig = {
-  metaPixelId: "",
-  metaAccessToken: "",
-  metaTestEventCode: "",
-  gtmContainerId: "",
-};
-
-const loadConfig = (): MarketingConfig => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return { ...defaultConfig, ...JSON.parse(stored) };
-  } catch (e) {
-    console.error("Erro ao carregar config de marketing:", e);
-  }
-  return defaultConfig;
-};
 
 const Marketing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [config, setConfig] = useState<MarketingConfig>(loadConfig);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [config, setConfig] = useState<MarketingConfig>({
+    meta_pixel_id: "",
+    meta_access_token: "",
+    meta_test_event_code: "",
+    gtm_container_id: "",
+  });
+
+  // Carregar dados do Supabase
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("tags_rastreamento" as any)
+          .select("*")
+          .eq("id", 1)
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error; // PGRST116 é "nenhum resultado encontrado"
+        
+        if (data) {
+          const d = data as any;
+          setConfig({
+            meta_pixel_id: d.meta_pixel_id || "",
+            meta_access_token: d.meta_access_token || "",
+            meta_test_event_code: d.meta_test_event_code || "",
+            gtm_container_id: d.gtm_container_id || "",
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao carregar:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, []);
 
   const handleChange = (field: keyof MarketingConfig, value: string) => {
     setConfig((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      const { error } = await supabase
+        .from("tags_rastreamento" as any)
+        .upsert({
+          id: 1,
+          ...config,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Configurações salvas!",
-        description: "As configurações de marketing foram atualizadas com sucesso.",
+        description: "As tags foram atualizadas no banco de dados.",
       });
     } catch (e) {
       toast({
         title: "Erro ao salvar",
-        description: "Não foi possível salvar as configurações.",
+        description: "Houve um problema ao conectar com o Supabase.",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -78,20 +118,17 @@ const Marketing = () => {
               </div>
               <div>
                 <CardTitle className="text-lg">Meta Pixel (Facebook)</CardTitle>
-                <CardDescription>
-                  Insira o ID do Pixel para rastrear eventos no seu cardápio.
-                </CardDescription>
+                <CardDescription>Insira o ID do Pixel.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="metaPixelId">ID do Pixel</Label>
+              <Label htmlFor="meta_pixel_id">ID do Pixel</Label>
               <Input
-                id="metaPixelId"
-                placeholder="Ex: 1056176321723068"
-                value={config.metaPixelId}
-                onChange={(e) => handleChange("metaPixelId", e.target.value)}
+                id="meta_pixel_id"
+                value={config.meta_pixel_id}
+                onChange={(e) => handleChange("meta_pixel_id", e.target.value)}
               />
             </div>
           </CardContent>
@@ -105,38 +142,28 @@ const Marketing = () => {
                 <Code2 className="h-6 w-6 text-indigo-600" />
               </div>
               <div>
-                <CardTitle className="text-lg">API de Conversões (CAPI) — Meta</CardTitle>
-                <CardDescription>
-                  Configure o token de acesso e o código de evento de teste para enviar eventos server-side ao Meta.
-                </CardDescription>
+                <CardTitle className="text-lg">API de Conversões (CAPI)</CardTitle>
+                <CardDescription>Token de acesso e código de teste.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="metaAccessToken">Token de Acesso (Access Token)</Label>
+              <Label htmlFor="meta_access_token">Token de Acesso</Label>
               <Textarea
-                id="metaAccessToken"
-                placeholder="Cole aqui o Access Token gerado no Gerenciador de Eventos"
+                id="meta_access_token"
                 className="font-mono text-xs min-h-[80px]"
-                value={config.metaAccessToken}
-                onChange={(e) => handleChange("metaAccessToken", e.target.value)}
+                value={config.meta_access_token}
+                onChange={(e) => handleChange("meta_access_token", e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Gere o token em: Gerenciador de Eventos → Configurações → API de Conversões → Gerar token de acesso.
-              </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="metaTestEventCode">Código de Evento de Teste (opcional)</Label>
+              <Label htmlFor="meta_test_event_code">Código de Teste</Label>
               <Input
-                id="metaTestEventCode"
-                placeholder="Ex: TEST12345"
-                value={config.metaTestEventCode}
-                onChange={(e) => handleChange("metaTestEventCode", e.target.value)}
+                id="meta_test_event_code"
+                value={config.meta_test_event_code}
+                onChange={(e) => handleChange("meta_test_event_code", e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Use para validar eventos na aba "Eventos de Teste" do Gerenciador de Eventos.
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -150,28 +177,30 @@ const Marketing = () => {
               </div>
               <div>
                 <CardTitle className="text-lg">Google Tag Manager</CardTitle>
-                <CardDescription>
-                  Insira o ID do contêiner GTM para gerenciar tags e eventos.
-                </CardDescription>
+                <CardDescription>ID do contêiner GTM.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="gtmContainerId">ID do Contêiner GTM</Label>
+              <Label htmlFor="gtm_container_id">ID do Contêiner GTM</Label>
               <Input
-                id="gtmContainerId"
-                placeholder="Ex: GTM-NXM954Z3"
-                value={config.gtmContainerId}
-                onChange={(e) => handleChange("gtmContainerId", e.target.value)}
+                id="gtm_container_id"
+                value={config.gtm_container_id}
+                onChange={(e) => handleChange("gtm_container_id", e.target.value)}
               />
             </div>
           </CardContent>
         </Card>
 
-        <Button onClick={handleSave} className="w-full gap-2" size="lg">
-          <Save className="h-4 w-4" />
-          Salvar Configurações
+        <Button 
+          onClick={handleSave} 
+          className="w-full gap-2" 
+          size="lg" 
+          disabled={saving}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? "Salvando..." : "Salvar Configurações"}
         </Button>
       </div>
     </div>
