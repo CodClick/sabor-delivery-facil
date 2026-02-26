@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useTracking } from "@/hooks/useTracking";
 import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -46,6 +47,7 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   const location = useLocation();
+  useTracking();
   
   // Routes where ShoppingCart and ChatAssistant should be hidden
   const adminRoutes = [
