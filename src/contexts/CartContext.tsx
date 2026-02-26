@@ -288,13 +288,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         price: finalPrice,
         quantity: quantityToAdd,
         category: item.category,
-        // Mapeando as variações para um formato mais simples para o rastreamento
         variations: enrichedVariations?.flatMap(group => 
           group.variations.map(v => ({ name: v.name, price: v.additionalPrice }))
         ),
+        border: menuItem.selectedBorder
+          ? { name: menuItem.selectedBorder.name, price: menuItem.selectedBorder.additionalPrice }
+          : undefined,
+        isHalfPizza: item.isHalfPizza,
+        combination: item.combination,
       };
 
-      trackAddToCart(trackingData); // <--- Chamada atualizada!
+      trackAddToCart(trackingData);
 
     } catch (error) {
         console.error("Falha ao rastrear evento AddToCart:", error);
