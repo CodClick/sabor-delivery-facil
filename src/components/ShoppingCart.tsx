@@ -12,6 +12,7 @@ import { getAllVariations, getVariationById } from "@/services/variationService"
 import { Variation } from "@/types/menu";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { trackInitiateCheckout } from "@/utils/trackingEvents";
 
 const ShoppingCart: React.FC = () => {
   const {
@@ -218,6 +219,9 @@ const ShoppingCart: React.FC = () => {
       return;
     }
     
+    // Track InitiateCheckout
+    trackInitiateCheckout(cartItems, finalTotal);
+
     setIsCartOpen(false);
     navigate("/checkout");
     window.scrollTo({ top: 0, behavior: "smooth" });
