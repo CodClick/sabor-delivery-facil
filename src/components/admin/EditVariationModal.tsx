@@ -150,7 +150,26 @@ export const EditVariationModal = ({
             </div>
             
             <div>
-              <Label className="block mb-2">Categorias aplicáveis</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Categorias aplicáveis</Label>
+                {categories.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => {
+                      const allSelected = categories.every(c => (editVariation.categoryIds || []).includes(c.id));
+                      setEditVariation({
+                        ...editVariation,
+                        categoryIds: allSelected ? [] : categories.map(c => c.id),
+                      });
+                    }}
+                  >
+                    {categories.every(c => (editVariation.categoryIds || []).includes(c.id)) ? "Desmarcar todas" : "Marcar todas"}
+                  </Button>
+                )}
+              </div>
               <div className="max-h-32 overflow-y-auto border rounded-md p-2">
                 {categories.map((category) => (
                   <div key={category.id} className="flex items-center space-x-2 py-1">
