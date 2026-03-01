@@ -136,3 +136,57 @@ export const deletePizzaBorder = async (id: string): Promise<void> => {
     throw new Error(`Falha ao deletar borda: ${error.message}`);
   }
 };
+
+/**
+ * Sincroniza as bordas em todos os itens do menu.
+ * Atualiza nome, descrição, preço e disponibilidade das bordas nos itens,
+ * e remove bordas que não existem mais.
+ */
+export const syncBordersToMenuItems = async (): Promise<number> => {
+  try {
+    console.log("=== SINCRONIZANDO BORDAS NOS ITENS DO MENU ===");
+    
+    // Buscar todas as bordas atuais
+    const allBorders = await getAllPizzaBorders();
+    const bordersMap = new Map(allBorders.map(b => [b.id, b]));
+    
+    // Buscar todos os itens do menu
+    const menuItemsCollection = collection(db, "menuItems");
+    const menuItemsSnapshot = await getDocs(query(menuItemsCollection));
+    
+    let updatedCount = 0;
+    
+    for (const docSnap of menuItemsSnapshot.docs) {
+      const itemData = docSnap.data();
+      const itemBorders: PizzaBorder[] = itemData.pizzaBorders || [];
+      
+      if (itemBorders.length === 0) continue;
+      
+      // Atualizar bordas: manter apenas as que ainda existem, com dados atualizados
+      const updatedBorders = itemBorders
+        .map(border => {
+          const freshBorder = bordersMap.get(border.id);
+          return freshBorder || null; // Remove se não existe mais
+        })
+        .filter((b): b is PizzaBorder => b !== null);
+      
+      // Verificar se houve mudança
+      const hasChanged = 
+        updatedBorders.length !== itemBorders.length ||
+        JSON.stringify(updatedBorders) !== JSON.stringify(itemBorders);
+      
+      if (hasChanged) {
+        const itemDocRef = doc(db, "menuItems", docSnap.id);
+        await updateDoc(itemDocRef, { pizzaBorders: updatedBorders });
+        updatedCount++;
+        console.log(`Item "${itemData.name}" atualizado com bordas sincronizadas`);
+      }
+    }
+    
+    console.log(`=== SINCRONIZAÇÃO CONCLUÍDA: ${updatedCount} itens atualizados ===`);
+    return updatedCount;
+  } catch (error: any) {
+    console.error("Erro ao sincronizar bordas nos itens:", error);
+    throw new Error(`Falha ao sincronizar bordas: ${error.message}`);
+  }
+};
