@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
 import { MenuItem, Category } from "@/types/menu";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ShoppingCart, LogIn, LogOut, ClipboardList, Search, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -20,11 +20,14 @@ const Index = () => {
   const { itemCount, isCartOpen, setIsCartOpen } = useCart();
   const { currentUser, logOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const itemRefs = useRef<Record<string, { triggerClick: () => void } | null>>({});
+  const deepLinkHandled = useRef(false);
 
   useEffect(() => {
     const loadMenuItems = async () => {
       const items = await getAllMenuItems();
-      // Filtrar apenas itens disponíveis
       const availableItems = items.filter(item => item.available !== false);
       setMenuItems(availableItems);
     };
@@ -37,6 +40,68 @@ const Index = () => {
     loadMenuItems();
     loadCategories();
   }, []);
+
+  // Deep link handler — runs after items are rendered and refs populated
+  const handleDeepLink = useCallback(() => {
+    if (deepLinkHandled.current) return;
+
+    const itemId = searchParams.get("item");
+    if (!itemId || menuItems.length === 0) return;
+
+    // Wait a tick for refs to be populated after render
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-product-id="${itemId}"]`);
+      const handle = itemRefs.current[itemId];
+
+      if (el && handle) {
+        deepLinkHandled.current = true;
+
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // Fire custom tracking event
+        const matchedItem = menuItems.find(i => i.id === itemId);
+        if (matchedItem) {
+          try {
+            (window as any).fbq?.("trackCustom", "view_item_from_ads", {
+              content_ids: [matchedItem.id],
+              content_name: matchedItem.name,
+              content_category: matchedItem.category,
+              currency: "BRL",
+              value: matchedItem.price,
+            });
+            (window as any).dataLayer = (window as any).dataLayer || [];
+            (window as any).dataLayer.push({
+              event: "view_item_from_ads",
+              ecommerce: {
+                currency: "BRL",
+                value: matchedItem.price,
+                items: [{
+                  item_id: matchedItem.id,
+                  item_name: matchedItem.name,
+                  item_category: matchedItem.category,
+                  price: matchedItem.price,
+                }],
+              },
+            });
+          } catch (e) {
+            console.error("view_item_from_ads tracking error:", e);
+          }
+        }
+
+        // Trigger click after scroll settles
+        setTimeout(() => {
+          handle.triggerClick();
+          // Clean up the URL param
+          searchParams.delete("item");
+          setSearchParams(searchParams, { replace: true });
+        }, 600);
+      }
+    });
+  }, [menuItems, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    handleDeepLink();
+  }, [handleDeepLink]);
 
   // Filtrar itens por busca e categoria
   const filteredItems = menuItems.filter(item => {
@@ -55,7 +120,6 @@ const Index = () => {
     
     let categoryItems = filteredItems.filter(item => item.category === category.id);
 
-    // Ordenar alfabeticamente
     categoryItems = categoryItems.sort((a, b) =>
       a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
     );
@@ -150,19 +214,19 @@ const Index = () => {
       
       <div className="container mx-auto px-4 py-8">
         {activeCategory === "all" ? (
-          // Mostrar todas as categorias com seus itens
           groupedItems.map(({ category, items }) => (
             <MenuSection 
               key={category.id}
               title={category.name} 
-              items={items} 
+              items={items}
+              itemRefs={itemRefs}
             />
           ))
         ) : (
-          // Mostrar apenas a categoria selecionada
           <MenuSection 
             title={categories.find(cat => cat.id === activeCategory)?.name || "Menu"} 
-            items={filteredItems} 
+            items={filteredItems}
+            itemRefs={itemRefs}
           />
         )}
       </div>
