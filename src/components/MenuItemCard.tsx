@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import ProductVariationDialog from "./ProductVariationDialog";
 import PizzaCombinationDialog from "./PizzaCombinationDialog";
+import QuantityDialog from "./QuantityDialog";
 import { getAllVariations } from "@/services/variationService";
 import { trackViewContent } from "@/utils/trackingEvents";
 
@@ -17,6 +18,7 @@ const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCard
   const { addToCart, addItem } = useCart();
   const [isVariationDialogOpen, setIsVariationDialogOpen] = useState(false);
   const [isPizzaDialogOpen, setIsPizzaDialogOpen] = useState(false);
+  const [isQuantityDialogOpen, setIsQuantityDialogOpen] = useState(false);
   const [availableVariations, setAvailableVariations] = useState<Variation[]>([]);
   const [groups, setGroups] = useState<{ [groupId: string]: Variation[] }>({});
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCard
     if (item.hasVariations && item.variationGroups && item.variationGroups.length > 0) {
       setIsVariationDialogOpen(true);
     } else {
-      addToCart(item);
+      setIsQuantityDialogOpen(true);
     }
   };
 
@@ -87,6 +89,9 @@ const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCard
       selectedBorder: selectedBorder || undefined,
     });
     setTempCombinedItem(null);
+  };
+  const handleQuantityConfirm = (menuItem: MenuItem, quantity: number) => {
+    addItem({ ...menuItem, quantity });
   };
 
   const handlePizzaCombination = (combinedItem: MenuItem) => {
@@ -161,6 +166,12 @@ const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCard
         availableVariations={availableVariations}
         groupVariations={groups}
         onOpenPizzaCombination={() => setIsPizzaDialogOpen(true)}
+      />
+      <QuantityDialog
+        item={item}
+        isOpen={isQuantityDialogOpen}
+        onClose={() => setIsQuantityDialogOpen(false)}
+        onConfirm={handleQuantityConfirm}
       />
     </>
   );
