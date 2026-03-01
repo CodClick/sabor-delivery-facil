@@ -3,7 +3,7 @@ import { VariationGroup, Variation } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Copy, Edit, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { deleteVariationGroup } from "@/services/variationGroupService";
 import { EditVariationGroupModal } from "./EditVariationGroupModal";
 
@@ -67,6 +67,15 @@ export const VariationGroupsTab = ({
 
   const handleEditExistingVariationGroup = (group: VariationGroup) => {
     setEditVariationGroup({ ...group });
+  };
+
+  const handleDuplicateVariationGroup = (group: VariationGroup) => {
+    setEditVariationGroup({
+      ...group,
+      id: "",
+      name: `${group.name} (Cópia)`,
+      internalName: group.internalName ? `${group.internalName} (Cópia)` : "",
+    });
   };
 
   const handleDeleteExistingVariationGroup = async (group: VariationGroup) => {
@@ -193,6 +202,14 @@ export const VariationGroupsTab = ({
                 </div>
 
                 <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDuplicateVariationGroup(group)}
+                    title="Duplicar"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                   <Button 
                     size="sm" 
                     variant="ghost" 
