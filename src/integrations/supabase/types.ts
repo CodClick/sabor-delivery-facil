@@ -1629,6 +1629,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tags_rastreamento: {
+        Row: {
+          gtm_container_id: string | null
+          id: number
+          meta_access_token: string | null
+          meta_pixel_id: string | null
+          meta_test_event_code: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          gtm_container_id?: string | null
+          id?: number
+          meta_access_token?: string | null
+          meta_pixel_id?: string | null
+          meta_test_event_code?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          gtm_container_id?: string | null
+          id?: number
+          meta_access_token?: string | null
+          meta_pixel_id?: string | null
+          meta_test_event_code?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string

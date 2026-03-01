@@ -7,6 +7,7 @@ import {
   UserCredential,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 
 // ============================================
 // SIGN UP (com envio direto para n8n)
@@ -20,22 +21,42 @@ export async function signUp(
   const result = await createUserWithEmailAndPassword(auth, email, password);
   
   if (result.user) {
-    // Monta objeto para enviar para o webhook do n8n
-    const userData = {
-      id: result.user.uid,
-      firebase_id: result.user.uid,
-      email: result.user.email || "",
-      name: name || "",
-      phone: phone || "",
-      created_at: new Date().toISOString(),
-      last_sign_in_at: new Date().toISOString(),
-      role: "user", // default
-    };
-
-    // DEBUG: log antes do fetch
-    console.log("🔄 Enviando dados para webhook do n8n:", userData);
-
+    // Salva usuário no Supabase com role "user"
     try {
+      const { error: supabaseError } = await supabase
+        .from('users')
+        .upsert({
+          firebase_id: result.user.uid,
+          email: result.user.email || email,
+          name: name || "",
+          phone: phone || "",
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          role: "user",
+        }, { onConflict: 'firebase_id' });
+
+      if (supabaseError) {
+        console.error("❌ Erro ao salvar usuário no Supabase:", supabaseError);
+      } else {
+        console.log("✅ Usuário criado no Supabase com role 'user'");
+      }
+    } catch (err) {
+      console.error("⚠️ Falha ao salvar no Supabase:", err);
+    }
+
+    // Envia dados para webhook do n8n
+    try {
+      const userData = {
+        id: result.user.uid,
+        firebase_id: result.user.uid,
+        email: result.user.email || "",
+        name: name || "",
+        phone: phone || "",
+        created_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+        role: "user",
+      };
+
       const response = await fetch(
         "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/signup",
         {
@@ -44,8 +65,6 @@ export async function signUp(
           body: JSON.stringify(userData),
         }
       );
-
-      console.log("✅ Resposta do n8n signup:", response.status, response.statusText);
 
       if (!response.ok) {
         const text = await response.text();
