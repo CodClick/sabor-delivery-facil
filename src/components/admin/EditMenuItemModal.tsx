@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save, XCircle, Upload, Image as ImageIcon } from "lucide-react";
+import { Save, XCircle, Upload, Image as ImageIcon, Copy, Link } from "lucide-react";
 import { saveMenuItem } from "@/services/menuItemService";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -157,6 +157,28 @@ export const EditMenuItemModal = ({
             <XCircle className="h-5 w-5" />
           </Button>
         </div>
+
+        {/* Deep Link */}
+        {editItem.id && menuItems.some((item) => item.id === editItem.id) && (
+          <div className="flex items-center gap-2 mb-4 p-2 bg-muted rounded-md">
+            <Link className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs text-muted-foreground truncate flex-1">
+              {`${window.location.origin}/?item=${editItem.id}`}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/?item=${editItem.id}`);
+                toast({ title: "Link copiado!", duration: 1500 });
+              }}
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              Copiar
+            </Button>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
