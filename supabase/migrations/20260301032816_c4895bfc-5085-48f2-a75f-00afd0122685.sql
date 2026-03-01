@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_id_unique ON public.users (firebase_id) WHERE firebase_id IS NOT NULL;
