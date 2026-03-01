@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { PizzaBorder, savePizzaBorder } from "@/services/pizzaBorderService";
+import { PizzaBorder, savePizzaBorder, syncBordersToMenuItems } from "@/services/pizzaBorderService";
 
 interface EditPizzaBorderModalProps {
   border: PizzaBorder;
@@ -39,11 +39,14 @@ export const EditPizzaBorderModal = ({
       setIsSaving(true);
       await savePizzaBorder(formData);
       
+      // Sincronizar bordas em todos os itens do menu
+      await syncBordersToMenuItems();
+      
       toast({
         title: "Sucesso",
         description: isNewBorder 
           ? "Borda criada com sucesso" 
-          : "Borda atualizada com sucesso",
+          : "Borda atualizada e sincronizada nos itens",
       });
       
       setBorder(null);
