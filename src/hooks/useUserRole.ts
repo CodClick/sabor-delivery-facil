@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useUserRole = () => {
   const { currentUser } = useAuth();
@@ -15,39 +16,22 @@ export const useUserRole = () => {
       }
 
       try {
-        const response = await fetch(
-          "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/user_role",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ firebase_id: currentUser.uid }),
-          }
-        );
+        const { data, error } = await supabase
+          .from("users")
+          .select("role")
+          .eq("firebase_id", currentUser.uid)
+          .maybeSingle();
 
-        if (!response.ok) {
-          throw new Error(`Erro na chamada do webhook: ${response.status}`);
+        if (error) {
+          console.error("Erro ao buscar role no Supabase:", error);
+          setRole("user");
+        } else {
+          console.log("Role encontrada no Supabase:", data?.role);
+          setRole(data?.role || "user");
         }
-
-        const data = await response.json();
-        console.log("Resposta do n8n:", data);
-
-        // Extrai role do primeiro item do array retornado
-// novo - aceita objeto ou array
-let userData: any = null;
-
-if (Array.isArray(data) && data.length > 0) {
-  userData = data[0];
-} else if (data && typeof data === "object") {
-  userData = data;
-}
-
-setRole(userData?.role || "user");
-
       } catch (error) {
-        console.error("Erro ao buscar role via webhook:", error);
-        setRole("user"); // fallback
+        console.error("Erro ao consultar role:", error);
+        setRole("user");
       } finally {
         setLoading(false);
       }
