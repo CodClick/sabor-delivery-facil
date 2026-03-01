@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Plus, Trash2 } from "lucide-react";
-import { PizzaBorder, deletePizzaBorder } from "@/services/pizzaBorderService";
+import { PizzaBorder, deletePizzaBorder, syncBordersToMenuItems } from "@/services/pizzaBorderService";
 import { EditPizzaBorderModal } from "./EditPizzaBorderModal";
 
 interface PizzaBordersTabProps {
@@ -50,9 +50,12 @@ export const PizzaBordersTab = ({
         setIsDeleting(border.id);
         await deletePizzaBorder(border.id);
         
+        // Sincronizar bordas nos itens (remove a borda deletada dos itens)
+        await syncBordersToMenuItems();
+        
         toast({
           title: "Sucesso",
-          description: "Borda excluída com sucesso",
+          description: "Borda excluída e removida dos itens",
         });
         
         onDataChange();
