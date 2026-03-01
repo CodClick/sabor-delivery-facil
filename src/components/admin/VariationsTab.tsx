@@ -4,7 +4,7 @@ import { Variation, Category } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Copy, Edit, Plus, Trash2 } from "lucide-react";
 import { deleteVariation } from "@/services/variationService";
 import { EditVariationModal } from "./EditVariationModal";
 
@@ -38,6 +38,15 @@ export const VariationsTab = ({
 
   const handleEditVariation = (variation: Variation) => {
     setEditVariation({...variation});
+  };
+
+  const handleDuplicateVariation = (variation: Variation) => {
+    const duplicated: Variation = {
+      ...variation,
+      id: "",
+      name: `${variation.name} (Cópia)`,
+    };
+    setEditVariation(duplicated);
   };
 
   const handleDeleteVariation = async (variation: Variation) => {
@@ -125,6 +134,9 @@ export const VariationsTab = ({
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => handleDuplicateVariation(variation)} title="Duplicar">
+                    <Copy className="h-4 w-4" />
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={() => handleEditVariation(variation)}>
                     <Edit className="h-4 w-4" />
                   </Button>
