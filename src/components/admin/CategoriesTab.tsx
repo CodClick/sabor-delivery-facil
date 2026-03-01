@@ -29,10 +29,6 @@ export const CategoriesTab = ({
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Categorias</h2>
-        <Button onClick={onSeedData}>
-          <Plus className="h-4 w-4 mr-1" />
-          Importar Dados Iniciais
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
