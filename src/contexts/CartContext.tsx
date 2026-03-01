@@ -321,17 +321,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  const decreaseQuantity = (id: string) => {
-    setCartItems(prevItems =>
-      prevItems
-        .map(item =>
-          item.id === id && item.quantity > 1
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-        .filter(item => !(item.id === id && item.quantity === 1))
-    );
-  };
+  const decreaseQuantity = (id: string) => {
+    setCartItems(prevItems => {
+      const item = prevItems.find(i => i.id === id);
+      if (!item) return prevItems;
+      if (item.quantity <= 1) {
+        return prevItems.filter(i => i.id !== id);
+      }
+      return prevItems.map(i =>
+        i.id === id ? { ...i, quantity: i.quantity - 1 } : i
+      );
+    });
+  };
 
   const updateCartItemByIndex = (index: number, updatedFields: Partial<CartItem>) => {
     setCartItems(prevItems =>
