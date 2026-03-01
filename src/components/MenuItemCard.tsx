@@ -13,7 +13,7 @@ interface MenuItemCardProps {
   item: MenuItem;
 }
 
-const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
+const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCardProps>(({ item }, ref) => {
   const { addToCart, addItem } = useCart();
   const [isVariationDialogOpen, setIsVariationDialogOpen] = useState(false);
   const [isPizzaDialogOpen, setIsPizzaDialogOpen] = useState(false);
@@ -72,6 +72,10 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
     }
   };
 
+  React.useImperativeHandle(ref, () => ({
+    triggerClick: handleButtonClick,
+  }));
+
   const handleAddItemWithVariations = (
     itemWithQty: MenuItem & { quantity?: number },
     selectedVariationGroups: SelectedVariationGroup[],
@@ -101,7 +105,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
 
   return (
     <>
-      <div className="food-item bg-white rounded-lg overflow-hidden shadow-md p-4 flex flex-col">
+      <div className="food-item bg-white rounded-lg overflow-hidden shadow-md p-4 flex flex-col" data-product-id={item.id}>
         <div className="h-48 overflow-hidden rounded-md mb-4">
           <img
             src={item.image}
@@ -160,6 +164,8 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
       />
     </>
   );
-};
+});
+
+MenuItemCard.displayName = "MenuItemCard";
 
 export default MenuItemCard;
