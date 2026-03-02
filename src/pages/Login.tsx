@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"; // 👈 importei os ícones
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,41 +22,22 @@ const Login = () => {
       setError("");
       setLoading(true);
       const userCredential = await signIn(email, password);
-      const firebaseUser = userCredential.user; // ✅ pega o user correto
+      const firebaseUser = userCredential.user;
 
-      // 🔥 busca role logo após login
-      const response = await fetch(
-        "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/user_role",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ firebase_id: firebaseUser.uid }),
-        }
-      );
+      // Consulta role diretamente no Supabase
+      const { data, error: roleError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("firebase_id", firebaseUser.uid)
+        .maybeSingle();
 
-      if (!response.ok) {
-        throw new Error(`Erro na chamada do webhook: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      let userData: any = null;
-      if (Array.isArray(data) && data.length > 0) {
-        userData = data[0];
-      } else if (data && typeof data === "object") {
-        userData = data;
-      }
-
-      const role = userData?.role || "user";
+      const role = (!roleError && data?.role) ? data.role : "user";
 
       toast({
         title: "Login realizado com sucesso",
-        description: `Bem-vindo, ${role}`,
+        description: `Bem-vindo!`,
       });
 
-      // 🚀 Navega baseado na role
       if (role === "admin") {
         navigate("/admin-dashboard");
       } else {
