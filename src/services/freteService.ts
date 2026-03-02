@@ -64,74 +64,51 @@ export async function calculateFreteByCep(
       };
     }
 
-    // 2. Chamar webhook para obter distância ou valor
-    const response = await fetch(
-      "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/consulta_cep",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cep_cliente: cleanCepCliente,
-          cep_empresa: cleanCepEmpresa,
-        }),
-      }
-    );
+    // 2. Chamar edge function para calcular distância via distancematrix.ai
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined;
+    const publishableKey =
+      (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
+      (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);
 
-    if (!response.ok) {
-      throw new Error("Erro ao consultar distância entre CEPs");
+    if (!projectId || !publishableKey) {
+      throw new Error("Configuração do Supabase incompleta para calcular distância");
     }
 
-    const rawData = await response.json();
+    const edgeFunctionUrl = `https://${projectId}.supabase.co/functions/v1/calcular-distancia`;
 
-    console.log("Resposta bruta do webhook consulta_cep:", JSON.stringify(rawData));
+    const edgeFnResponse = await fetch(edgeFunctionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: publishableKey,
+      },
+      body: JSON.stringify({
+        cep_cliente: cleanCepCliente,
+        cep_empresa: cleanCepEmpresa,
+      }),
+    });
 
-    const first = Array.isArray(rawData) ? rawData[0] : rawData;
-    // n8n pode responder no formato: [{ json: { ... } }]
-    const data =
-      first && typeof first === "object" && (first as any).json
-        ? (first as any).json
-        : first;
+    const edgeFnData = await edgeFnResponse.json().catch(() => null);
 
-    console.log("Data normalizada do webhook consulta_cep:", JSON.stringify(data));
-
-    // Extrair distância do formato Google Maps Distance Matrix API
-    let distanciaMetros = 0;
-    let valorDireto: number | null = null;
-
-    // Verificar se é formato Google Maps Distance Matrix
-    const dmDistanceValue = data?.rows?.[0]?.elements?.[0]?.distance?.value;
-    if (dmDistanceValue !== undefined && dmDistanceValue !== null) {
-      distanciaMetros = Number(dmDistanceValue);
-      console.log("Distância extraída do Google Maps:", distanciaMetros, "metros");
-    }
-    // Formato simples com valor direto
-    else if (data?.valor !== undefined && data.valor !== null) {
-      valorDireto = Number(data.valor);
-    }
-    // Formato simples com distância
-    else if (data?.distancia !== undefined && data.distancia !== null) {
-      distanciaMetros = Number(data.distancia);
+    if (!edgeFnResponse.ok) {
+      console.error("Erro ao chamar edge function calcular-distancia:", {
+        status: edgeFnResponse.status,
+        data: edgeFnData,
+      });
+      throw new Error(edgeFnData?.error || "Erro ao consultar distância entre CEPs");
     }
 
-    const hasDistanceOrValue =
-      (dmDistanceValue !== undefined && dmDistanceValue !== null) ||
-      (data?.distancia !== undefined && data.distancia !== null) ||
-      (data?.valor !== undefined && data.valor !== null);
+    if (edgeFnData?.error) {
+      throw new Error(edgeFnData.error);
+    }
 
-    if (!hasDistanceOrValue) {
-      throw new Error("Não foi possível encontrar esse cep em nosso banco de dados. \n Por favor, tente novamente");
+    const distanciaMetros = edgeFnData?.distancia_metros;
+
+    if (distanciaMetros === undefined || distanciaMetros === null) {
+      throw new Error("Não foi possível calcular a distância. Por favor, tente novamente.");
     }
-    // Se veio valor direto, usar
-    if (valorDireto !== null) {
-      console.log("Usando valor direto do webhook:", valorDireto);
-      return {
-        distanciaKm: 0,
-        valorFrete: valorDireto,
-        origem: 'webhook_valor'
-      };
-    }
+
+    console.log("Distância retornada pela API:", distanciaMetros, "metros |", edgeFnData?.distancia_texto);
 
     // Calcular usando faixas_frete
     const distanciaKm = distanciaMetros / 1000;
