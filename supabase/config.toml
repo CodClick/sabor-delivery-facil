@@ -2,3 +2,6 @@ project_id = "ypsfoumafbfgcvrxylmw"
 
 [functions.registrar-uso-cupom]
 verify_jwt = false
+
+[functions.calcular-distancia]
+verify_jwt = false
