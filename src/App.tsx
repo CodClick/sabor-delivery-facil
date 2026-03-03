@@ -30,6 +30,7 @@ import Logistica from "@/pages/Logistica";
 import MeusPedidos from "./pages/MeusPedidos";
 import Fidelidade from "./pages/Fidelidade";
 import Marketing from "./pages/Marketing";
+import AdminMetrics from "./pages/AdminMetrics";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const AppRoutes = () => {
     '/admin-dashboard',
     '/admin',
     '/admin-orders',
+    '/admin-metrics',
     '/entregador',
     '/pdv',
     '/admin-cupons',
@@ -127,6 +129,11 @@ const AppRoutes = () => {
         <Route path="/marketing" element={
           <AdminRoute>
             <Marketing />
+          </AdminRoute>
+        } />
+        <Route path="/admin-metrics" element={
+          <AdminRoute>
+            <AdminMetrics />
           </AdminRoute>
         } />
         
