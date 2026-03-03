@@ -123,7 +123,7 @@ const AdminMetrics = () => {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">Métricas do Restaurante</h1>
+          <h1 className="text-2xl font-bold">Performance do Restaurante</h1>
         </div>
         <DateRangePicker
           dateRange={dateRange}
