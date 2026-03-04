@@ -172,6 +172,8 @@ export const createOrder = async (
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
       address: orderData.address,
+      bairro: (orderData as any).bairro ?? "",
+      cidade: (orderData as any).cidade ?? "",
       paymentMethod: orderData.paymentMethod,
       observations: orderData.observations ?? "",
       items: orderItems,
