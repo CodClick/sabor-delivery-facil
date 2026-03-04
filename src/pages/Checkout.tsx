@@ -389,6 +389,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       customerName,
       customerPhone,
       address: fullAddress,
+      bairro: neighborhood,
+      cidade: city,
       paymentMethod,
       observations,
       items: itemsWithSubtotal,
