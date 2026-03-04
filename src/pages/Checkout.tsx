@@ -22,6 +22,8 @@ import {
 import { createOrder } from "@/services/orderService";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { fetchAddressByCep } from "@/services/cepService";
 import { saveCustomerData, getCustomerByPhone } from "@/services/customerService";
 import { calculateFreteByCep } from "@/services/freteService";
@@ -444,6 +446,26 @@ const handleSubmit = async (e: React.FormEvent) => {
       city,
       state,
     });
+
+    // Salvar dados do usuário na coleção "user" do Firestore
+    if (currentUser?.uid) {
+      try {
+        await setDoc(doc(db, "user", currentUser.uid), {
+          nome: customerName,
+          cep,
+          rua: street,
+          numero: number,
+          bairro: neighborhood,
+          cidade: city,
+          estado: state,
+          complemento: complement,
+          updatedAt: new Date(),
+        }, { merge: true });
+        console.log("[CHECKOUT] Dados do usuário salvos no Firestore (coleção 'user')");
+      } catch (firebaseErr) {
+        console.error("[CHECKOUT] Erro ao salvar dados do usuário no Firestore:", firebaseErr);
+      }
+    }
 
     // Fidelidade será contabilizada apenas quando o pedido for entregue (status "delivered")
 
