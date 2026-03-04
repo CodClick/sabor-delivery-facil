@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { subDays, format, parseISO, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import { ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Package } from "lucide-react";
+import { ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Package, Users, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { getOrdersByDateRange } from "@/services/orderService";
@@ -37,6 +37,14 @@ const revenueChartConfig: ChartConfig = {
 
 const topProductsChartConfig: ChartConfig = {
   quantidade: { label: "Quantidade", color: "hsl(var(--primary))" },
+};
+
+const topBuyersChartConfig: ChartConfig = {
+  pedidos: { label: "Pedidos", color: "hsl(262, 83%, 58%)" },
+};
+
+const topNeighborhoodsChartConfig: ChartConfig = {
+  pedidos: { label: "Pedidos", color: "hsl(25, 95%, 53%)" },
 };
 
 const AdminMetrics = () => {
@@ -112,6 +120,30 @@ const AdminMetrics = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([name, quantidade]) => ({ name, quantidade }));
+  }, [orders]);
+
+  const top5Compradores = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.forEach((o) => {
+      const name = o.customerName?.trim() || "Desconhecido";
+      map.set(name, (map.get(name) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, pedidos]) => ({ name, pedidos }));
+  }, [orders]);
+
+  const top5Bairros = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.forEach((o) => {
+      const bairro = (o as any).bairro?.trim() || "Não informado";
+      map.set(bairro, (map.get(bairro) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, pedidos]) => ({ name, pedidos }));
   }, [orders]);
 
   return (
@@ -231,6 +263,47 @@ const AdminMetrics = () => {
               </ChartContainer>
             </CardContent>
           </Card>
+
+          {/* Top 5 Compradores e Top 5 Bairros */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Top 5 Compradores
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={topBuyersChartConfig} className="h-[350px] w-full">
+                  <BarChart data={top5Compradores} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="name" fontSize={12} tickLine={false} axisLine={false} width={90} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="pedidos" fill="var(--color-pedidos)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Top 5 Bairros
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={topNeighborhoodsChartConfig} className="h-[350px] w-full">
+                  <BarChart data={top5Bairros} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="name" fontSize={12} tickLine={false} axisLine={false} width={90} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="pedidos" fill="var(--color-pedidos)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
     </div>
