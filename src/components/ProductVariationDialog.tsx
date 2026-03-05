@@ -49,6 +49,8 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
   const [selectingHalfFor, setSelectingHalfFor] = useState<{groupId: string, variationId: string} | null>(null);
   // Estado para borda selecionada
   const [selectedBorder, setSelectedBorder] = useState<PizzaBorder | null>(null);
+  // Quantidade do item
+  const [itemQuantity, setItemQuantity] = useState(1);
 
   const isHalfPizza = item.isHalfPizza === true;
   const hasBorders = item.tipo === "pizza" && item.pizzaBorders && item.pizzaBorders.length > 0;
@@ -108,6 +110,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
         setSelectedBorder(null);
       }
       setSelectingHalfFor(null);
+      setItemQuantity(1);
     }
   }, [isOpen, item.variationGroups, groupVariations]);
 
@@ -220,7 +223,7 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
     console.log("Enviando variações para o carrinho:", nonZeroGroups);
     console.log("Borda selecionada:", selectedBorder);
     
-    onAddToCart(item, nonZeroGroups, selectedBorder);
+    onAddToCart({ ...item, quantity: itemQuantity }, nonZeroGroups, selectedBorder);
     onClose();
   };
 
@@ -593,17 +596,42 @@ const ProductVariationDialog: React.FC<ProductVariationDialogProps> = ({
             <div className="h-20"></div>
           </div>
           
-          <div className="flex justify-between gap-3 p-6 border-t flex-shrink-0 bg-white">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleAddToCart} 
-              disabled={!isValid}
-              className="bg-food-green hover:bg-opacity-90 flex-1"
-            >
-              {confirmLabel || "Adicionar ao carrinho"}
-            </Button>
+          <div className="p-6 border-t flex-shrink-0 bg-white space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Quantidade de itens</span>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 p-0"
+                  onClick={() => setItemQuantity(q => Math.max(1, q - 1))}
+                  disabled={itemQuantity <= 1}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-8 text-center font-bold text-lg">{itemQuantity}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 p-0"
+                  onClick={() => setItemQuantity(q => q + 1)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-between gap-3">
+              <Button variant="outline" onClick={onClose} className="flex-1">
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleAddToCart} 
+                disabled={!isValid}
+                className="bg-food-green hover:bg-opacity-90 flex-1"
+              >
+                {confirmLabel || `Adicionar ${itemQuantity}x ao carrinho`}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
