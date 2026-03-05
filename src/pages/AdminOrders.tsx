@@ -299,8 +299,10 @@ const AdminOrders = () => {
     }
   });
 
+  const deliveredOrders = filteredOrders.filter(o => o.status === "delivered");
   const totalOrders = filteredOrders.length;
-  const totalSales = filteredOrders.reduce((sum, order) => sum + order.total, 0);
+  const totalRecebidos = deliveredOrders.filter(o => o.paymentStatus === "recebido").reduce((sum, o) => sum + o.total, 0);
+  const totalNaoRecebidos = deliveredOrders.filter(o => o.paymentStatus !== "recebido").reduce((sum, o) => sum + o.total, 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -437,8 +439,9 @@ const AdminOrders = () => {
             <p className="text-2xl font-bold text-blue-600">{totalOrders}</p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Valor Total das Vendas</p>
-            <p className="text-2xl font-bold text-green-600">R$ {totalSales.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mb-1">Vendas totais (Finalizados):</p>
+            <p className="text-lg font-bold text-green-600">Recebidos: R$ {totalRecebidos.toFixed(2)}</p>
+            <p className="text-lg font-bold text-red-600">Não recebidos: R$ {totalNaoRecebidos.toFixed(2)}</p>
           </div>
         </div>
         {dateRange?.from && (
