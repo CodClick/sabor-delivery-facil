@@ -61,6 +61,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus }) =>
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [isDeliveredConfirmOpen, setIsDeliveredConfirmOpen] = useState(false);
 
   // 🟢 Novo estado para o código curto
   const [shortCode, setShortCode] = useState<string | null>(null);
@@ -236,7 +237,7 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
 
     console.log("📦 Enviando payload do pedido para webhook n8n:", payload);
 
-    const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido", {
+    const response = await fetch("https://n8n-n8n-start.yh11mi.easypanel.host/webhook/status_pedido_Aut5", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -368,6 +369,27 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
       buttonClass = "flex items-center gap-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-orange-300";
     } else if (status === "paid") {
       buttonClass = "flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300";
+    }
+
+    // Intercept "delivered" status: check if payment received
+    if (status === "delivered") {
+      return (
+        <Button
+          key={status}
+          onClick={() => {
+            if (order.paymentStatus !== "recebido") {
+              setIsDeliveredConfirmOpen(true);
+            } else {
+              handleUpdateStatus(order.id, "delivered");
+            }
+          }}
+          variant={buttonVariant}
+          className={buttonClass}
+        >
+          {icon}
+          {label}
+        </Button>
+      );
     }
 
     return (
@@ -640,6 +662,38 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
       <div className="flex flex-wrap gap-2">
         {nextStatusButtons}
       </div>
+
+      {/* Diálogo de confirmação: Entrega finalizada sem pagamento */}
+      <Dialog open={isDeliveredConfirmOpen} onOpenChange={setIsDeliveredConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">⚠️ ATENÇÃO: Pedido não pago</DialogTitle>
+            <DialogDescription>
+              Este pedido ainda não foi marcado como recebido. Deseja finalizar a entrega mesmo assim?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeliveredConfirmOpen(false);
+                handleUpdateStatus(order.id, "delivered");
+              }}
+            >
+              Finalizar mesmo assim
+            </Button>
+            <Button
+              onClick={() => {
+                setIsDeliveredConfirmOpen(false);
+                handleUpdatePaymentStatus(order.id, "recebido");
+                handleUpdateStatus(order.id, "delivered");
+              }}
+            >
+              Marcar como recebido e finalizar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
