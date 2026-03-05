@@ -382,9 +382,14 @@ const AdminOrders = () => {
                     {formatFullDate(order.createdAt as string)}
                   </p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs flex items-center ${getStatusColor(order.status)}`}>
-                  {translateStatus(order.status)}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`px-2 py-1 rounded-full text-xs flex items-center ${getStatusColor(order.status)}`}>
+                    {translateStatus(order.status)}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs ${order.paymentStatus === "recebido" ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"}`}>
+                    {order.paymentStatus === "recebido" ? "Recebido" : "Não Recebido"}
+                  </span>
+                </div>
               </div>
               <div className="mt-2">
                 <div className="font-semibold">{order.customerName}</div>
