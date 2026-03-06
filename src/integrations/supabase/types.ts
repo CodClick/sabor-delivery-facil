@@ -1631,6 +1631,7 @@ export type Database = {
       }
       tags_rastreamento: {
         Row: {
+          capi_ativo: boolean
           gtm_container_id: string | null
           id: number
           meta_access_token: string | null
@@ -1639,6 +1640,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          capi_ativo?: boolean
           gtm_container_id?: string | null
           id?: number
           meta_access_token?: string | null
@@ -1647,6 +1649,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          capi_ativo?: boolean
           gtm_container_id?: string | null
           id?: number
           meta_access_token?: string | null

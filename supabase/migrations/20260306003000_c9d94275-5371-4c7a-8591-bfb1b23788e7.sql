@@ -1,0 +1,1 @@
+ALTER TABLE public.tags_rastreamento ADD COLUMN IF NOT EXISTS capi_ativo boolean NOT NULL DEFAULT false;
