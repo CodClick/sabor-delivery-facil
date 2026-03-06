@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { MenuItem, Category, VariationGroup, PizzaBorder } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy } from "lucide-react";
+import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy, Grid3X3, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteMenuItem, cleanupPopularItems } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
@@ -31,6 +31,7 @@ export const MenuItemsTab = ({
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
   const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
 
   // Detectar duplicatas
   const duplicateIds = useMemo(() => {
@@ -224,6 +225,24 @@ export const MenuItemsTab = ({
   </h2>
 
   <div className="flex gap-2">
+    <div className="flex border rounded-md overflow-hidden">
+      <Button
+        size="sm"
+        variant={viewMode === "cards" ? "default" : "ghost"}
+        onClick={() => setViewMode("cards")}
+        className="rounded-none px-2"
+      >
+        <Grid3X3 className="h-4 w-4" />
+      </Button>
+      <Button
+        size="sm"
+        variant={viewMode === "list" ? "default" : "ghost"}
+        onClick={() => setViewMode("list")}
+        className="rounded-none px-2"
+      >
+        <List className="h-4 w-4" />
+      </Button>
+    </div>
     <Button 
       onClick={handleCleanupPopularItems}
       variant="outline"
@@ -270,6 +289,7 @@ export const MenuItemsTab = ({
               
               {!collapsedCategories[category.id] && items.length > 0 && (
                 <div className="p-4">
+                  {viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map((item, index) => {
                       const isDuplicate = duplicateIds.includes(item.id);
@@ -363,6 +383,81 @@ export const MenuItemsTab = ({
                       );
                     })}
                   </div>
+                  ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left p-3 font-medium w-12">Img</th>
+                          <th className="text-left p-3 font-medium">Nome</th>
+                          <th className="text-left p-3 font-medium hidden md:table-cell">Descrição</th>
+                          <th className="text-left p-3 font-medium">Preço</th>
+                          <th className="text-center p-3 font-medium">Status</th>
+                          <th className="text-center p-3 font-medium hidden md:table-cell">Tags</th>
+                          <th className="text-right p-3 font-medium">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item, index) => {
+                          const isDuplicate = duplicateIds.includes(item.id);
+                          const isDeleting = deletingItems.has(item.id);
+                          return (
+                            <tr key={`${item.id}-${index}`} className={`border-t hover:bg-muted/50 ${isDuplicate ? 'bg-red-50' : ''} ${isDeleting ? 'opacity-50' : ''}`}>
+                              <td className="p-3">
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-10 h-10 rounded object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = "/placeholder.svg";
+                                  }}
+                                />
+                              </td>
+                              <td className="p-3 font-medium">{item.name}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">
+                                <span className="line-clamp-1">{item.description || "—"}</span>
+                              </td>
+                              <td className="p-3">
+                                {item.priceFrom && <span className="text-xs text-muted-foreground">a partir de </span>}
+                                R$ {item.price.toFixed(2)}
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className={`inline-block h-2 w-2 rounded-full ${item.available !== false ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                              </td>
+                              <td className="p-3 hidden md:table-cell">
+                                <div className="flex flex-wrap gap-1 justify-center">
+                                  {item.popular && (
+                                    <span className="inline-block bg-food-green text-white text-xs px-1.5 py-0.5 rounded">Popular</span>
+                                  )}
+                                  {item.hasVariations && (
+                                    <span className="inline-block bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded">Variações</span>
+                                  )}
+                                  {item.isHalfPizza && (
+                                    <span className="inline-block bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded">½ a ½</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex gap-1 justify-end">
+                                  <Button size="sm" variant="ghost" onClick={() => handleEditItem(item)} disabled={isDeleting} title="Editar">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => handleDuplicateItem(item)} disabled={isDeleting} title="Duplicar">
+                                    <Copy className="h-4 w-4 text-blue-500" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item)} disabled={isDeleting} title="Excluir">
+                                    <Trash2 className={`h-4 w-4 ${isDeleting ? 'text-gray-400' : 'text-red-500'}`} />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  )}
                 </div>
               )}
             </div>
