@@ -43,8 +43,16 @@ const topBuyersChartConfig: ChartConfig = {
   pedidos: { label: "Pedidos", color: "hsl(262, 83%, 58%)" },
 };
 
+const topBuyersValueChartConfig: ChartConfig = {
+  valor: { label: "Valor (R$)", color: "hsl(262, 83%, 45%)" },
+};
+
 const topNeighborhoodsChartConfig: ChartConfig = {
   pedidos: { label: "Pedidos", color: "hsl(25, 95%, 53%)" },
+};
+
+const topNeighborhoodsValueChartConfig: ChartConfig = {
+  valor: { label: "Valor (R$)", color: "hsl(25, 95%, 40%)" },
 };
 
 const AdminMetrics = () => {
@@ -134,6 +142,18 @@ const AdminMetrics = () => {
       .map(([name, pedidos]) => ({ name, pedidos }));
   }, [orders]);
 
+  const top5CompradoresValor = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.forEach((o) => {
+      const name = o.customerName?.trim() || "Desconhecido";
+      map.set(name, (map.get(name) || 0) + (o.total || 0));
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, valor]) => ({ name, valor: Number(valor.toFixed(2)) }));
+  }, [orders]);
+
   const top5Bairros = useMemo(() => {
     const map = new Map<string, number>();
     orders.forEach((o) => {
@@ -144,6 +164,18 @@ const AdminMetrics = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([name, pedidos]) => ({ name, pedidos }));
+  }, [orders]);
+
+  const top5BairrosValor = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.forEach((o) => {
+      const bairro = (o as any).bairro?.trim() || "Não informado";
+      map.set(bairro, (map.get(bairro) || 0) + (o.total || 0));
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, valor]) => ({ name, valor: Number(valor.toFixed(2)) }));
   }, [orders]);
 
   return (
@@ -264,13 +296,14 @@ const AdminMetrics = () => {
             </CardContent>
           </Card>
 
-          {/* Top 5 Compradores e Top 5 Bairros */}
+          {/* Top 5 Compradores e Top 5 Bairros - Por Pedidos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Users className="h-4 w-4" /> Top 5 Compradores
                 </CardTitle>
+                <p className="text-xs font-bold text-muted-foreground">Por número de Pedidos</p>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={topBuyersChartConfig} className="h-[350px] w-full">
@@ -290,6 +323,7 @@ const AdminMetrics = () => {
                 <CardTitle className="text-base flex items-center gap-2">
                   <MapPin className="h-4 w-4" /> Top 5 Bairros
                 </CardTitle>
+                <p className="text-xs font-bold text-muted-foreground">Por número de Pedidos</p>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={topNeighborhoodsChartConfig} className="h-[350px] w-full">
@@ -299,6 +333,49 @@ const AdminMetrics = () => {
                     <YAxis type="category" dataKey="name" fontSize={12} tickLine={false} axisLine={false} width={90} />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar dataKey="pedidos" fill="var(--color-pedidos)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top 5 Compradores e Top 5 Bairros - Por Valor */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Top 5 Compradores
+                </CardTitle>
+                <p className="text-xs font-bold text-muted-foreground">Por Valor de Vendas</p>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={topBuyersValueChartConfig} className="h-[350px] w-full">
+                  <BarChart data={top5CompradoresValor} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="name" fontSize={12} tickLine={false} axisLine={false} width={90} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="valor" fill="var(--color-valor)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Top 5 Bairros
+                </CardTitle>
+                <p className="text-xs font-bold text-muted-foreground">Por Valor de Vendas</p>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={topNeighborhoodsValueChartConfig} className="h-[350px] w-full">
+                  <BarChart data={top5BairrosValor} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="name" fontSize={12} tickLine={false} axisLine={false} width={90} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="valor" fill="var(--color-valor)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
