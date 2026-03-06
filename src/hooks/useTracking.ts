@@ -14,6 +14,7 @@ declare global {
 interface TrackingConfig {
   meta_pixel_id: string | null;
   gtm_container_id: string | null;
+  capi_ativo: boolean;
 }
 
 let trackingConfig: TrackingConfig | null = null;
@@ -31,7 +32,7 @@ export const getTrackingConfig = async (): Promise<TrackingConfig | null> => {
     try {
       const { data, error } = await supabase
         .from('tags_rastreamento' as any)
-        .select('meta_pixel_id, gtm_container_id')
+        .select('meta_pixel_id, gtm_container_id, capi_ativo')
         .eq('id', 1)
         .single();
 
@@ -45,6 +46,7 @@ export const getTrackingConfig = async (): Promise<TrackingConfig | null> => {
       trackingConfig = {
         meta_pixel_id: d.meta_pixel_id || null,
         gtm_container_id: d.gtm_container_id || null,
+        capi_ativo: d.capi_ativo ?? false,
       };
       configLoaded = true;
       return trackingConfig;

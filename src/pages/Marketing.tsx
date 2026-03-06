@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Facebook, BarChart3, Code2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ interface MarketingConfig {
   meta_access_token: string;
   meta_test_event_code: string;
   gtm_container_id: string;
+  capi_ativo: boolean;
 }
 
 const Marketing = () => {
@@ -26,6 +28,7 @@ const Marketing = () => {
     meta_access_token: "",
     meta_test_event_code: "",
     gtm_container_id: "",
+    capi_ativo: false,
   });
 
   // Carregar dados do Supabase
@@ -47,6 +50,7 @@ const Marketing = () => {
             meta_access_token: d.meta_access_token || "",
             meta_test_event_code: d.meta_test_event_code || "",
             gtm_container_id: d.gtm_container_id || "",
+            capi_ativo: d.capi_ativo ?? false,
           });
         }
       } catch (e) {
@@ -135,15 +139,27 @@ const Marketing = () => {
         </Card>
 
         {/* Meta CAPI */}
-        <Card>
+        <Card className={!config.capi_ativo ? "opacity-70" : ""}>
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-100 rounded-full">
-                <Code2 className="h-6 w-6 text-indigo-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-100 rounded-full">
+                  <Code2 className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">API de Conversões (CAPI)</CardTitle>
+                  <CardDescription>Token de acesso e código de teste.</CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-lg">API de Conversões (CAPI)</CardTitle>
-                <CardDescription>Token de acesso e código de teste.</CardDescription>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="capi_switch" className="text-xs text-muted-foreground">
+                  {config.capi_ativo ? "Ativo" : "Inativo"}
+                </Label>
+                <Switch
+                  id="capi_switch"
+                  checked={config.capi_ativo}
+                  onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, capi_ativo: checked }))}
+                />
               </div>
             </div>
           </CardHeader>
@@ -155,6 +171,7 @@ const Marketing = () => {
                 className="font-mono text-xs min-h-[80px]"
                 value={config.meta_access_token}
                 onChange={(e) => handleChange("meta_access_token", e.target.value)}
+                disabled={!config.capi_ativo}
               />
             </div>
             <div className="space-y-2">
@@ -163,6 +180,7 @@ const Marketing = () => {
                 id="meta_test_event_code"
                 value={config.meta_test_event_code}
                 onChange={(e) => handleChange("meta_test_event_code", e.target.value)}
+                disabled={!config.capi_ativo}
               />
             </div>
           </CardContent>
