@@ -11,6 +11,7 @@ import { ShoppingCart, LogIn, LogOut, ClipboardList, Search, X } from "lucide-re
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { trackViewItemList } from "@/utils/trackingEvents";
 
 const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -187,7 +188,25 @@ const Index = () => {
       <CategoryNav 
         categories={categories} 
         activeCategory={activeCategory}
-        onSelectCategory={setActiveCategory}
+        onSelectCategory={(categoryId) => {
+          setActiveCategory(categoryId);
+          // Fire view_item_list only on explicit category click
+          const categoryName = categories.find(c => c.id === categoryId)?.name || categoryId;
+          const categoryItems = categoryId === "all"
+            ? menuItems
+            : menuItems.filter(item => item.category === categoryId);
+          if (categoryItems.length > 0) {
+            trackViewItemList({
+              listName: categoryName,
+              items: categoryItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                category: item.category,
+              })),
+            });
+          }
+        }}
       />
 
       {/* Campo de busca */}
