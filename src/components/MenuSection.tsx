@@ -10,6 +10,7 @@ interface MenuSectionProps {
 }
 
 const MenuSection: React.FC<MenuSectionProps> = ({ title, items, itemRefs }) => {
+
   if (items.length === 0) {
     return null;
   }
