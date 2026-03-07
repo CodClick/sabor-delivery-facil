@@ -33,7 +33,7 @@ import { formatCurrency } from "@/lib/utils";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
 import { getAllVariations } from "@/services/variationService";
 import { CartItem, MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
-import { trackPurchase } from "@/utils/trackingEvents";
+import { trackPurchase, trackUpdateCheckoutQuantity } from "@/utils/trackingEvents";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, discountAmount, finalTotal } = useCart();
@@ -536,10 +536,29 @@ const handleSubmit = async (e: React.FormEvent) => {
     selectedBorder?: PizzaBorder | null
   ) => {
     if (editingItemIndex === null) return;
+    const currentItem = cartItems[editingItemIndex];
     updateCartItemByIndex(editingItemIndex, {
       selectedVariations: selectedVariationGroups,
       selectedBorder: selectedBorder || undefined,
     });
+
+    // Track checkout quantity/details update
+    trackUpdateCheckoutQuantity({
+      id: currentItem.id,
+      name: currentItem.name,
+      price: currentItem.price,
+      quantity: currentItem.quantity,
+      category: currentItem.category,
+      variations: selectedVariationGroups?.flatMap(group =>
+        group.variations.map(v => ({ name: v.name, price: v.additionalPrice }))
+      ),
+      border: selectedBorder
+        ? { name: selectedBorder.name, price: selectedBorder.additionalPrice }
+        : undefined,
+      isHalfPizza: currentItem.isHalfPizza,
+      combination: currentItem.combination,
+    });
+
     setEditDialogOpen(false);
     setEditingItemIndex(null);
     toast({
