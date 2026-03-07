@@ -3,7 +3,7 @@ import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder } from "@/types
 import { toast } from "@/components/ui/use-toast";
 import { getAllVariations } from "@/services/variationService";
 import { getAllMenuItems } from "@/services/menuItemService";
-import { trackAddToCart, trackRemoveFromCart } from "@/utils/trackingEvents";
+import { trackAddToCart, trackRemoveFromCart, trackUpdateCartQuantity } from "@/utils/trackingEvents";
 
 interface AppliedCoupon {
   id: string;
@@ -323,15 +323,39 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));
   };
 
-  const increaseQuantity = (id: string) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
+  const buildTrackingData = (item: CartItem, newQuantity: number) => ({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    quantity: newQuantity,
+    category: item.category,
+    variations: item.selectedVariations?.flatMap(group =>
+      group.variations.map(v => ({ name: v.name, price: v.additionalPrice }))
+    ),
+    border: item.selectedBorder
+      ? { name: item.selectedBorder.name, price: item.selectedBorder.additionalPrice }
+      : undefined,
+    isHalfPizza: item.isHalfPizza,
+    combination: item.combination,
+  });
+
+  const increaseQuantity = (id: string) => {
+    const item = cartItems.find(i => i.id === id);
+    if (item) {
+      trackUpdateCartQuantity(buildTrackingData(item, item.quantity + 1));
+    }
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+      )
+    );
+  };
 
   const decreaseQuantity = (id: string) => {
+    const item = cartItems.find(i => i.id === id);
+    if (item && item.quantity > 1) {
+      trackUpdateCartQuantity(buildTrackingData(item, item.quantity - 1));
+    }
     setCartItems(prevItems => {
       const item = prevItems.find(i => i.id === id);
       if (!item) return prevItems;
