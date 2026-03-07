@@ -3,7 +3,7 @@ import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder } from "@/types
 import { toast } from "@/components/ui/use-toast";
 import { getAllVariations } from "@/services/variationService";
 import { getAllMenuItems } from "@/services/menuItemService";
-import { trackAddToCart } from "@/utils/trackingEvents";
+import { trackAddToCart, trackRemoveFromCart } from "@/utils/trackingEvents";
 
 interface AppliedCoupon {
   id: string;
@@ -309,9 +309,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addToCart = (item: MenuItem) => addItem(item);
 
-  const removeFromCart = (id: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
+  const removeFromCart = (id: string) => {
+    const removedItem = cartItems.find(item => item.id === id);
+    if (removedItem) {
+      trackRemoveFromCart({
+        id: removedItem.id,
+        name: removedItem.name,
+        price: removedItem.price,
+        quantity: removedItem.quantity,
+        category: removedItem.category,
+      });
+    }
+    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+  };
 
   const increaseQuantity = (id: string) => {
     setCartItems(prevItems =>
