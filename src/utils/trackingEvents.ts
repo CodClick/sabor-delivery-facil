@@ -200,6 +200,71 @@ export const trackInitiateCheckout = (cartItems: CartItem[], totalValue: number)
 /**
  * Purchase — fired when the order is successfully created.
  */
+/**
+ * ViewItemList — fired when a category/section of items is displayed.
+ */
+export const trackViewItemList = (params: {
+  listName: string;
+  items: Array<{ id: string; name: string; price: number; category?: string }>;
+}) => {
+  try {
+    const { listName, items } = params;
+
+    pushDataLayer({
+      event: 'view_item_list',
+      ecommerce: {
+        item_list_name: listName,
+        items: items.map((item, i) => ({
+          item_id: item.id,
+          item_name: item.name,
+          item_category: item.category,
+          price: item.price,
+          index: i,
+        })),
+      },
+    });
+  } catch (e) {
+    console.error('trackViewItemList error:', e);
+  }
+};
+
+/**
+ * RemoveFromCart — fired when an item is removed from the cart.
+ */
+export const trackRemoveFromCart = (data: {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category?: string;
+}) => {
+  try {
+    const totalValue = data.price * data.quantity;
+
+    pushDataLayer({
+      event: 'remove_from_cart',
+      ecommerce: {
+        currency: 'BRL',
+        value: totalValue,
+        items: [
+          {
+            item_id: data.id,
+            item_name: data.name,
+            item_category: data.category,
+            price: data.price,
+            quantity: data.quantity,
+          },
+        ],
+      },
+    });
+  } catch (e) {
+    console.error('trackRemoveFromCart error:', e);
+  }
+};
+
+/**
+ * Purchase — fired when the order is successfully created.
+ */
 export const trackPurchase = (params: {
   orderId: string;
   cartItems: CartItem[];
