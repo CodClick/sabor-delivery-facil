@@ -229,6 +229,98 @@ export const trackViewItemList = (params: {
 };
 
 /**
+ * UpdateCartQuantity — fired when item quantity changes in the cart.
+ */
+export const trackUpdateCartQuantity = (data: {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category?: string;
+  variations?: Array<{ name?: string; price?: number }>;
+  border?: { name: string; price: number };
+  isHalfPizza?: boolean;
+  combination?: { sabor1: { name: string }; sabor2: { name: string }; tamanho: string };
+}) => {
+  try {
+    const totalValue = data.price * data.quantity;
+
+    pushDataLayer({
+      event: 'update_cart_quantity',
+      ecommerce: {
+        currency: 'BRL',
+        value: totalValue,
+        items: [
+          {
+            item_id: data.id,
+            item_name: data.name,
+            item_category: data.category,
+            price: data.price,
+            quantity: data.quantity,
+            ...(data.isHalfPizza && data.combination
+              ? {
+                  item_variant: `${data.combination.sabor1.name} / ${data.combination.sabor2.name}`,
+                  pizza_size: data.combination.tamanho,
+                }
+              : {}),
+            ...(data.border ? { border_name: data.border.name, border_price: data.border.price } : {}),
+            ...(data.variations?.length ? { variations: data.variations } : {}),
+          },
+        ],
+      },
+    });
+  } catch (e) {
+    console.error('trackUpdateCartQuantity error:', e);
+  }
+};
+
+/**
+ * UpdateCheckoutQuantity — fired when item quantity/details change in the checkout.
+ */
+export const trackUpdateCheckoutQuantity = (data: {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category?: string;
+  variations?: Array<{ name?: string; price?: number }>;
+  border?: { name: string; price: number };
+  isHalfPizza?: boolean;
+  combination?: { sabor1: { name: string }; sabor2: { name: string }; tamanho: string };
+}) => {
+  try {
+    const totalValue = data.price * data.quantity;
+
+    pushDataLayer({
+      event: 'update_checkout_quantity',
+      ecommerce: {
+        currency: 'BRL',
+        value: totalValue,
+        items: [
+          {
+            item_id: data.id,
+            item_name: data.name,
+            item_category: data.category,
+            price: data.price,
+            quantity: data.quantity,
+            ...(data.isHalfPizza && data.combination
+              ? {
+                  item_variant: `${data.combination.sabor1.name} / ${data.combination.sabor2.name}`,
+                  pizza_size: data.combination.tamanho,
+                }
+              : {}),
+            ...(data.border ? { border_name: data.border.name, border_price: data.border.price } : {}),
+            ...(data.variations?.length ? { variations: data.variations } : {}),
+          },
+        ],
+      },
+    });
+  } catch (e) {
+    console.error('trackUpdateCheckoutQuantity error:', e);
+  }
+};
+
+/**
  * RemoveFromCart — fired when an item is removed from the cart.
  */
 export const trackRemoveFromCart = (data: {
