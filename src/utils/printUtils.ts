@@ -42,6 +42,11 @@ const calculateItemSubtotal = (item: any) => {
     });
   }
 
+  // Adiciona preço da borda recheada
+  if (item.selectedBorder && item.selectedBorder.additionalPrice > 0) {
+    variationsTotal += item.selectedBorder.additionalPrice * item.quantity;
+  }
+
   return basePrice + variationsTotal;
 };
 
@@ -60,14 +65,19 @@ export const printOrder = (order: Order) => {
         }
 
         html, body {
-          width: 80mm;
+          width: 72mm;
           height: auto;
           margin: 0;
-          padding: 0;
+          padding: 2mm;
           overflow: visible;
           font-family: Arial, sans-serif;
           font-size: 11px;
           color: #000;
+          box-sizing: border-box;
+        }
+
+        * {
+          box-sizing: border-box;
         }
 
         .header {
@@ -100,6 +110,8 @@ export const printOrder = (order: Order) => {
           width: 100%;
           border-collapse: collapse;
           margin-bottom: 6px;
+          table-layout: fixed;
+          word-wrap: break-word;
         }
 
         .items-table th, .items-table td {
@@ -116,6 +128,21 @@ export const printOrder = (order: Order) => {
         .variation {
           font-size: 9px;
           color: #555;
+          margin-left: 8px;
+          display: block;
+        }
+
+        .border-info {
+          font-size: 9px;
+          color: #333;
+          margin-left: 8px;
+          display: block;
+          font-weight: bold;
+        }
+
+        .combination-info {
+          font-size: 9px;
+          color: #444;
           margin-left: 8px;
           display: block;
         }
@@ -170,14 +197,29 @@ export const printOrder = (order: Order) => {
                 <td>
                   <strong>${item.name}</strong>
                   ${item.priceFrom ? '<span style="font-size:9px;color:#666;">(a partir de)</span>' : ''}
+                  ${item.isHalfPizza && item.combination
+                    ? `<div class="combination-info">🍕 ${
+                        Array.isArray(item.combination)
+                          ? item.combination.map((c: any) => c.name || c).join(' + ')
+                          : typeof item.combination === 'object' && item.combination.flavors
+                            ? item.combination.flavors.map((f: any) => f.name || f).join(' + ')
+                            : ''
+                      }</div>`
+                    : ''
+                  }
                   ${item.selectedVariations && Array.isArray(item.selectedVariations)
                     ? item.selectedVariations.map(group =>
-                        group.variations && Array.isArray(group.variations)
+                        `<div class="variation" style="font-weight:600;margin-top:2px;">${group.groupName || ''}:</div>` +
+                        (group.variations && Array.isArray(group.variations)
                           ? group.variations.map(variation =>
-                              `<div class="variation">+ ${variation.name} ${variation.quantity > 1 ? `(${variation.quantity}x)` : ''} ${variation.additionalPrice > 0 ? `+ R$ ${variation.additionalPrice.toFixed(2)}` : ''}</div>`
+                              `<div class="variation">+ ${variation.name} ${variation.quantity > 1 ? `(${variation.quantity}x)` : ''} ${variation.additionalPrice && variation.additionalPrice > 0 ? `+ R$ ${variation.additionalPrice.toFixed(2)}` : ''}</div>`
                             ).join('')
-                          : ''
+                          : '')
                       ).join('')
+                    : ''
+                  }
+                  ${item.selectedBorder
+                    ? `<div class="border-info">🧀 Borda: ${item.selectedBorder.name} ${item.selectedBorder.additionalPrice > 0 ? `+ R$ ${item.selectedBorder.additionalPrice.toFixed(2)}` : ''}</div>`
                     : ''
                   }
                 </td>
