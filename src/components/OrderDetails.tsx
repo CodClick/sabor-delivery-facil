@@ -38,7 +38,8 @@ import {
   Truck,
   XCircle,
   Check,
-  DollarSign
+  DollarSign,
+  Printer
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatusService";
@@ -661,6 +662,14 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
       {/* Botões de ação */}
       <div className="flex flex-wrap gap-2">
         {nextStatusButtons}
+        <Button
+          variant="outline"
+          className="flex items-center gap-1"
+          onClick={() => printOrder(order)}
+        >
+          <Printer className="h-5 w-5" />
+          Imprimir
+        </Button>
       </div>
 
       {/* Diálogo de confirmação: Entrega finalizada sem pagamento */}
