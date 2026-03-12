@@ -106,62 +106,88 @@ export const printOrder = (order: Order) => {
           margin-bottom: 2px;
         }
 
-        .items-table {
+        .section-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 6px;
+          margin-bottom: 0;
           table-layout: fixed;
           word-wrap: break-word;
         }
 
-        .items-table th, .items-table td {
-          border-bottom: 1px dotted #000;
-          padding: 3px 0;
+        .section-table th, .section-table td {
+          padding: 4px 0;
           text-align: left;
+          vertical-align: top;
         }
 
-        .items-table th {
+        .section-table th {
           font-weight: bold;
+          font-size: 12px;
+          border-top: 2px solid #000;
+          border-bottom: 2px solid #000;
+        }
+
+        .section-table td {
           font-size: 11px;
         }
 
-        .variation {
-          font-size: 9px;
-          color: #555;
-          margin-left: 8px;
-          display: block;
+        .item-name {
+          text-align: center;
+          font-size: 12px;
         }
 
-        .border-info {
-          font-size: 9px;
+        .item-combination {
+          text-align: center;
+          font-size: 11px;
           color: #333;
-          margin-left: 8px;
-          display: block;
-          font-weight: bold;
         }
 
-        .combination-info {
-          font-size: 9px;
-          color: #444;
-          margin-left: 8px;
-          display: block;
+        .price-row {
+          border-bottom: none;
         }
 
-        .total {
-          font-weight: bold;
-          font-size: 13px;
-          text-align: right;
-          margin-top: 5px;
+        .price-row td {
+          padding: 2px 0;
+          font-size: 11px;
+        }
+
+        .separator {
+          border-top: 2px solid #000;
+          margin: 4px 0;
+        }
+
+        .separator-thin {
           border-top: 1px solid #000;
-          padding-top: 5px;
+          margin: 3px 0;
+        }
+
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 4px 0;
+          font-size: 12px;
+        }
+
+        .summary-row strong {
+          font-weight: bold;
+        }
+
+        .summary-row.total-final {
+          font-size: 16px;
+          font-weight: bold;
+          text-align: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 8px 0;
         }
 
         .footer {
-          margin-top: 10px;
-          text-align: center;
+          margin-top: 6px;
+          text-align: left;
           font-size: 9px;
           border-top: 1px dashed #ccc;
           padding-top: 4px;
+          color: #666;
         }
       </style>
     </head>
@@ -180,64 +206,121 @@ export const printOrder = (order: Order) => {
         ${order.observations ? `<div><strong>Obs.:</strong> ${order.observations}</div>` : ''}
       </div>
 
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qtd</th>
-            <th>Unit.</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${order.items.map(item => {
-            const subtotal = calculateItemSubtotal(item);
-            return `
-              <tr>
-                <td>
-                  <strong>${item.name}</strong>
-                  ${item.priceFrom ? '<span style="font-size:9px;color:#666;">(a partir de)</span>' : ''}
-                  ${item.isHalfPizza && item.combination
-                    ? `<div class="combination-info">🍕 ${
-                        Array.isArray(item.combination)
-                          ? item.combination.map((c: any) => c.name || c).join(' + ')
-                          : typeof item.combination === 'object' && item.combination.flavors
-                            ? item.combination.flavors.map((f: any) => f.name || f).join(' + ')
-                            : ''
-                      }</div>`
-                    : ''
-                  }
-                  ${item.selectedVariations && Array.isArray(item.selectedVariations)
-                    ? item.selectedVariations.map(group =>
-                        `<div class="variation" style="font-weight:600;margin-top:2px;">${group.groupName || ''}:</div>` +
-                        (group.variations && Array.isArray(group.variations)
-                          ? group.variations.map(variation =>
-                              `<div class="variation">+ ${variation.name} ${variation.quantity > 1 ? `(${variation.quantity}x)` : ''} ${variation.additionalPrice && variation.additionalPrice > 0 ? `+ R$ ${variation.additionalPrice.toFixed(2)}` : ''}</div>`
-                            ).join('')
-                          : '')
-                      ).join('')
-                    : ''
-                  }
-                  ${item.selectedBorder
-                    ? `<div class="border-info">🧀 Borda: ${item.selectedBorder.name} ${item.selectedBorder.additionalPrice > 0 ? `+ R$ ${item.selectedBorder.additionalPrice.toFixed(2)}` : ''}</div>`
-                    : ''
-                  }
-                </td>
-                <td>${item.quantity}</td>
-                <td>R$ ${(item.price || 0).toFixed(2)}</td>
-                <td>R$ ${subtotal.toFixed(2)}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+      <!-- ITENS -->
+      ${order.items.map(item => {
+        const itemSubtotal = calculateItemSubtotal(item);
+        const combinationText = item.isHalfPizza && item.combination
+          ? (Array.isArray(item.combination)
+              ? item.combination.map((c: any) => c.name || c).join(' + ')
+              : typeof item.combination === 'object' && item.combination.flavors
+                ? item.combination.flavors.map((f: any) => f.name || f).join(' + ')
+                : '')
+          : '';
 
-      <div class="total">
-        TOTAL: R$ ${order.total.toFixed(2)}
+        // Coleta adicionais com preço
+        const adicionais: { name: string; price: number }[] = [];
+        if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
+          item.selectedVariations.forEach((group: any) => {
+            if (group.variations && Array.isArray(group.variations)) {
+              group.variations.forEach((v: any) => {
+                const halfLabel = v.halfSelection === 'first' ? ' (Metade 1)' : v.halfSelection === 'second' ? ' (Metade 2)' : '';
+                adicionais.push({
+                  name: (v.name || '') + (v.quantity > 1 ? ` (${v.quantity}x)` : '') + halfLabel,
+                  price: (v.additionalPrice || 0) * (v.quantity || 1),
+                });
+              });
+            }
+          });
+        }
+
+        const hasAdicionais = adicionais.some(a => a.price > 0);
+        const hasBorda = item.selectedBorder && item.selectedBorder.additionalPrice > 0;
+
+        return `
+          <table class="section-table">
+            <thead>
+              <tr>
+                <th style="width:25%;">Qtd</th>
+                <th style="width:75%;text-align:center;">Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align:center;font-size:13px;">${item.quantity}</td>
+                <td class="item-name">
+                  <strong>${item.name}</strong>
+                  ${combinationText ? `<div class="item-combination">½ ${combinationText.replace(' + ', ' ½ ')}</div>` : ''}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="section-table">
+            <tr class="price-row">
+              <td><strong>Unit -</strong> R$ ${(item.price || 0).toFixed(2).replace('.', ',')}</td>
+              <td style="text-align:right;"><strong>Subtotal -</strong> R$ ${((item.priceFrom ? 0 : (item.price || 0)) * item.quantity).toFixed(2).replace('.', ',')}</td>
+            </tr>
+          </table>
+
+          ${hasBorda ? `
+            <div class="separator"></div>
+            <table class="section-table">
+              <tr>
+                <td><strong>Borda Recheada</strong></td>
+                <td style="text-align:center;">${item.selectedBorder!.name}</td>
+                <td style="text-align:right;font-weight:bold;">R$ ${(item.selectedBorder!.additionalPrice * item.quantity).toFixed(2).replace('.', ',')}</td>
+              </tr>
+            </table>
+          ` : ''}
+
+          ${hasAdicionais ? `
+            <div class="separator"></div>
+            <table class="section-table">
+              ${adicionais.filter(a => a.price > 0).map((a, i) => `
+                <tr>
+                  <td>${i === 0 ? '<strong>Adicionais</strong>' : ''}</td>
+                  <td style="text-align:center;">${a.name}</td>
+                  <td style="text-align:right;font-weight:bold;">R$ ${(a.price * item.quantity).toFixed(2).replace('.', ',')}</td>
+                </tr>
+              `).join('')}
+            </table>
+          ` : ''}
+
+          <div class="separator"></div>
+        `;
+      }).join('')}
+
+      <!-- RESUMO FINANCEIRO -->
+      ${(order.discount && order.discount > 0) ? `
+        <div class="summary-row">
+          <strong>Desconto</strong>
+          <span>- R$ ${order.discount.toFixed(2).replace('.', ',')}</span>
+        </div>
+        <div class="separator-thin"></div>
+      ` : ''}
+
+      ${order.subtotal ? `
+        <div class="summary-row">
+          <strong>Sub Total</strong>
+          <span style="font-weight:bold;">R$ ${order.subtotal.toFixed(2).replace('.', ',')}</span>
+        </div>
+        <div class="separator-thin"></div>
+      ` : ''}
+
+      ${(order.frete && order.frete > 0) ? `
+        <div class="summary-row">
+          <strong>Frete</strong>
+          <span style="font-weight:bold;">R$ ${order.frete.toFixed(2).replace('.', ',')}</span>
+        </div>
+        <div class="separator-thin"></div>
+      ` : ''}
+
+      <div class="summary-row total-final">
+        <span>TOTAL  -  R$ ${order.total.toFixed(2).replace('.', ',')}</span>
       </div>
 
       <div class="footer">
-        Impressão automática - ${new Date().toLocaleString('pt-BR')}
+        ${new Date().toLocaleString('pt-BR')}
       </div>
     </body>
     </html>
