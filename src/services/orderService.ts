@@ -10,7 +10,7 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types/order";
 import { getAllVariations } from "@/services/variationService";
 import { verificarFidelidade } from "@/services/fidelidadeService";
@@ -168,21 +168,30 @@ export const createOrder = async (
     console.log(JSON.stringify(orderItems, null, 2));
     console.log(`Total final: R$ ${total}`);
 
+    // Capturar o UID do usuário autenticado (Firebase Auth)
+    const currentUserId = auth.currentUser?.uid ?? null;
+
     const orderToSave = removeUndefinedDeep({
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
+      userId: currentUserId, // 🔥 vincula pedido ao usuário autenticado
       address: orderData.address,
-      bairro: (orderData as any).bairro ?? "",
-      cidade: (orderData as any).cidade ?? "",
+      bairro: orderData.bairro ?? "",
+      cidade: orderData.cidade ?? "",
       paymentMethod: orderData.paymentMethod,
       observations: orderData.observations ?? "",
       items: orderItems,
-      status: orderData.status ?? "pending", // Usa o status enviado ou "pending" como padrão
-      subtotal: orderData.subtotal ?? total, // Subtotal sem frete
-      frete: orderData.frete ?? 0, // Valor do frete
-      total: orderData.total ?? total, // Total com desconto e frete aplicados
+      status: orderData.status ?? "pending",
+      subtotal: orderData.subtotal ?? total,
+      frete: orderData.frete ?? 0,
+      total: orderData.total ?? total,
       discount: orderData.discount ?? 0,
       couponCode: orderData.couponCode ?? null,
+      utm_source: orderData.utm_source ?? null,
+      utm_medium: orderData.utm_medium ?? null,
+      utm_campaign: orderData.utm_campaign ?? null,
+      utm_content: orderData.utm_content ?? null,
+      utm_term: orderData.utm_term ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
