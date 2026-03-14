@@ -54,6 +54,8 @@ export interface CreateOrderRequest {
   customerName: string;
   customerPhone: string;
   address: string;
+  bairro?: string;
+  cidade?: string;
   paymentMethod: "card" | "cash" | "pix" | "payroll_discount";
   observations?: string;
   status?: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "received" | "delivered" | "cancelled" | "to_deduct" | "paid" | "completed";
@@ -78,6 +80,14 @@ export interface CreateOrderRequest {
   frete?: number;
   discount?: number;
   couponCode?: string | null;
+  firebaseId?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
 }
 
 export interface UpdateOrderRequest {
