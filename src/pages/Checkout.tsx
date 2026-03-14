@@ -1,3 +1,4 @@
+
 //checkout.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { useCart } from "@/contexts/CartContext";
@@ -34,6 +35,7 @@ import ProductVariationDialog from "@/components/ProductVariationDialog";
 import { getAllVariations } from "@/services/variationService";
 import { CartItem, MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
 import { trackPurchase, trackUpdateCheckoutQuantity } from "@/utils/trackingEvents";
+import { getUtmParams } from "@/utils/utmCapture";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, discountAmount, finalTotal } = useCart();
@@ -385,6 +387,8 @@ const handleSubmit = async (e: React.FormEvent) => {
     const freteEfetivo = hasFreteGratis ? 0 : valorFrete;
     const totalComFrete = finalTotal + freteEfetivo;
 
+    const utms = getUtmParams();
+
     const orderData = {
       customerName,
       customerPhone,
@@ -402,6 +406,11 @@ const handleSubmit = async (e: React.FormEvent) => {
       firebaseId: currentUser?.uid ?? null,
       userName: currentUser?.displayName ?? null,
       userEmail: currentUser?.email ?? null,
+      utm_source: utms.utm_source,
+      utm_medium: utms.utm_medium,
+      utm_campaign: utms.utm_campaign,
+      utm_content: utms.utm_content,
+      utm_term: utms.utm_term,
     };
 
     console.log("[CHECKOUT] Dados do pedido sendo enviados:", JSON.stringify(orderData, null, 2));
