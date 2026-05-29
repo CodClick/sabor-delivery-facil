@@ -326,21 +326,33 @@ export const printOrder = (order: Order) => {
     </html>
   `;
 
+  const triggerPrint = (targetWindow: Window, closeAfterPrint = true) => {
+    targetWindow.focus();
+    targetWindow.document.body.style.height = "auto";
+    targetWindow.document.body.style.overflow = "visible";
+
+    setTimeout(() => {
+      targetWindow.print();
+    }, 350);
+
+    if (closeAfterPrint) {
+      targetWindow.onafterprint = () => targetWindow.close();
+    }
+  };
+
   // Cria nova janela de impressão
   const printWindow = window.open('', '_blank', 'width=400,height=600');
 
   if (printWindow) {
+    printWindow.document.open();
     printWindow.document.write(printContent);
     printWindow.document.close();
 
-    printWindow.onload = () => {
-      // Garante que só imprime o conteúdo necessário
-      printWindow.document.body.style.height = "auto";
-      printWindow.document.body.style.overflow = "visible";
-
-      printWindow.print();
-      printWindow.close();
-    };
+    if (printWindow.document.readyState === "complete") {
+      triggerPrint(printWindow);
+    } else {
+      printWindow.onload = () => triggerPrint(printWindow);
+    }
   } else {
     // Fallback via iframe
     const printFrame = document.createElement('iframe');
@@ -353,9 +365,10 @@ export const printOrder = (order: Order) => {
       frameDoc.close();
 
       setTimeout(() => {
+        printFrame.contentWindow?.focus();
         printFrame.contentWindow?.print();
         document.body.removeChild(printFrame);
-      }, 100);
+      }, 350);
     }
   }
 };
