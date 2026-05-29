@@ -1,4 +1,19 @@
-import { Order } from "@/types/order";
+import { Order, OrderItem, SelectedVariationGroup } from "@/types/order";
+
+type PrintableVariation = {
+  name?: string;
+  quantity?: number;
+  additionalPrice?: number;
+  halfSelection?: "first" | "second" | "whole" | string;
+};
+
+const getDisplayName = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "name" in value) {
+    return String((value as { name?: unknown }).name ?? "");
+  }
+  return String(value ?? "");
+};
 
 // Função para formatar data em português
 const formatDate = (dateString: string) => {
@@ -24,14 +39,14 @@ const translatePaymentMethod = (method: Order["paymentMethod"]) => {
 };
 
 // Função para calcular subtotal do item incluindo variações
-const calculateItemSubtotal = (item: any) => {
-  let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
+const calculateItemSubtotal = (item: OrderItem) => {
+  const basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
   let variationsTotal = 0;
 
   if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-    item.selectedVariations.forEach((group: any) => {
+    item.selectedVariations.forEach((group: SelectedVariationGroup) => {
       if (group.variations && Array.isArray(group.variations)) {
-        group.variations.forEach((variation: any) => {
+        group.variations.forEach((variation: PrintableVariation) => {
           const additionalPrice = variation.additionalPrice || 0;
           const quantity = variation.quantity || 1;
           if (additionalPrice > 0) {
@@ -211,18 +226,18 @@ export const printOrder = (order: Order) => {
         const itemSubtotal = calculateItemSubtotal(item);
         const combinationText = item.isHalfPizza && item.combination
           ? (Array.isArray(item.combination)
-              ? item.combination.map((c: any) => c.name || c).join(' + ')
+              ? item.combination.map(getDisplayName).join(' + ')
               : typeof item.combination === 'object' && item.combination.flavors
-                ? item.combination.flavors.map((f: any) => f.name || f).join(' + ')
+                ? item.combination.flavors.map(getDisplayName).join(' + ')
                 : '')
           : '';
 
         // Coleta adicionais com preço
         const adicionais: { name: string; price: number }[] = [];
         if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-          item.selectedVariations.forEach((group: any) => {
+          item.selectedVariations.forEach((group: SelectedVariationGroup) => {
             if (group.variations && Array.isArray(group.variations)) {
-              group.variations.forEach((v: any) => {
+              group.variations.forEach((v: PrintableVariation) => {
                 const halfLabel = v.halfSelection === 'first' ? ' (Metade 1)' : v.halfSelection === 'second' ? ' (Metade 2)' : '';
                 adicionais.push({
                   name: (v.name || '') + (v.quantity > 1 ? ` (${v.quantity}x)` : '') + halfLabel,
@@ -326,49 +341,53 @@ export const printOrder = (order: Order) => {
     </html>
   `;
 
-  const triggerPrint = (targetWindow: Window, closeAfterPrint = true) => {
+  const printFrame = document.createElement('iframe');
+  printFrame.setAttribute('aria-hidden', 'true');
+  printFrame.style.position = 'fixed';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  printFrame.style.width = '1px';
+  printFrame.style.height = '1px';
+  printFrame.style.border = '0';
+  printFrame.style.opacity = '0';
+  printFrame.style.pointerEvents = 'none';
+  document.body.appendChild(printFrame);
+
+  const cleanup = () => {
+    setTimeout(() => {
+      if (printFrame.parentNode) {
+        document.body.removeChild(printFrame);
+      }
+    }, 3000);
+  };
+
+  const triggerPrint = () => {
+    const targetWindow = printFrame.contentWindow;
+    const targetDocument = targetWindow?.document;
+    if (!targetWindow || !targetDocument) return;
+
     targetWindow.focus();
-    targetWindow.document.body.style.height = "auto";
-    targetWindow.document.body.style.overflow = "visible";
+    targetDocument.body.style.height = "auto";
+    targetDocument.body.style.overflow = "visible";
 
     setTimeout(() => {
       targetWindow.print();
-    }, 350);
-
-    if (closeAfterPrint) {
-      targetWindow.onafterprint = () => targetWindow.close();
-    }
+      cleanup();
+    }, 500);
   };
 
-  // Cria nova janela de impressão
-  const printWindow = window.open('', '_blank', 'width=400,height=600');
+  const frameDoc = printFrame.contentWindow?.document;
+  if (frameDoc) {
+    frameDoc.open();
+    frameDoc.write(printContent);
+    frameDoc.close();
 
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-
-    if (printWindow.document.readyState === "complete") {
-      triggerPrint(printWindow);
+    if (frameDoc.readyState === "complete") {
+      triggerPrint();
     } else {
-      printWindow.onload = () => triggerPrint(printWindow);
+      printFrame.onload = triggerPrint;
     }
   } else {
-    // Fallback via iframe
-    const printFrame = document.createElement('iframe');
-    printFrame.style.display = 'none';
-    document.body.appendChild(printFrame);
-
-    const frameDoc = printFrame.contentWindow?.document;
-    if (frameDoc) {
-      frameDoc.write(printContent);
-      frameDoc.close();
-
-      setTimeout(() => {
-        printFrame.contentWindow?.focus();
-        printFrame.contentWindow?.print();
-        document.body.removeChild(printFrame);
-      }, 350);
-    }
+    cleanup();
   }
 };
