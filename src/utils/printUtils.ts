@@ -1,4 +1,19 @@
-import { Order } from "@/types/order";
+import { Order, OrderItem, SelectedVariationGroup } from "@/types/order";
+
+type PrintableVariation = {
+  name?: string;
+  quantity?: number;
+  additionalPrice?: number;
+  halfSelection?: "first" | "second" | "whole" | string;
+};
+
+const getDisplayName = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "name" in value) {
+    return String((value as { name?: unknown }).name ?? "");
+  }
+  return String(value ?? "");
+};
 
 // Função para formatar data em português
 const formatDate = (dateString: string) => {
@@ -24,14 +39,14 @@ const translatePaymentMethod = (method: Order["paymentMethod"]) => {
 };
 
 // Função para calcular subtotal do item incluindo variações
-const calculateItemSubtotal = (item: any) => {
-  let basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
+const calculateItemSubtotal = (item: OrderItem) => {
+  const basePrice = (item.priceFrom ? 0 : (item.price || 0)) * item.quantity;
   let variationsTotal = 0;
 
   if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-    item.selectedVariations.forEach((group: any) => {
+    item.selectedVariations.forEach((group: SelectedVariationGroup) => {
       if (group.variations && Array.isArray(group.variations)) {
-        group.variations.forEach((variation: any) => {
+        group.variations.forEach((variation: PrintableVariation) => {
           const additionalPrice = variation.additionalPrice || 0;
           const quantity = variation.quantity || 1;
           if (additionalPrice > 0) {
