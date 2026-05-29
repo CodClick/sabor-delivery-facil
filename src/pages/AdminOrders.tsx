@@ -20,8 +20,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { updateOrder, getOrdersByDateRange } from "@/services/orderService";
+import { updateOrder, getOrdersByDateRange, getOrderById } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
+import { printOrder } from "@/utils/printUtils";
+
+const PRINTED_ORDERS_KEY = "auto_printed_order_ids";
+const getPrintedIds = (): Set<string> => {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem(PRINTED_ORDERS_KEY) || "[]"));
+  } catch { return new Set(); }
+};
+const markPrinted = (id: string) => {
+  const ids = getPrintedIds();
+  ids.add(id);
+  sessionStorage.setItem(PRINTED_ORDERS_KEY, JSON.stringify(Array.from(ids).slice(-200)));
+};
 import {
   Select,
   SelectContent,
