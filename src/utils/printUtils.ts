@@ -326,49 +326,53 @@ export const printOrder = (order: Order) => {
     </html>
   `;
 
-  const triggerPrint = (targetWindow: Window, closeAfterPrint = true) => {
+  const printFrame = document.createElement('iframe');
+  printFrame.setAttribute('aria-hidden', 'true');
+  printFrame.style.position = 'fixed';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  printFrame.style.width = '1px';
+  printFrame.style.height = '1px';
+  printFrame.style.border = '0';
+  printFrame.style.opacity = '0';
+  printFrame.style.pointerEvents = 'none';
+  document.body.appendChild(printFrame);
+
+  const cleanup = () => {
+    setTimeout(() => {
+      if (printFrame.parentNode) {
+        document.body.removeChild(printFrame);
+      }
+    }, 3000);
+  };
+
+  const triggerPrint = () => {
+    const targetWindow = printFrame.contentWindow;
+    const targetDocument = targetWindow?.document;
+    if (!targetWindow || !targetDocument) return;
+
     targetWindow.focus();
-    targetWindow.document.body.style.height = "auto";
-    targetWindow.document.body.style.overflow = "visible";
+    targetDocument.body.style.height = "auto";
+    targetDocument.body.style.overflow = "visible";
 
     setTimeout(() => {
       targetWindow.print();
-    }, 350);
-
-    if (closeAfterPrint) {
-      targetWindow.onafterprint = () => targetWindow.close();
-    }
+      cleanup();
+    }, 500);
   };
 
-  // Cria nova janela de impressão
-  const printWindow = window.open('', '_blank', 'width=400,height=600');
+  const frameDoc = printFrame.contentWindow?.document;
+  if (frameDoc) {
+    frameDoc.open();
+    frameDoc.write(printContent);
+    frameDoc.close();
 
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-
-    if (printWindow.document.readyState === "complete") {
-      triggerPrint(printWindow);
+    if (frameDoc.readyState === "complete") {
+      triggerPrint();
     } else {
-      printWindow.onload = () => triggerPrint(printWindow);
+      printFrame.onload = triggerPrint;
     }
   } else {
-    // Fallback via iframe
-    const printFrame = document.createElement('iframe');
-    printFrame.style.display = 'none';
-    document.body.appendChild(printFrame);
-
-    const frameDoc = printFrame.contentWindow?.document;
-    if (frameDoc) {
-      frameDoc.write(printContent);
-      frameDoc.close();
-
-      setTimeout(() => {
-        printFrame.contentWindow?.focus();
-        printFrame.contentWindow?.print();
-        document.body.removeChild(printFrame);
-      }, 350);
-    }
+    cleanup();
   }
 };
