@@ -20,8 +20,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { updateOrder, getOrdersByDateRange } from "@/services/orderService";
+import { updateOrder, getOrdersByDateRange, getOrderById } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
+import { printOrder } from "@/utils/printUtils";
+
+const PRINTED_ORDERS_KEY = "auto_printed_order_ids";
+const getPrintedIds = (): Set<string> => {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem(PRINTED_ORDERS_KEY) || "[]"));
+  } catch { return new Set(); }
+};
+const markPrinted = (id: string) => {
+  const ids = getPrintedIds();
+  ids.add(id);
+  sessionStorage.setItem(PRINTED_ORDERS_KEY, JSON.stringify(Array.from(ids).slice(-200)));
+};
 import {
   Select,
   SelectContent,
@@ -158,12 +171,22 @@ const AdminOrders = () => {
           if (payload.eventType === "INSERT") {
             const row: any = payload.new;
             const createdAt = new Date(row.criado_em ?? Date.now());
-            const isRecent = Date.now() - createdAt.getTime() < 10000;
-            if (isRecent && row.status_atual === "pending") {
-              toast({
-                title: "Novo pedido recebido!",
-                description: `Cliente: ${row.nome_cliente}`,
-              });
+            const isRecent = Date.now() - createdAt.getTime() < 60000;
+            if (isRecent) {
+              const printed = getPrintedIds();
+              if (!printed.has(row.id)) {
+                markPrinted(row.id);
+                if (row.status_atual === "pending") {
+                  toast({
+                    title: "Novo pedido recebido!",
+                    description: `Cliente: ${row.nome_cliente}`,
+                  });
+                }
+                // Auto-impressão
+                getOrderById(row.id)
+                  .then((full) => { if (full) printOrder(full); })
+                  .catch((e) => console.error("Erro ao imprimir pedido automaticamente:", e));
+              }
             }
           }
         }

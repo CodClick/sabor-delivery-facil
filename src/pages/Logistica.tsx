@@ -90,7 +90,7 @@ const Logistica = () => {
         .insert({
           cep: newCep.cep,
           valor: parseFloat(newCep.valor),
-        });
+        } as any);
 
       if (error) throw error;
 

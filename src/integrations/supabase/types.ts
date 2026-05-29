@@ -54,7 +54,7 @@ export type Database = {
         Insert: {
           cep?: string | null
           created_at?: string
-          id?: number
+          id: number
           valor?: number | null
         }
         Update: {
@@ -149,15 +149,7 @@ export type Database = {
           updated_at?: string | null
           valor?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "configuracoes_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresa_info"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cupons: {
         Row: {
@@ -528,7 +520,7 @@ export type Database = {
         Insert: {
           check?: string | null
           created_at?: string
-          id?: number
+          id: number
         }
         Update: {
           check?: string | null
