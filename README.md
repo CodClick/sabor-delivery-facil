@@ -1,21 +1,21 @@
 ## ClickPrato  
 
-**Versão 1.1.12**  
+**Versão 1.1.13**  
 
-**URL**: https://menu-simple-show.lovable.app
+**URL**: https://sabor-delivery-facil.lovable.app/
 
 ##Criado por ClickPrato##  
 
 **Alteração:**  
 
-Cupom "Compre e Ganhe" há um seletor Modo do brinde:  
+Ajustei para imprimir via iframe oculto sem abrir nova janela 
 
-Produto único — comportamento atual (você define o brinde).  
-Grupo de opções (cliente escolhe) — você cadastra uma lista de produtos (ex.: Coca, Guaraná, Fanta) e a quantidade do brinde concedido. No carrinho, o cliente vê um seletor "Escolha seu brinde" e o item escolhido é adicionado com R$ 0,00, multiplicando proporcionalmente pelos ciclos da regra (ex.: 2 pizzas grandes → 1 refri à escolha).  
+*IMPORTANTE*
+Criar atalho no desktop com a janela do admin-orders aberta. Alterar "PROPRIEDADES" do atalho, inserir o link abaixo, alterando o link do admin-orders para o do domínio em uso:
+"C:\Program Files\Google\Chrome\Application\chrome_proxy.exe" --profile-directory="Profile 10" --ignore-profile-directory-if-not-exists https://crave-cardapio-display.lovable.app/admin-orders --kiosk --kiosk-printing --user-data-dir="C:\ChromePerfilPedidos"
 
+Testado e funcionando perfeitamente com impressão automática ao chegar o pedido.
+Ao clicar em "Aceito", Imprime a comanda novamente automaticamente.
 * Arquivos Alterados:  
-src/contexts/CartContext.tsx  
-src/pages/AdminCupons.tsx  
-src/components/CouponField.tsx  
-src/components/ShoppingCart.tsx  
-  
+src/utils/printUtils.ts  
+
