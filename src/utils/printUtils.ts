@@ -226,18 +226,18 @@ export const printOrder = (order: Order) => {
         const itemSubtotal = calculateItemSubtotal(item);
         const combinationText = item.isHalfPizza && item.combination
           ? (Array.isArray(item.combination)
-              ? item.combination.map((c: any) => c.name || c).join(' + ')
+              ? item.combination.map(getDisplayName).join(' + ')
               : typeof item.combination === 'object' && item.combination.flavors
-                ? item.combination.flavors.map((f: any) => f.name || f).join(' + ')
+                ? item.combination.flavors.map(getDisplayName).join(' + ')
                 : '')
           : '';
 
         // Coleta adicionais com preço
         const adicionais: { name: string; price: number }[] = [];
         if (item.selectedVariations && Array.isArray(item.selectedVariations)) {
-          item.selectedVariations.forEach((group: any) => {
+          item.selectedVariations.forEach((group: SelectedVariationGroup) => {
             if (group.variations && Array.isArray(group.variations)) {
-              group.variations.forEach((v: any) => {
+              group.variations.forEach((v: PrintableVariation) => {
                 const halfLabel = v.halfSelection === 'first' ? ' (Metade 1)' : v.halfSelection === 'second' ? ' (Metade 2)' : '';
                 adicionais.push({
                   name: (v.name || '') + (v.quantity > 1 ? ` (${v.quantity}x)` : '') + halfLabel,
