@@ -167,6 +167,7 @@ const Layout = () => {
         saveLayoutSetting('cor_fonte', corFonte),
         saveLayoutSetting('cor_fonte_categorias', corFonteCategorias),
         saveLayoutSetting('cor_fonte_titulos', corFonteTitulos),
+        saveLayoutSetting('cor_fonte_titulo_produto', corFonteTituloProduto),
         saveLayoutSetting('cor_fonte_secundaria', corFonteSecundaria),
         saveLayoutSetting('cor_background', corBackground),
         saveLayoutSetting('cor_barra_botoes', corBarraBotoes),
