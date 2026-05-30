@@ -283,9 +283,20 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
 };
 
 
-  const handleUpdateStatus = (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
+  const handleUpdateStatus = async (orderId: string, status: Order["status"], cancellationReasonValue?: string) => {
     if (status === "confirmed") {
-      printOrder(order);
+      try {
+        const { data } = await supabase
+          .from("configuracoes")
+          .select("valor")
+          .eq("chave", "auto_print_on_accept")
+          .maybeSingle();
+        const enabled = !data || data.valor !== "false";
+        if (enabled) printOrder(order);
+      } catch (e) {
+        console.error("Erro ao verificar config de impressão:", e);
+        printOrder(order);
+      }
     }
     const updatedOrder: Order & { cancellationReason?: string } = { ...order, status };
     if (status === "cancelled" && cancellationReasonValue) {

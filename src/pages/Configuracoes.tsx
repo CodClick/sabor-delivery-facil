@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Clock, RefreshCw, MessageCircle, Bell, ShieldCheck, Radio, Activity } from "lucide-react";
+import { ArrowLeft, Clock, RefreshCw, MessageCircle, Bell, ShieldCheck, Radio, Activity, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { invalidateComunicacaoMetaCache } from "@/utils/webhookPayload";
 
@@ -31,6 +31,8 @@ const Configuracoes = () => {
   const [comunicacaoInstancia, setComunicacaoInstancia] = useState("");
   const [comunicacaoApikey, setComunicacaoApikey] = useState("");
   const [savingComunicacao, setSavingComunicacao] = useState(false);
+  const [autoPrintOnAccept, setAutoPrintOnAccept] = useState(true);
+  const [savingAutoPrintToggle, setSavingAutoPrintToggle] = useState(false);
 
   const currentProjectUrl = (supabase as any).supabaseUrl;
 
@@ -43,7 +45,7 @@ const Configuracoes = () => {
       const { data, error } = await supabase
         .from("configuracoes")
         .select("chave, valor")
-        .in("chave", ["cron_ga4_schedule", "webhook_chatassistant", "mensagem_atendimento", "webhook_status_pedido", "webhook_autenticacao", "webhook_eventos", "tempo_disparo_abandoned_cart", "whatsapp_verification_enabled", "comunicacao_instancia", "comunicacao_apikey"]);
+        .in("chave", ["cron_ga4_schedule", "webhook_chatassistant", "mensagem_atendimento", "webhook_status_pedido", "webhook_autenticacao", "webhook_eventos", "tempo_disparo_abandoned_cart", "whatsapp_verification_enabled", "comunicacao_instancia", "comunicacao_apikey", "auto_print_on_accept"]);
 
       if (error) throw error;
 
@@ -59,6 +61,7 @@ const Configuracoes = () => {
           if (row.chave === "whatsapp_verification_enabled") setWhatsappVerificationEnabled(row.valor !== "false");
           if (row.chave === "comunicacao_instancia" && row.valor) setComunicacaoInstancia(row.valor);
           if (row.chave === "comunicacao_apikey" && row.valor) setComunicacaoApikey(row.valor);
+          if (row.chave === "auto_print_on_accept") setAutoPrintOnAccept(row.valor !== "false");
         });
       }
     } catch (error) {
@@ -199,6 +202,54 @@ const Configuracoes = () => {
                 <RefreshCw className={`h-4 w-4 mr-2 ${savingComunicacao ? "animate-spin" : ""}`} />
                 {savingComunicacao ? "Salvando..." : "Salvar Comunicação"}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Impressão Automática */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Printer className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle>Impressão Automática ao Aceitar</CardTitle>
+                <CardDescription>Define se o pedido será impresso automaticamente ao clicar em "Aceito" nos detalhes do pedido.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div className="space-y-0.5 pr-4">
+                <Label htmlFor="auto_print_toggle" className="text-base">Imprimir ao clicar em "Aceito"</Label>
+                <p className="text-sm text-muted-foreground">
+                  Quando desabilitado, clicar em "Aceito" não dispara a impressão automática (a impressão automática ao chegar novo pedido continua ativa).
+                </p>
+              </div>
+              <Switch
+                id="auto_print_toggle"
+                checked={autoPrintOnAccept}
+                disabled={savingAutoPrintToggle}
+                onCheckedChange={async (checked) => {
+                  setSavingAutoPrintToggle(true);
+                  const prev = autoPrintOnAccept;
+                  setAutoPrintOnAccept(checked);
+                  try {
+                    const { error } = await supabase
+                      .from("configuracoes")
+                      .upsert(
+                        { chave: "auto_print_on_accept", valor: checked ? "true" : "false", updated_at: new Date().toISOString() },
+                        { onConflict: "chave" }
+                      );
+                    if (error) throw error;
+                    toast({ title: "Sucesso!", description: `Impressão ao aceitar ${checked ? "habilitada" : "desabilitada"}.` });
+                  } catch (error: any) {
+                    setAutoPrintOnAccept(prev);
+                    toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+                  } finally {
+                    setSavingAutoPrintToggle(false);
+                  }
+                }}
+              />
             </div>
           </CardContent>
         </Card>
