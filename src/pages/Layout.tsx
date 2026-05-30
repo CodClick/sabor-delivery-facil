@@ -429,6 +429,12 @@ const Layout = () => {
                 <div className="flex items-center gap-2 mt-1">
                   <input type="color" value={corFonteTitulos} onChange={(e) => setCorFonteTitulos(e.target.value)} className="w-10 h-10 rounded cursor-pointer border-0" />
                   <Input value={corFonteTitulos} onChange={(e) => setCorFonteTitulos(e.target.value)} className="flex-1" />
+              </div>
+              <div>
+                <Label>Cor do Título do Produto</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input type="color" value={corFonteTituloProduto} onChange={(e) => setCorFonteTituloProduto(e.target.value)} className="w-10 h-10 rounded cursor-pointer border-0" />
+                  <Input value={corFonteTituloProduto} onChange={(e) => setCorFonteTituloProduto(e.target.value)} className="flex-1" />
                 </div>
               </div>
               <div>
