@@ -40,6 +40,7 @@ const Layout = () => {
   const [corFonte, setCorFonte] = useState('#1f2937');
   const [corFonteCategorias, setCorFonteCategorias] = useState('#1f2937');
   const [corFonteTitulos, setCorFonteTitulos] = useState('#1f2937');
+  const [corFonteTituloProduto, setCorFonteTituloProduto] = useState('#1f2937');
   const [corFonteSecundaria, setCorFonteSecundaria] = useState('#6b7280');
   const [corBackground, setCorBackground] = useState('#f9fafb');
   const [corBarraBotoes, setCorBarraBotoes] = useState('#ffffff');
