@@ -117,7 +117,8 @@ const Index = () => {
       </div>
 
       {/* Busca - aparece antes da nav no mobile, depois no desktop */}
-      <div className="order-1 md:order-3 px-4 z-10 -mt-4 md:mt-8 flex md:hidden">
+      {/* ALTERADO: Adicionado mb-8 para afastar a busca mobile da CategoryNav com simetria */}
+      <div className="order-1 md:order-3 px-4 z-10 -mt-4 md:mt-8 flex md:hidden mb-8">
         <div className="relative max-w-xl mx-auto w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
           <Input
@@ -139,7 +140,8 @@ const Index = () => {
       />
 
       {/* Busca no desktop - abaixo da nav */}
-      <div className="px-4 z-10 mt-8 hidden md:block">
+      {/* ALTERADO: Adicionado mb-8 para dar o mesmo espaçamento na parte inferior em relação às seções do menu */}
+      <div className="px-4 z-10 mt-8 mb-8 hidden md:block">
         <div className="relative max-w-xl mx-auto">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
           <Input
@@ -153,7 +155,8 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 pt-0 pb-8 md:pt-8">
+      {/* ALTERADO: Ajustado o padding-top de pt-0 para pt-4 no container mobile para harmonizar com a margem inferior da busca */}
+      <div className="container mx-auto px-4 pt-4 pb-8 md:pt-8">
         {activeCategory === "all" ? (
           groupedItems.map(({ category, items }) => (
             <MenuSection key={category.id} title={category.name} items={items} itemRefs={itemRefs} />
