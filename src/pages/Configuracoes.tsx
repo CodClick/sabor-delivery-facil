@@ -31,6 +31,8 @@ const Configuracoes = () => {
   const [comunicacaoInstancia, setComunicacaoInstancia] = useState("");
   const [comunicacaoApikey, setComunicacaoApikey] = useState("");
   const [savingComunicacao, setSavingComunicacao] = useState(false);
+  const [autoPrintOnAccept, setAutoPrintOnAccept] = useState(true);
+  const [savingAutoPrintToggle, setSavingAutoPrintToggle] = useState(false);
 
   const currentProjectUrl = (supabase as any).supabaseUrl;
 
