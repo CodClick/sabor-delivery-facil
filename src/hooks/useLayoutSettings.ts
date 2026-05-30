@@ -38,6 +38,7 @@ const defaults: LayoutSettings = {
   cor_fonte: '#1f2937',
   cor_fonte_categorias: '#1f2937',
   cor_fonte_titulos: '#1f2937',
+  cor_fonte_titulo_produto: '#1f2937',
   cor_fonte_secundaria: '#6b7280',
   cor_background: '#f9fafb',
   cor_barra_botoes: '#ffffff',
