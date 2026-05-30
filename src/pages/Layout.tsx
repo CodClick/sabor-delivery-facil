@@ -87,6 +87,7 @@ const Layout = () => {
       setCorFonte(settings.cor_fonte);
       setCorFonteCategorias(settings.cor_fonte_categorias);
       setCorFonteTitulos(settings.cor_fonte_titulos);
+      setCorFonteTituloProduto(settings.cor_fonte_titulo_produto);
       setCorFonteSecundaria(settings.cor_fonte_secundaria);
       setCorBackground(settings.cor_background);
       setCorBarraBotoes(settings.cor_barra_botoes);
