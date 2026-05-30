@@ -61,6 +61,7 @@ const Configuracoes = () => {
           if (row.chave === "whatsapp_verification_enabled") setWhatsappVerificationEnabled(row.valor !== "false");
           if (row.chave === "comunicacao_instancia" && row.valor) setComunicacaoInstancia(row.valor);
           if (row.chave === "comunicacao_apikey" && row.valor) setComunicacaoApikey(row.valor);
+          if (row.chave === "auto_print_on_accept") setAutoPrintOnAccept(row.valor !== "false");
         });
       }
     } catch (error) {
