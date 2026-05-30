@@ -149,7 +149,7 @@ const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCard
           />
         </div>
         <div className="flex-1">
-          <h3 className="text-sm sm:text-lg font-bold mb-1 line-clamp-2">{item.name}</h3>
+          <h3 className="text-sm sm:text-lg font-bold mb-1 line-clamp-2" style={{ color: settings.cor_fonte_titulo_produto }}>{item.name}</h3>
           <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-3">{item.description}</p>
         </div>
         <div className={`flex items-center mt-2 ${isTwoColumns ? 'flex-col gap-2' : 'justify-between flex-row'}`}>

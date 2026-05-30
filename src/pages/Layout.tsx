@@ -40,6 +40,7 @@ const Layout = () => {
   const [corFonte, setCorFonte] = useState('#1f2937');
   const [corFonteCategorias, setCorFonteCategorias] = useState('#1f2937');
   const [corFonteTitulos, setCorFonteTitulos] = useState('#1f2937');
+  const [corFonteTituloProduto, setCorFonteTituloProduto] = useState('#1f2937');
   const [corFonteSecundaria, setCorFonteSecundaria] = useState('#6b7280');
   const [corBackground, setCorBackground] = useState('#f9fafb');
   const [corBarraBotoes, setCorBarraBotoes] = useState('#ffffff');
@@ -86,6 +87,7 @@ const Layout = () => {
       setCorFonte(settings.cor_fonte);
       setCorFonteCategorias(settings.cor_fonte_categorias);
       setCorFonteTitulos(settings.cor_fonte_titulos);
+      setCorFonteTituloProduto(settings.cor_fonte_titulo_produto);
       setCorFonteSecundaria(settings.cor_fonte_secundaria);
       setCorBackground(settings.cor_background);
       setCorBarraBotoes(settings.cor_barra_botoes);
@@ -165,6 +167,7 @@ const Layout = () => {
         saveLayoutSetting('cor_fonte', corFonte),
         saveLayoutSetting('cor_fonte_categorias', corFonteCategorias),
         saveLayoutSetting('cor_fonte_titulos', corFonteTitulos),
+        saveLayoutSetting('cor_fonte_titulo_produto', corFonteTituloProduto),
         saveLayoutSetting('cor_fonte_secundaria', corFonteSecundaria),
         saveLayoutSetting('cor_background', corBackground),
         saveLayoutSetting('cor_barra_botoes', corBarraBotoes),
@@ -426,6 +429,13 @@ const Layout = () => {
                 <div className="flex items-center gap-2 mt-1">
                   <input type="color" value={corFonteTitulos} onChange={(e) => setCorFonteTitulos(e.target.value)} className="w-10 h-10 rounded cursor-pointer border-0" />
                   <Input value={corFonteTitulos} onChange={(e) => setCorFonteTitulos(e.target.value)} className="flex-1" />
+                </div>
+              </div>
+              <div>
+                <Label>Cor do Título do Produto</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input type="color" value={corFonteTituloProduto} onChange={(e) => setCorFonteTituloProduto(e.target.value)} className="w-10 h-10 rounded cursor-pointer border-0" />
+                  <Input value={corFonteTituloProduto} onChange={(e) => setCorFonteTituloProduto(e.target.value)} className="flex-1" />
                 </div>
               </div>
               <div>
