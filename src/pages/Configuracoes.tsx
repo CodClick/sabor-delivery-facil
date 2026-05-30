@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Clock, RefreshCw, MessageCircle, Bell, ShieldCheck, Radio, Activity } from "lucide-react";
+import { ArrowLeft, Clock, RefreshCw, MessageCircle, Bell, ShieldCheck, Radio, Activity, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { invalidateComunicacaoMetaCache } from "@/utils/webhookPayload";
 
