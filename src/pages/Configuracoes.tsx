@@ -206,6 +206,54 @@ const Configuracoes = () => {
           </CardContent>
         </Card>
 
+        {/* Impressão Automática */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Printer className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle>Impressão Automática ao Aceitar</CardTitle>
+                <CardDescription>Define se o pedido será impresso automaticamente ao clicar em "Aceito" nos detalhes do pedido.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div className="space-y-0.5 pr-4">
+                <Label htmlFor="auto_print_toggle" className="text-base">Imprimir ao clicar em "Aceito"</Label>
+                <p className="text-sm text-muted-foreground">
+                  Quando desabilitado, clicar em "Aceito" não dispara a impressão automática (a impressão automática ao chegar novo pedido continua ativa).
+                </p>
+              </div>
+              <Switch
+                id="auto_print_toggle"
+                checked={autoPrintOnAccept}
+                disabled={savingAutoPrintToggle}
+                onCheckedChange={async (checked) => {
+                  setSavingAutoPrintToggle(true);
+                  const prev = autoPrintOnAccept;
+                  setAutoPrintOnAccept(checked);
+                  try {
+                    const { error } = await supabase
+                      .from("configuracoes")
+                      .upsert(
+                        { chave: "auto_print_on_accept", valor: checked ? "true" : "false", updated_at: new Date().toISOString() },
+                        { onConflict: "chave" }
+                      );
+                    if (error) throw error;
+                    toast({ title: "Sucesso!", description: `Impressão ao aceitar ${checked ? "habilitada" : "desabilitada"}.` });
+                  } catch (error: any) {
+                    setAutoPrintOnAccept(prev);
+                    toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+                  } finally {
+                    setSavingAutoPrintToggle(false);
+                  }
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Cron GA4 */}
         <Card>
           <CardHeader>
