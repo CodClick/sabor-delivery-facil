@@ -63,7 +63,7 @@ const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ actions }) => {
               </div>
               <div className="text-center sm:text-left">
                 <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: settings.cor_fonte }}>{settings.empresa_nome}</h1>
-                <p className="mt-1" style={{ color: settings.cor_fonte }}><b>{settings.empresa_descricao}</b></p>
+                <p className="mt-1 whitespace-pre-line" style={{ color: settings.cor_fonte }}><b>{settings.empresa_descricao}</b></p>
 
                 <div className="flex items-center justify-center sm:justify-start mt-2">
                   <div className="flex text-yellow-400">
