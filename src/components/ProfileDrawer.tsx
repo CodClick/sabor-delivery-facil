@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { MenuItem } from "@/types/menu";
 import { getFirstPurchaseCouponBlockMessage, validateFirstPurchaseCoupon } from "@/services/couponEligibilityService";
+import { useLayoutSettings } from "@/hooks/useLayoutSettings";
 
 interface ProfileDrawerProps {
   open: boolean;
@@ -71,6 +72,7 @@ const mapRow = (row: any): Order => ({
 
 const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onOpenChange, onRewardsCountChange }) => {
   const { currentUser, logOut } = useAuth();
+  const { settings } = useLayoutSettings();
   const navigate = useNavigate();
   const { addItem, setIsCartOpen, setAppliedCoupon } = useCart();
 
@@ -412,14 +414,27 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onOpenChange, onRew
         side="right"
         className="w-screen sm:max-w-full p-0 overflow-y-auto [&>button]:hidden"
       >
-        <SheetHeader className="px-4 py-4 border-b bg-gradient-to-br from-green-600 to-green-700 text-white">
+        <SheetHeader
+          className="px-4 py-4 border-b"
+          style={{
+            backgroundColor: settings.cor_chat_cabecalho,
+            color: settings.cor_chat_fonte_cabecalho,
+            borderColor: settings.cor_chat_fonte_cabecalho,
+          }}
+        >
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-white text-xl">Minha Conta</SheetTitle>
+            <SheetTitle className="text-xl" style={{ color: settings.cor_chat_fonte_cabecalho }}>
+              Minha Conta
+            </SheetTitle>
             <SheetClose asChild>
               <Button
                 size="icon"
-                variant="destructive"
-                className="h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-md"
+                variant="ghost"
+                className="h-8 w-8 rounded-full shadow-md hover:opacity-80"
+                style={{
+                  backgroundColor: settings.cor_chat_fonte_cabecalho,
+                  color: settings.cor_chat_cabecalho,
+                }}
               >
                 <X className="h-4 w-4" />
                 <span className="sr-only">Fechar</span>
@@ -430,12 +445,16 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onOpenChange, onRew
             <div className="text-lg font-semibold">
               {profileName || currentUser?.email?.split("@")[0] || "Cliente"}
             </div>
-            <div className="text-sm text-green-100 break-all">{currentUser?.email}</div>
+            <div className="text-sm break-all opacity-80">{currentUser?.email}</div>
             <div className="flex gap-2 mt-3">
               <Button
                 size="sm"
                 variant="secondary"
-                className="bg-white text-green-700 hover:bg-green-50"
+                className="hover:opacity-90"
+                style={{
+                  backgroundColor: settings.cor_chat_fonte_cabecalho,
+                  color: settings.cor_chat_cabecalho,
+                }}
                 onClick={openEdit}
               >
                 <UserCog className="h-4 w-4 mr-1" /> Editar dados
@@ -443,7 +462,11 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onOpenChange, onRew
               <Button
                 size="sm"
                 variant="outline"
-                className="border-white/70 text-white bg-transparent hover:bg-white/10 hover:text-white"
+                className="bg-transparent hover:opacity-80"
+                style={{
+                  borderColor: settings.cor_chat_fonte_cabecalho,
+                  color: settings.cor_chat_fonte_cabecalho,
+                }}
                 onClick={async () => {
                   await logOut();
                   onOpenChange(false);
