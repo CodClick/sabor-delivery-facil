@@ -107,8 +107,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
     )}
   >
     <CardContent className="p-5 flex flex-col justify-between">
-      <div className="min-h-[2.5rem]">
-        <p className="text-[11px] font-medium leading-tight text-muted-foreground">{label}</p>
+      <div className="h-[2.5rem]">
+        <p className="text-[11px] font-medium leading-tight text-muted-foreground line-clamp-2">{label}</p>
       </div>
       <div>
         <span className="block text-xl font-bold tracking-tight whitespace-nowrap">{value}</span>
