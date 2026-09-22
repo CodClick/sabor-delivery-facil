@@ -106,39 +106,43 @@ const MetricCard: React.FC<MetricCardProps> = ({
       className
     )}
   >
-    <CardContent className="p-5 flex flex-col">
-      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-      <span className="text-xl font-bold tracking-tight whitespace-nowrap mt-1">{value}</span>
-      <div className="flex items-center justify-between gap-3 mt-2">
-        {change ? (
-          <span
-            className={cn(
-              "flex items-center gap-1 text-sm font-semibold",
-              isPositive ? "text-food-green" : "text-destructive"
-            )}
-          >
-            {isPositive ? (
-              <TrendingUp className="h-4 w-4" />
-            ) : (
-              <TrendingDown className="h-4 w-4" />
-            )}
-            {change}
-          </span>
-        ) : (
-          <span />
-        )}
-        {onDetailsClick && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDetailsClick();
-            }}
-            className="shrink-0 text-xs font-medium text-food-green underline underline-offset-2 hover:text-food-green/80 transition-colors"
-          >
-            Detalhes
-          </button>
-        )}
+    <CardContent className="p-5 flex flex-col justify-between">
+      <div className="min-h-[2.5rem]">
+        <p className="text-[11px] font-medium leading-tight text-muted-foreground">{label}</p>
+      </div>
+      <div>
+        <span className="block text-xl font-bold tracking-tight whitespace-nowrap">{value}</span>
+        <div className="flex items-center justify-between gap-3 mt-2">
+          {change ? (
+            <span
+              className={cn(
+                "flex items-center gap-1 text-sm font-semibold",
+                isPositive ? "text-food-green" : "text-destructive"
+              )}
+            >
+              {isPositive ? (
+                <TrendingUp className="h-4 w-4" />
+              ) : (
+                <TrendingDown className="h-4 w-4" />
+              )}
+              {change}
+            </span>
+          ) : (
+            <span />
+          )}
+          {onDetailsClick && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDetailsClick();
+              }}
+              className="shrink-0 text-xs font-medium text-food-green underline underline-offset-2 hover:text-food-green/80 transition-colors"
+            >
+              Detalhes
+            </button>
+          )}
+        </div>
       </div>
     </CardContent>
   </Card>
