@@ -23,6 +23,7 @@ export type Database = {
           name: string
           order: number
           show_in_category_nav: boolean
+          show_in_nav: boolean
           updated_at: string
           visible: boolean
         }
@@ -34,6 +35,7 @@ export type Database = {
           name: string
           order?: number
           show_in_category_nav?: boolean
+          show_in_nav?: boolean
           updated_at?: string
           visible?: boolean
         }
@@ -45,6 +47,7 @@ export type Database = {
           name?: string
           order?: number
           show_in_category_nav?: boolean
+          show_in_nav?: boolean
           updated_at?: string
           visible?: boolean
         }
@@ -495,13 +498,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fidelidade_historico_regra_id_fkey"
-            columns: ["regra_id"]
-            isOneToOne: false
-            referencedRelation: "fidelidade_regras"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fidelidade_historico_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -520,6 +516,7 @@ export type Database = {
           regra_id: string | null
           telefone_cliente: string
           ultima_atualizacao: string | null
+          user_id: string | null
           valor_gasto_pizzas: number
         }
         Insert: {
@@ -531,6 +528,7 @@ export type Database = {
           regra_id?: string | null
           telefone_cliente: string
           ultima_atualizacao?: string | null
+          user_id?: string | null
           valor_gasto_pizzas?: number
         }
         Update: {
@@ -542,6 +540,7 @@ export type Database = {
           regra_id?: string | null
           telefone_cliente?: string
           ultima_atualizacao?: string | null
+          user_id?: string | null
           valor_gasto_pizzas?: number
         }
         Relationships: []
@@ -1267,6 +1266,7 @@ export type Database = {
       }
     }
     Functions: {
+      current_user_phones: { Args: never; Returns: string[] }
       decrement_menu_item_stock: {
         Args: { _item_id: string; _qty: number }
         Returns: undefined
@@ -1318,56 +1318,31 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _uid: string }; Returns: boolean }
-      mkt_avg_visit_duration:
-        | {
-            Args: {
-              p_campaign?: string
-              p_end: string
-              p_source?: string
-              p_start: string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_campaign?: string
-              p_cidade?: string
-              p_end: string
-              p_source?: string
-              p_start: string
-            }
-            Returns: number
-          }
-      mkt_bounce_rate:
-        | {
-            Args: {
-              p_campaign?: string
-              p_end: string
-              p_source?: string
-              p_start: string
-            }
-            Returns: {
-              bounced_new: number
-              bounced_returning: number
-              bounced_sessions: number
-              total_sessions: number
-            }[]
-          }
-        | {
-            Args: {
-              p_campaign?: string
-              p_cidade?: string
-              p_end: string
-              p_source?: string
-              p_start: string
-            }
-            Returns: {
-              bounced_new: number
-              bounced_returning: number
-              bounced_sessions: number
-              total_sessions: number
-            }[]
-          }
+      mkt_avg_visit_duration: {
+        Args: {
+          p_campaign?: string
+          p_cidade?: string
+          p_end: string
+          p_source?: string
+          p_start: string
+        }
+        Returns: number
+      }
+      mkt_bounce_rate: {
+        Args: {
+          p_campaign?: string
+          p_cidade?: string
+          p_end: string
+          p_source?: string
+          p_start: string
+        }
+        Returns: {
+          bounced_new: number
+          bounced_returning: number
+          bounced_sessions: number
+          total_sessions: number
+        }[]
+      }
       mkt_cidade_options: {
         Args: never
         Returns: {
