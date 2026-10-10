@@ -174,7 +174,7 @@ export type Database = {
           limite_uso: number | null
           nome: string
           origem: string | null
-          primeira_compra_apenas: boolean
+          primeira_compra_apenas: boolean | null
           produto_brinde: Json | null
           produtos_requeridos: Json | null
           tipo: string
@@ -193,7 +193,7 @@ export type Database = {
           limite_uso?: number | null
           nome: string
           origem?: string | null
-          primeira_compra_apenas?: boolean
+          primeira_compra_apenas?: boolean | null
           produto_brinde?: Json | null
           produtos_requeridos?: Json | null
           tipo: string
@@ -212,7 +212,7 @@ export type Database = {
           limite_uso?: number | null
           nome?: string
           origem?: string | null
-          primeira_compra_apenas?: boolean
+          primeira_compra_apenas?: boolean | null
           produto_brinde?: Json | null
           produtos_requeridos?: Json | null
           tipo?: string
@@ -362,9 +362,6 @@ export type Database = {
           nome: string
           numero: string | null
           pais: string | null
-          pix_chave: string | null
-          pix_cidade: string | null
-          pix_nome_recebedor: string | null
           rua: string | null
           sobre: string | null
           superfrete_sandbox: boolean
@@ -393,9 +390,6 @@ export type Database = {
           nome: string
           numero?: string | null
           pais?: string | null
-          pix_chave?: string | null
-          pix_cidade?: string | null
-          pix_nome_recebedor?: string | null
           rua?: string | null
           sobre?: string | null
           superfrete_sandbox?: boolean
@@ -424,9 +418,6 @@ export type Database = {
           nome?: string
           numero?: string | null
           pais?: string | null
-          pix_chave?: string | null
-          pix_cidade?: string | null
-          pix_nome_recebedor?: string | null
           rua?: string | null
           sobre?: string | null
           superfrete_sandbox?: boolean
@@ -519,28 +510,37 @@ export type Database = {
         Row: {
           contagem_pizzas: number
           criado_em: string | null
+          eventos: Json
           id: string
           nome_cliente: string | null
+          regra_id: string | null
           telefone_cliente: string
           ultima_atualizacao: string | null
+          user_id: string | null
           valor_gasto_pizzas: number
         }
         Insert: {
           contagem_pizzas?: number
           criado_em?: string | null
+          eventos?: Json
           id?: string
           nome_cliente?: string | null
+          regra_id?: string | null
           telefone_cliente: string
           ultima_atualizacao?: string | null
+          user_id?: string | null
           valor_gasto_pizzas?: number
         }
         Update: {
           contagem_pizzas?: number
           criado_em?: string | null
+          eventos?: Json
           id?: string
           nome_cliente?: string | null
+          regra_id?: string | null
           telefone_cliente?: string
           ultima_atualizacao?: string | null
+          user_id?: string | null
           valor_gasto_pizzas?: number
         }
         Relationships: []
@@ -661,7 +661,6 @@ export type Database = {
           height_cm: number | null
           hidden_in_menu: boolean
           id: string
-          "id-teste": string | null
           image: string
           is_half_pizza: boolean | null
           length_cm: number | null
@@ -700,7 +699,6 @@ export type Database = {
           height_cm?: number | null
           hidden_in_menu?: boolean
           id: string
-          "id-teste"?: string | null
           image?: string
           is_half_pizza?: boolean | null
           length_cm?: number | null
@@ -739,7 +737,6 @@ export type Database = {
           height_cm?: number | null
           hidden_in_menu?: boolean
           id?: string
-          "id-teste"?: string | null
           image?: string
           is_half_pizza?: boolean | null
           length_cm?: number | null
@@ -1317,6 +1314,7 @@ export type Database = {
       }
     }
     Functions: {
+      current_user_phones: { Args: never; Returns: string[] }
       decrement_menu_item_stock: {
         Args: { _item_id: string; _qty: number }
         Returns: undefined
