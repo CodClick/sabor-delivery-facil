@@ -145,20 +145,33 @@ const AdminMetrics = () => {
     [orders]
   );
 
+  // Custo exato do tamanho escolhido (pizza_sizes); custo base só como fallback.
+  const resolveItemCost = (item: any, itemMap: Map<string, any>, productId: string): number => {
+    const mi = itemMap.get(String(productId ?? "").replace(/^gift-/, ""));
+    const stored = Number(item?.selectedSize?.cost);
+    if (stored > 0) return stored;
+    const sizeRef = item?.selectedSize || item?.combination?.size;
+    const sizeId = sizeRef?.id;
+    const sizeName = String(sizeRef?.name ?? item?.combination?.tamanho ?? "").trim().toLowerCase();
+    const sizes: any[] = mi?.pizzaSizes || mi?.pizza_sizes || [];
+    if (sizes.length && (sizeId || sizeName)) {
+      const match = sizes.find(
+        (s) => (sizeId && s.id === sizeId) || (sizeName && String(s.name ?? "").trim().toLowerCase() === sizeName)
+      );
+      const c = Number(match?.cost);
+      if (c > 0) return c;
+    }
+    return Number(mi?.cost) || 0;
+  };
+
   const custoProduto = useMemo(() => {
     const itemMap = new Map<string, any>();
     menuItems.forEach((mi) => itemMap.set(mi.id, mi));
-    const resolveCost = (item: any): number => {
-      const mi = itemMap.get(item.menuItemId);
-      const sizeCost = item?.selectedSize?.cost;
-      if (mi?.priceFrom && typeof sizeCost === "number") return sizeCost;
-      return mi?.cost || 0;
-    };
     return orders.reduce((sum, o) => {
       if (!Array.isArray(o.items)) return sum;
       return sum + o.items.reduce((s, item: any) => {
         if (item?.isGift) return s; // brindes contam em "Custo Brindes"
-        return s + resolveCost(item) * (item.quantity || 1);
+        return s + resolveItemCost(item, itemMap, item.menuItemId) * (item.quantity || 1);
       }, 0);
     }, 0);
   }, [orders, menuItems]);
@@ -171,12 +184,7 @@ const AdminMetrics = () => {
       return sum + o.items.reduce((s, item: any) => {
         if (!item?.isGift) return s;
         const productId = item.giftProductId || item.menuItemId;
-        const mi = itemMap.get(productId);
-        const sizeCost = item?.selectedSize?.cost;
-        const cost = (mi?.priceFrom && typeof sizeCost === "number")
-          ? sizeCost
-          : (mi?.cost || 0);
-        return s + cost * (item.quantity || 1);
+        return s + resolveItemCost(item, itemMap, productId) * (item.quantity || 1);
       }, 0);
     }, 0);
   }, [orders, menuItems]);
