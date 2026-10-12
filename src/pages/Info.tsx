@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Store, Info as InfoIcon } from "lucide-react";
+import { ArrowLeft, Store, Info as InfoIcon, Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLayoutSettings } from "@/hooks/useLayoutSettings";
@@ -52,12 +52,8 @@ const Info: React.FC = () => {
   const enderecoLinha = [empresa?.rua && empresa?.numero ? `${empresa.rua}, ${empresa.numero}` : empresa?.rua, empresa?.bairro, empresa?.cidade]
     .filter(Boolean)
     .join(" - ");
-  const contatoLinha = [
-    empresa?.telefone && `Telefone ${formatPhoneLocalBr(empresa.telefone)}`,
-    empresa?.whatsapp && `WhatsApp ${formatPhoneLocalBr(empresa.whatsapp)}`,
-  ]
-    .filter(Boolean)
-    .join("    ");
+  const temTelefone = Boolean(empresa?.telefone);
+  const temWhatsapp = Boolean(empresa?.whatsapp);
 
   return (
     <div className="min-h-screen pb-8" style={{ backgroundColor: settings.cor_background }}>
@@ -95,8 +91,21 @@ const Info: React.FC = () => {
 
             {cepLinha && <p className="text-sm text-muted-foreground">{cepLinha}</p>}
             {enderecoLinha && <p className="text-sm text-muted-foreground">{enderecoLinha}</p>}
-            {contatoLinha && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{contatoLinha}</p>
+            {(temTelefone || temWhatsapp) && (
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                {temTelefone && (
+                  <span className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 shrink-0" />
+                    {formatPhoneLocalBr(empresa?.telefone)}
+                  </span>
+                )}
+                {temWhatsapp && (
+                  <span className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    {formatPhoneLocalBr(empresa?.whatsapp)}
+                  </span>
+                )}
+              </div>
             )}
             {empresa?.cnpj && (
               <p className="text-sm text-muted-foreground">CNPJ {empresa.cnpj}</p>
