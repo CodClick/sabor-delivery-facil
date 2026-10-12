@@ -30,6 +30,30 @@ export const formatPhoneBr = (raw?: string | null): string => {
   return out;
 };
 
+// Formata "(DD) XXXXX-XXXX" (celular) / "(DD) XXXX-XXXX" (fixo), sem código país
+export const formatPhoneLocalBr = (raw?: string | null): string => {
+  const all = phoneDigits(raw);
+  if (!all) return "";
+  const local = all.startsWith("55") && all.length >= 12 ? all.slice(2) : all;
+  if (local.length < 10) return raw?.trim() || local;
+  const ddd = local.slice(0, 2);
+  const rest = local.slice(2);
+  const body =
+    rest.length === 9
+      ? `${rest.slice(0, 5)}-${rest.slice(5)}`
+      : rest.length === 8
+        ? `${rest.slice(0, 4)}-${rest.slice(4)}`
+        : rest;
+  return `(${ddd}) ${body}`;
+};
+
+// Formata CEP "09061-640"; mantém como veio quando não tem 8 dígitos
+export const formatCep = (raw?: string | null): string => {
+  const digits = phoneDigits(raw);
+  if (digits.length !== 8) return raw?.trim() || "";
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
 // Gera todas as variantes possíveis para busca em bases legadas
 export const phoneVariants = (raw?: string | null): string[] => {
   if (!raw) return [];
