@@ -7,6 +7,7 @@ import { useLayoutSettings } from "@/hooks/useLayoutSettings";
 import StoreStatusBadge from "@/components/StoreStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_SCHEDULE, DAY_NAMES, WeekSchedule } from "@/hooks/useStoreOpen";
+import { formatCep, formatPhoneLocalBr } from "@/utils/phoneUtils";
 
 const DEFAULT_SOBRE =
   'Faça seu pedido pelo nosso cardápio digital: escolha os itens, adicione ao carrinho e finalize em poucos cliques. Acompanhe o status do seu pedido na aba "Pedidos" e acumule recompensas no nosso plano de fidelidade.';
@@ -47,11 +48,16 @@ const Info: React.FC = () => {
       ? { ...DEFAULT_SCHEDULE, ...empresa.horarios_funcionamento }
       : DEFAULT_SCHEDULE;
 
-  const cepLinha = empresa?.cep ? `CEP ${empresa.cep}` : "";
+  const cepLinha = empresa?.cep ? `CEP ${formatCep(empresa.cep)}` : "";
   const enderecoLinha = [empresa?.rua && empresa?.numero ? `${empresa.rua}, ${empresa.numero}` : empresa?.rua, empresa?.bairro, empresa?.cidade]
     .filter(Boolean)
     .join(" - ");
-  const contatoLinha = [empresa?.telefone, empresa?.whatsapp].filter(Boolean).join("    ");
+  const contatoLinha = [
+    empresa?.telefone && `Telefone ${formatPhoneLocalBr(empresa.telefone)}`,
+    empresa?.whatsapp && `WhatsApp ${formatPhoneLocalBr(empresa.whatsapp)}`,
+  ]
+    .filter(Boolean)
+    .join("    ");
 
   return (
     <div className="min-h-screen pb-8" style={{ backgroundColor: settings.cor_background }}>
