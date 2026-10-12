@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getSessionId, getVisitorId } from '@/utils/sessionId';
 import { getUtmParams } from '@/utils/utmCapture';
 import { getVisitorCity } from '@/utils/visitorLocation';
+import { getReferrer, getChannel } from '@/utils/referrerCapture';
 import { format, subDays, differenceInCalendarDays } from 'date-fns';
 import { cachedFetch } from './queryCache';
 import { getCategoryMaps } from '@/utils/orderItemCategories';
@@ -104,6 +105,8 @@ export const trackProductEvent = (payload: ProductEventPayload) => {
       utm_content: utms.utm_content ?? null,
       utm_term: utms.utm_term ?? null,
       cidade: getVisitorCity(),
+      referrer: getReferrer(),
+      channel: getChannel(),
     })
     .then(({ error }) => {
       if (error) console.error('Error tracking product event:', error);
@@ -157,6 +160,8 @@ export const trackCartEvent = (
       utm_content: utms.utm_content ?? null,
       utm_term: utms.utm_term ?? null,
       cidade: getVisitorCity(),
+      referrer: getReferrer(),
+      channel: getChannel(),
     })
     .then(({ error }) => {
       if (error) console.error('Error tracking cart event:', error);
