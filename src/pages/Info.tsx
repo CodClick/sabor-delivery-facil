@@ -47,10 +47,11 @@ const Info: React.FC = () => {
       ? { ...DEFAULT_SCHEDULE, ...empresa.horarios_funcionamento }
       : DEFAULT_SCHEDULE;
 
-  const enderecoLinha1 = [empresa?.rua && empresa?.numero ? `${empresa.rua}, ${empresa.numero}` : empresa?.rua, empresa?.bairro, empresa?.cidade]
+  const cepLinha = empresa?.cep ? `CEP ${empresa.cep}` : "";
+  const enderecoLinha = [empresa?.rua && empresa?.numero ? `${empresa.rua}, ${empresa.numero}` : empresa?.rua, empresa?.bairro, empresa?.cidade]
     .filter(Boolean)
     .join(" - ");
-  const contatoLinha = [empresa?.cep, empresa?.telefone, empresa?.whatsapp].filter(Boolean).join("    ");
+  const contatoLinha = [empresa?.telefone, empresa?.whatsapp].filter(Boolean).join("    ");
 
   return (
     <div className="min-h-screen pb-8" style={{ backgroundColor: settings.cor_background }}>
@@ -86,9 +87,8 @@ const Info: React.FC = () => {
               <StoreStatusBadge />
             </div>
 
-            {enderecoLinha1 && (
-              <p className="text-sm text-muted-foreground">{enderecoLinha1}</p>
-            )}
+            {cepLinha && <p className="text-sm text-muted-foreground">{cepLinha}</p>}
+            {enderecoLinha && <p className="text-sm text-muted-foreground">{enderecoLinha}</p>}
             {contatoLinha && (
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{contatoLinha}</p>
             )}
