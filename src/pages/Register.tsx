@@ -409,6 +409,13 @@ const Register = () => {
             >
               {loading ? "Criando conta..." : "Criar Conta"}
             </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Ao criar sua conta, você concorda com nossa{" "}
+              <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                Política de Privacidade
+              </a>
+              .
+            </p>
           </form>
         </Form>
       </div>

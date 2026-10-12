@@ -54,6 +54,7 @@ import MinhaConta from "./pages/MinhaConta";
 import PlanoFidelidade from "./pages/PlanoFidelidade";
 import Info from "./pages/Info";
 import GA4Metrics from "./pages/GA4Metrics";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 
 const queryClient = new QueryClient();
 
@@ -114,7 +115,7 @@ const AppRoutes = () => {
   
   useAdminOrderWatcher();
 
-  const coverRoutes = ['/', '/minha-conta', '/plano-fidelidade', '/info'];
+  const coverRoutes = ['/', '/minha-conta', '/plano-fidelidade', '/info', '/politica-de-privacidade'];
   const isAdminPage =
     adminRoutes.some(route => location.pathname.startsWith(route)) ||
     coverRoutes.includes(location.pathname);
@@ -127,6 +128,7 @@ const AppRoutes = () => {
         <Route path="/minha-conta" element={<MinhaConta />} />
         <Route path="/plano-fidelidade" element={<PlanoFidelidade />} />
         <Route path="/info" element={<Info />} />
+        <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/checkout" element={<Checkout />} />
