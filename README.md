@@ -1,5 +1,5 @@
 ----------------------------------------------------
-**V.1.157.1** -CodClick/sabor-delivery-facil - 11/10/2026**
+**V.1.158.1** -CodClick/sabor-delivery-facil - 12/10/2026**
 ----------------------------------------------------
-- Corrigido os campos de custo nas páginas admin-metrics e marketing-metrics 
+- Reformulação do layout da página "Info". Criada a página "Política de Privacidade" e adicionados links na página "Info" e no "Signup" 
 
