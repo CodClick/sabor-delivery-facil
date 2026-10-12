@@ -125,6 +125,17 @@ const Info: React.FC = () => {
             </p>
           </CardContent>
         </Card>
+
+        <div className="text-center pt-2">
+          <button
+            type="button"
+            onClick={() => navigate("/politica-de-privacidade")}
+            className="text-xs underline opacity-70 hover:opacity-100"
+            style={{ color: settings.cor_fonte }}
+          >
+            Política de Privacidade
+          </button>
+        </div>
       </div>
     </div>
   );
